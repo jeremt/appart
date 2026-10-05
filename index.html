@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="fr">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Appart 3D</title>
+    </head>
+    <body>
+        <div id="viewport"></div>
+
+        <header id="toolbar">
+            <div class="brand">Appart 3D</div>
+            <div class="seg" id="modes">
+                <button data-mode="plan" title="Touche 1">Plan 2D</button>
+                <button data-mode="orbit" title="Touche 2">3D libre</button>
+                <button data-mode="fps" title="Touche 3">Visite</button>
+            </div>
+            <label class="chk"><input type="checkbox" id="opt-labels" checked /> Cotes & pièces</label>
+            <label class="chk"><input type="checkbox" id="opt-snap" checked /> Pas de 5 cm</label>
+            <button id="btn-undo" title="Ctrl/⌘ + Z">Annuler</button>
+            <button id="btn-reset">Réinitialiser</button>
+            <button id="btn-help" title="Aide et raccourcis">? Aide</button>
+        </header>
+
+        <aside id="panel" hidden>
+            <h3 id="p-name"></h3>
+            <div id="p-dims" class="muted"></div>
+            <div class="fields">
+                <label>X (cm)<input type="number" id="p-x" step="1" /></label>
+                <label>Y (cm)<input type="number" id="p-y" step="1" /></label>
+                <label>Rotation (°)<input type="number" id="p-rot" step="15" /></label>
+            </div>
+            <div class="row">
+                <button id="p-rotl">⟲ 90°</button>
+                <button id="p-rotr">⟳ 90°</button>
+            </div>
+            <button id="p-del" class="danger">Supprimer</button>
+        </aside>
+
+        <aside id="trash" hidden>
+            <h4>Meubles supprimés</h4>
+            <ul id="trash-list"></ul>
+        </aside>
+
+        <div id="help" hidden></div>
+
+        <div id="fps-overlay" hidden>
+            <div class="card">
+                <h2>Visite de l'appartement</h2>
+                <p>Vous démarrez sur le palier, devant la porte d'entrée.</p>
+                <ul>
+                    <li><kbd>ZQSD</kbd> / <kbd>WASD</kbd> ou flèches : se déplacer</li>
+                    <li><kbd>Maj</kbd> : courir · souris : regarder</li>
+                    <li><kbd>E</kbd> ou clic : ouvrir / fermer la porte visée</li>
+                    <li><kbd>Échap</kbd> : libérer la souris</li>
+                    <li><kbd>1</kbd> / <kbd>2</kbd> / <kbd>3</kbd> : Plan, 3D libre, Visite (à tout moment)</li>
+                </ul>
+                <div class="row">
+                    <button id="fps-start" class="primary">Commencer la visite</button>
+                    <button id="fps-respawn">Revenir à l'entrée</button>
+                </div>
+            </div>
+        </div>
+        <div id="crosshair" hidden></div>
+        <div id="hint" hidden></div>
+
+        <script type="module" src="/src/main.js"></script>
+    </body>
+</html>
