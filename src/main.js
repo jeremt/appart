@@ -27,7 +27,8 @@ viewport.appendChild(labelRenderer.domElement);
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xcfe2f1);
-scene.add(new THREE.HemisphereLight(0xeaf4ff, 0x7a6a55, 1.1));
+const hemi = new THREE.HemisphereLight(0xeaf4ff, 0x7a6a55, 1.1);
+scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xfff3e0, 2.4);
 sun.position.set(6, 14, 8);
 sun.castShadow = true;
@@ -229,7 +230,7 @@ let mode = 'plan';
 const showLabels = {plan: true, orbit: false};
 const activeCam = () => (mode === 'plan' ? ortho : mode === 'orbit' ? persp : fpsCam);
 
-const MODES_HELP = 'Changer de vue à tout moment : <kbd>1</kbd> Plan · <kbd>2</kbd> 3D libre · <kbd>3</kbd> Visite';
+const MODES_HELP = 'Changer de vue à tout moment : <kbd>1</kbd> Plan · <kbd>2</kbd> 3D libre · <kbd>3</kbd> Visite · <kbd>N</kbd> jour / nuit';
 const HELP = {
     plan: `<b>Plan 2D</b> — glisser : déplacer la vue · <kbd>Espace</kbd> + glisser : déplacer la vue même sur un meuble · molette : zoom<br>Clic sur un meuble : sélection · glisser : déplacer · <kbd>R</kbd> pivoter 90° (<kbd>⇧R</kbd> 15°) · <kbd>Suppr</kbd> supprimer · flèches : ajuster<br>Double-clic sur une porte : ouvrir / fermer<br>${MODES_HELP}`,
     orbit: `<b>3D libre</b> — clic gauche : tourner · <kbd>Espace</kbd> + glisser ou clic droit : déplacer la vue · molette : zoom<br>Glisser un meuble pour le déplacer · <kbd>R</kbd> pivoter · <kbd>Suppr</kbd> supprimer<br>Double-clic sur une porte : ouvrir / fermer<br>${MODES_HELP}`,
@@ -241,6 +242,7 @@ function setMode(m) {
     orbit.enabled = m === 'orbit';
     planCtl.enabled = m === 'plan';
     structure.ceiling.visible = m === 'fps';
+    fixtures.visible = m === 'fps';
     env.soffit.visible = m === 'fps';
     document.querySelectorAll('#modes button').forEach((b) => b.classList.toggle('active', b.dataset.mode === m));
     $('#opt-labels').disabled = m === 'fps';
@@ -564,8 +566,10 @@ window.addEventListener('keydown', (e) => {
     }
     if (mode === 'fps') {
         if (e.code === 'KeyE') interact();
+        if (e.code === 'KeyN') setNight(!night);
         return;
     }
+    if (e.code === 'KeyN' && !e.metaKey && !e.ctrlKey) return setNight(!night);
     if (!selected) return;
     const step = e.shiftKey ? 10 : 1;
     switch (true) {
@@ -742,6 +746,89 @@ function scheduleReflections() {
     reflTimer = setTimeout(captureReflections, 300);
 }
 scheduleReflections();
+
+// ---------- Mode nuit ----------
+// Lune bleutée à la place du soleil, ciel sombre, plafonniers à lumière chaude (avec ombres
+// pour que la lumière ne traverse pas les cloisons), écrans et lampadaire plus présents.
+let night = false;
+const DAY = {
+    bg: scene.background.clone(),
+    exposure: renderer.toneMappingExposure,
+    sun: [sun.color.clone(), sun.intensity, sun.position.clone()],
+    hemi: [hemi.color.clone(), hemi.groundColor.clone(), hemi.intensity],
+};
+const interiorLights = new THREE.Group();
+interiorLights.visible = false;
+scene.add(interiorLights);
+// plafonniers : disques lumineux visibles seulement en visite (comme le plafond)
+const fixtures = new THREE.Group();
+fixtures.visible = false;
+scene.add(fixtures);
+const fixtureMat = new THREE.MeshStandardMaterial({color: 0xffffff, emissive: 0xfff0d8, emissiveIntensity: 0});
+
+function ceilingLight(x, y, intensity, {shadow = true, h = 242, angle = Math.PI / 2.6} = {}) {
+    const p = toWorld(x, y, h);
+    const spot = new THREE.SpotLight(0xffe0b5, intensity, 8, angle, 1, 1.4);
+    spot.position.copy(p);
+    spot.target.position.set(p.x, 0, p.z);
+    if (shadow) {
+        spot.castShadow = true;
+        spot.shadow.mapSize.set(1024, 1024);
+        spot.shadow.radius = 4;
+        spot.shadow.bias = -0.0004;
+        Object.assign(spot.shadow.camera, {near: 0.1, far: 6});
+    }
+    interiorLights.add(spot, spot.target);
+    const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.03, 24), fixtureMat);
+    disc.position.copy(toWorld(x, y, 248));
+    fixtures.add(disc);
+}
+ceilingLight(306, 473, 22); // séjour
+ceilingLight(90, 420, 10); // cuisine
+ceilingLight(418, 155, 18); // chambre
+ceilingLight(108, 170, 14); // salle de bain
+ceilingLight(-140, 570, 8, {shadow: false}); // palier
+ceilingLight(708, 375, 6, {shadow: false, h: 265, angle: Math.PI / 2.4}); // applique du balcon
+
+function setNight(on) {
+    night = on;
+    $('#btn-night').classList.toggle('active', on);
+    $('#btn-night').textContent = on ? '☀ Jour' : '☾ Nuit';
+    scene.background.set(on ? 0x0a1020 : DAY.bg);
+    renderer.toneMappingExposure = on ? 1.25 : DAY.exposure;
+    if (on) {
+        sun.color.set(0x9db4e8);
+        sun.intensity = 0.18;
+        sun.position.set(-7, 12, -5);
+        hemi.color.set(0x2c3a63);
+        hemi.groundColor.set(0x14110e);
+        hemi.intensity = 0.25;
+    } else {
+        sun.color.copy(DAY.sun[0]);
+        sun.intensity = DAY.sun[1];
+        sun.position.copy(DAY.sun[2]);
+        hemi.color.copy(DAY.hemi[0]);
+        hemi.groundColor.copy(DAY.hemi[1]);
+        hemi.intensity = DAY.hemi[2];
+    }
+    interiorLights.visible = on;
+    fixtureMat.emissiveIntensity = on ? 2.5 : 0;
+    // lampes et écrans des meubles : plus intenses la nuit
+    furnRoot.traverse((o) => {
+        if (o.userData.nightOnly) o.visible = on; // ex. ampoules de la guirlande
+        else if (o.isSpotLight || o.isPointLight) {
+            o.userData.dayIntensity ??= o.intensity;
+            o.intensity = o.userData.dayIntensity * (on ? 3 : 1);
+        }
+        if (o.isMesh && o.material.emissiveIntensity > 0) {
+            const mat = o.material;
+            mat.userData.dayEmissive ??= mat.emissiveIntensity;
+            mat.emissiveIntensity = on ? (mat.userData.night ?? mat.userData.dayEmissive * 2) : mat.userData.dayEmissive;
+        }
+    });
+    scheduleReflections();
+}
+$('#btn-night').addEventListener('click', () => setNight(!night));
 
 // ---------- Boucle ----------
 function resize() {

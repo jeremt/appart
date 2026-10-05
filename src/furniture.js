@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
 // Chaque constructeur reçoit (largeur, profondeur) en cm et renvoie un Group :
 // origine au centre de l'emprise au sol, face avant orientée vers +z.
@@ -1256,7 +1257,686 @@ function rug(w, d) {
     return g;
 }
 
+// ---------- Grille murale de cuisine ----------
+
+// Grille en fil inox fixée au mur (dos en -z) : ustensiles suspendus en haut,
+// panier à épices au milieu, poêles et casseroles accrochées en bas.
+function kitchenGrid(w, d) {
+    const g = new THREE.Group(),
+        hw = w / 2,
+        hd = d / 2;
+    const steel = std(0x9ea3a8, {metalness: 0.9, roughness: 0.35, envMap: MAT.chrome.envMap});
+    const wood = std(0xb88a5a, {roughness: 0.6});
+    const y0 = 50,
+        y1 = 200,
+        zg = -hd + 2; // plan de la grille, 2 cm devant le mur
+
+    // grille : fils fusionnés en un seul maillage
+    const wires = [];
+    const wire = (x1, x2, ya, yb, z1, z2) => {
+        const geo = new THREE.BoxGeometry((x2 - x1) / 100, (yb - ya) / 100, (z2 - z1) / 100);
+        geo.translate((x1 + x2) / 200, (ya + yb) / 200, (z1 + z2) / 200);
+        wires.push(geo);
+    };
+    for (let x = -hw; x <= hw + 0.01; x += 5) wire(x - 0.2, x + 0.2, y0, y1, zg - 0.2, zg + 0.2);
+    for (let y = y0; y <= y1 + 0.01; y += 5) wire(-hw, hw, y - 0.2, y + 0.2, zg + 0.2, zg + 0.6);
+    for (const x of [-hw, hw]) wire(x - 0.5, x + 0.5, y0, y1, zg - 0.5, zg + 0.6);
+    for (const y of [y0, y1]) wire(-hw, hw, y - 0.5, y + 0.5, zg - 0.5, zg + 0.6);
+    for (const [x, y] of [[-hw + 4, y1 - 4], [hw - 4, y1 - 4], [-hw + 4, y0 + 4], [hw - 4, y0 + 4]]) wire(x - 1, x + 1, y - 1, y + 1, -hd, zg); // pattes de fixation
+    const grid = new THREE.Mesh(mergeGeometries(wires), steel);
+    grid.castShadow = grid.receiveShadow = true;
+    g.add(grid);
+
+    const hook = (x, y) => B(g, x - 0.25, x + 0.25, y - 3, y + 1, zg + 0.5, zg + 2.5, steel);
+
+    // --- haut : ustensiles sur crochets en S ---
+    const yh = y1 - 8;
+    const tools = [
+        (x) => {
+            // pince
+            const a = B(g, -0.6, 0.6, yh - 32, yh, zg + 2, zg + 2.6, steel);
+            a.position.x = (x - 1.2) / 100;
+            a.rotation.z = 0.06;
+            const b = B(g, -0.6, 0.6, yh - 32, yh, zg + 2.7, zg + 3.3, steel);
+            b.position.x = (x + 1.2) / 100;
+            b.rotation.z = -0.06;
+        },
+        (x) => {
+            // louche
+            B(g, x - 0.6, x + 0.6, yh - 26, yh, zg + 2, zg + 2.6, steel);
+            const bowl = new THREE.Mesh(new THREE.SphereGeometry(0.045, 16, 8, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), steel);
+            bowl.material.side = THREE.DoubleSide;
+            bowl.rotation.x = -Math.PI / 2;
+            bowl.position.set(x / 100, (yh - 30) / 100, (zg + 3) / 100);
+            bowl.castShadow = true;
+            g.add(bowl);
+        },
+        (x) => {
+            // fouet
+            Cyl(g, 0.8, 0.8, 12, x, yh - 6, zg + 3, steel);
+            for (let k = 0; k < 4; k++) {
+                const loop = new THREE.Mesh(new THREE.TorusGeometry(0.028, 0.0015, 4, 20), steel);
+                loop.scale.y = 2.6;
+                loop.rotation.y = (k * Math.PI) / 4;
+                loop.position.set(x / 100, (yh - 19) / 100, (zg + 3) / 100);
+                g.add(loop);
+            }
+        },
+        (x) => {
+            // spatule ajourée, manche bois
+            B(g, x - 0.9, x + 0.9, yh - 16, yh, zg + 2, zg + 3, wood);
+            B(g, x - 0.4, x + 0.4, yh - 22, yh - 16, zg + 2.3, zg + 2.7, steel);
+            B(g, x - 4, x + 4, yh - 33, yh - 22, zg + 2.3, zg + 2.7, steel);
+        },
+        (x) => {
+            // écumoire
+            B(g, x - 0.6, x + 0.6, yh - 24, yh, zg + 2, zg + 2.6, steel);
+            const s = Cyl(g, 4.2, 4.2, 0.6, x, yh - 28, zg + 2.6, steel, true);
+            s.scale.y = 1.25;
+        },
+        (x) => {
+            // cuillère en bois
+            B(g, x - 0.7, x + 0.7, yh - 24, yh, zg + 2, zg + 3, wood);
+            const s = Cyl(g, 2.6, 2.6, 0.8, x, yh - 27, zg + 2.6, wood, true);
+            s.scale.y = 1.5;
+        },
+        (x) => {
+            // brosse
+            B(g, x - 0.8, x + 0.8, yh - 14, yh, zg + 2, zg + 3, wood);
+            B(g, x - 1.8, x + 1.8, yh - 22, yh - 14, zg + 1.8, zg + 3.6, wood);
+            B(g, x - 1.5, x + 1.5, yh - 23, yh - 14, zg + 3.6, zg + 5.2, std(0x3b2a1c, {roughness: 1}));
+        },
+    ];
+    tools.forEach((t, i) => {
+        const x = -hw + 7 + (i * (w - 14)) / (tools.length - 1);
+        hook(x, yh + 2);
+        t(x);
+    });
+
+    // --- milieu : panier grillagé avec bocaux d'épices ---
+    const yb = 122,
+        bz1 = zg + 0.6,
+        bz2 = zg + 11;
+    B(g, -hw + 4, hw - 4, yb, yb + 0.6, bz1, bz2, steel);
+    B(g, -hw + 4, hw - 4, yb + 7, yb + 7.6, bz2 - 0.6, bz2, steel);
+    B(g, -hw + 4, hw - 4, yb + 3.5, yb + 4, bz2 - 0.6, bz2, steel);
+    for (const x of [-hw + 4, hw - 4]) B(g, x - 0.3, x + 0.3, yb, yb + 8, bz1, bz2, steel);
+    const spices = [0xc2571d, 0x8e2b1c, 0x7a5a2e, 0x5f7330, 0xd99a2b, 0x9b3a2a, 0x6a4e3a];
+    spices.forEach((c, i) => {
+        const x = -hw + 9 + i * ((w - 18) / (spices.length - 1));
+        Cyl(g, 2.6, 2.6, 9, x, yb + 5.1, zg + 6, MAT.glass);
+        Cyl(g, 2.4, 2.4, 7, x, yb + 4.2, zg + 6, std(c, {roughness: 0.9}));
+        Cyl(g, 2.7, 2.7, 1.6, x, yb + 10.3, zg + 6, MAT.matteBlack);
+    });
+
+    // --- bas : poêles et casseroles inox à manches laiton, suspendues par le manche ---
+    const inox = std(0xd4d7da, {metalness: 0.95, roughness: 0.22, envMap: MAT.chrome.envMap});
+    const brass = std(0xc9a25a, {metalness: 0.9, roughness: 0.35, envMap: MAT.chrome.envMap});
+    // cuve en révolution : fond plat, bords évasés (poêle) ou droits (casserole), ouverte vers +z
+    const vessel = (r, depth, flare) => {
+        const pts = [];
+        const rb = r - flare;
+        pts.push(new THREE.Vector2(0, 0));
+        for (let i = 0; i <= 8; i++) {
+            const t = i / 8;
+            pts.push(new THREE.Vector2((rb + (r - rb) * Math.pow(t, 0.7)) / 100, (depth * t) / 100));
+        }
+        pts.push(new THREE.Vector2((r + 0.4) / 100, depth / 100)); // lèvre roulée
+        const geo = new THREE.LatheGeometry(pts, 40);
+        const m = new THREE.Mesh(geo, inox);
+        m.material.side = THREE.DoubleSide;
+        m.rotation.x = Math.PI / 2; // axe de révolution vers +z : intérieur face à la pièce
+        m.castShadow = m.receiveShadow = true;
+        return m;
+    };
+    // manche laiton effilé avec trou de suspension et deux rivets
+    const handle = (p, len, z) => {
+        const h = Cyl(p, 0.75, 1.15, len, 0, -len / 2, z, brass);
+        h.castShadow = true;
+        const eye = new THREE.Mesh(new THREE.TorusGeometry(0.012, 0.004, 8, 16), brass);
+        eye.position.set(0, 0, z / 100);
+        p.add(eye);
+    };
+    const yp = 114;
+    const pan = (x, r, depth, tilt = 0) => {
+        const p = new THREE.Group();
+        const zb = zg + 2.5; // le fond touche presque la grille
+        const body = vessel(r, depth, r * 0.22);
+        body.position.set(0, -(r + 20) / 100, zb / 100);
+        p.add(body);
+        handle(p, 20, zb + depth * 0.7);
+        for (const sx of [-1, 1]) {
+            const rv = new THREE.Mesh(new THREE.SphereGeometry(0.005, 8, 6), inox);
+            rv.position.set((sx * 1.4) / 100, -(20.5) / 100, (zb + depth * 0.7) / 100);
+            p.add(rv);
+        }
+        p.position.set(x / 100, yp / 100, 0);
+        p.rotation.z = tilt;
+        g.add(p);
+        hook(x, yp + 2);
+    };
+    pan(-hw + 15, 14, 4.5, 0.04); // poêle 28 cm
+    pan(-hw + 37, 12, 4, -0.03); // poêle 24 cm
+    pan(hw - 13, 10, 3.5, 0.05); // poêle 20 cm
+
+    // casserole et faitout dans le panier du bas
+    const yc = y0 + 1;
+    B(g, -hw + 4, hw - 4, yc, yc + 0.6, bz1, zg + 18, steel);
+    B(g, -hw + 4, hw - 4, yc + 6, yc + 6.6, zg + 17.4, zg + 18, steel);
+    const pot = (x, r, depth, withLid) => {
+        const v = vessel(r, depth, 0.3);
+        v.rotation.x = 0; // posée à plat, ouverture vers le haut
+        v.position.set(x / 100, (yc + 0.6) / 100, (zg + 9) / 100);
+        g.add(v);
+        const hh = B(g, x + r - 1, x + r + 15, yc + depth - 2.2, yc + depth - 0.8, zg + 8.3, zg + 9.7, brass);
+        hh.castShadow = true;
+        if (withLid) {
+            Cyl(g, r + 0.3, r + 0.3, 0.6, x, yc + depth + 1.2, zg + 9, inox);
+            Cyl(g, 1.6, 2, 1.6, x, yc + depth + 2.3, zg + 9, brass);
+        }
+    };
+    pot(-hw + 14, 9, 12, true); // casserole
+    pot(hw - 26, 8, 10, false);
+    return g;
+}
+
+// ---------- Lampadaire arc ----------
+
+// Lampadaire arc : socle rond en marbre noir (centré sur l'emprise), mât inox brossé
+// qui monte puis décrit un arc vers l'avant (+z) jusqu'à un abat-jour demi-sphère.
+function arcLamp(w, d, reach = 140) {
+    const g = new THREE.Group();
+    const inox = std(0xb5b8bb, {metalness: 0.9, roughness: 0.38, envMap: MAT.chrome.envMap});
+    const marble = std(0x161718, {roughness: 0.2});
+    const r = Math.min(w, d) / 2;
+    Cyl(g, r, r, 4, 0, 2, 0, marble);
+    // mât : vertical jusqu'à 110 cm puis arc (courbe de Bézier) culminant vers 205 cm
+    const m = (x, y, z) => new THREE.Vector3(x / 100, y / 100, z / 100);
+    const curve = new THREE.CurvePath();
+    curve.add(new THREE.LineCurve3(m(0, 4, 0), m(0, 110, 0)));
+    curve.add(new THREE.CubicBezierCurve3(m(0, 110, 0), m(0, 205, 5), m(0, 225, reach * 0.45), m(0, 185, reach)));
+    const pole = new THREE.Mesh(new THREE.TubeGeometry(curve, 80, 0.011, 10), inox);
+    pole.castShadow = true;
+    g.add(pole);
+    Cyl(g, 1.6, 1.6, 4, 0, 108, 0, inox); // bague de réglage
+    // abat-jour : demi-sphère ouverte vers le bas, intérieur blanc lumineux
+    const shadeR = 0.19;
+    const shade = new THREE.Mesh(new THREE.SphereGeometry(shadeR, 32, 12, 0, Math.PI * 2, 0, Math.PI / 2), inox);
+    shade.position.set(0, 1.6, reach / 100);
+    shade.castShadow = true;
+    g.add(shade);
+    const inner = new THREE.Mesh(
+        new THREE.SphereGeometry(shadeR - 0.004, 32, 12, 0, Math.PI * 2, 0, Math.PI / 2),
+        new THREE.MeshStandardMaterial({color: 0xffffff, emissive: 0xfff1d6, emissiveIntensity: 0.6, side: THREE.BackSide}),
+    );
+    inner.position.copy(shade.position);
+    g.add(inner);
+    Cyl(g, 1.2, 1.2, 25, 0, 172, reach, inox); // tige entre arc et abat-jour
+    // lumière chaude vers le bas
+    const light = new THREE.SpotLight(0xffd9a0, 6, 4, Math.PI / 3.2, 0.7, 1.5);
+    light.position.set(0, 1.58, reach / 100);
+    light.target.position.set(0, 0, reach / 100);
+    g.add(light, light.target);
+    return g;
+}
+
+// ---------- Balcon : guirlande et plantes ----------
+
+const seeded = (seed) => () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+
+function foliage(g, x, y, z, r, mat, sy = 0.75) {
+    const f = new THREE.Mesh(new THREE.IcosahedronGeometry(r / 100, 1), mat);
+    f.position.set(x / 100, y / 100, z / 100);
+    f.scale.y = sy;
+    f.castShadow = f.receiveShadow = true;
+    g.add(f);
+    return f;
+}
+
+// Guirlande guinguette : câble en festons accroché à 2,35 m le long de l'axe x, ampoules globe.
+// Les ampoules s'allument (et éclairent) en mode nuit.
+function stringLights(w, d) {
+    const g = new THREE.Group(),
+        hw = w / 2,
+        H = 235,
+        sag = 22,
+        swags = 4;
+    const hookY = (x) => {
+        const t = ((x + hw) / w) * swags; // position dans les festons
+        const u = t - Math.floor(t);
+        return H - sag * (1 - (2 * u - 1) ** 2);
+    };
+    const pts = [];
+    for (let i = 0; i <= 160; i++) {
+        const x = -hw + (i / 160) * w;
+        pts.push(new THREE.Vector3(x / 100, hookY(x) / 100, 0));
+    }
+    const cable = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 320, 0.002, 4), MAT.matteBlack);
+    g.add(cable);
+    for (let i = 0; i <= swags; i++) B(g, -hw + (i * w) / swags - 0.4, -hw + (i * w) / swags + 0.4, H - 1, H + 4, -0.5, 0.5, MAT.metal); // crochets
+    // ampoules multicolores (couleurs en alternance), éteintes le jour, vives la nuit
+    const palette = [0xff3b3b, 0xffc21a, 0x2fd36b, 0x2f8bff, 0xff7a1a, 0xd14bff];
+    const bulbs = palette.map((c) => {
+        const m = std(c, {roughness: 0.2, emissive: c, emissiveIntensity: 0.12, transparent: true, opacity: 0.9});
+        m.userData.night = 1.1; // assez faible pour garder la couleur après tone mapping
+        return m;
+    });
+    const n = Math.floor(w / 24);
+    for (let i = 0; i < n; i++) {
+        const x = -hw + 12 + i * ((w - 24) / (n - 1));
+        const y = hookY(x);
+        Cyl(g, 0.6, 0.6, 3, x, y - 1.5, 0, MAT.matteBlack);
+        const globe = new THREE.Mesh(new THREE.SphereGeometry(0.024, 14, 10), bulbs[i % bulbs.length]);
+        globe.position.set(x / 100, (y - 5.5) / 100, 0);
+        g.add(globe);
+    }
+    // quelques sources réelles réparties le long de la guirlande (nuit seulement)
+    for (let i = 0; i < 4; i++) {
+        const x = -hw + w * (0.125 + i * 0.25);
+        const light = new THREE.PointLight([0xffb27a, 0xffd0f0, 0xc8e0ff, 0xfff0a0][i], 1.6, 4, 1.5);
+        light.position.set(x / 100, (hookY(x) - 8) / 100, 0);
+        light.userData.nightOnly = true;
+        light.visible = false;
+        g.add(light);
+    }
+    return g;
+}
+
+// Olivier en pot béton.
+function oliveTree(w, d) {
+    const g = new THREE.Group(),
+        r = Math.min(w, d) / 2;
+    const rnd = seeded(31);
+    const concrete = std(0xa9a8a3, {roughness: 0.95});
+    const bark = std(0x6b5a48, {roughness: 1});
+    const leaves = new THREE.MeshStandardMaterial({color: 0x75876a, roughness: 0.8, flatShading: true});
+    Cyl(g, r * 0.95, r * 0.75, 45, 0, 22.5, 0, concrete);
+    Cyl(g, r * 0.85, r * 0.85, 1, 0, 44, 0, std(0x3a2a1e, {roughness: 1}));
+    const m = (x, y, z) => new THREE.Vector3(x / 100, y / 100, z / 100);
+    const trunk = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([m(0, 44, 0), m(3, 80, 1), m(-2, 110, 2), m(1, 125, 0)]), 20, 0.022, 8), bark);
+    trunk.castShadow = true;
+    g.add(trunk);
+    for (let i = 0; i < 11; i++) {
+        const a = rnd() * Math.PI * 2,
+            rr = 8 + rnd() * 18;
+        foliage(g, Math.cos(a) * rr, 115 + rnd() * 50, Math.sin(a) * rr, 11 + rnd() * 7, leaves, 0.7);
+    }
+    return g;
+}
+
+// Jardinière accrochée au garde-corps (face avant +z vers le balcon) avec lavande.
+function railPlanter(w, d) {
+    const g = new THREE.Group(),
+        hw = w / 2,
+        hd = d / 2;
+    const rnd = seeded(7 + Math.round(w));
+    const box = std(0x3b3d40, {roughness: 0.7});
+    B(g, -hw, hw, 0, 17, -hd + 2, hd, box);
+    B(g, -hw + 1, hw - 1, 15, 16, -hd + 3, hd - 1, std(0x3a2a1e, {roughness: 1}));
+    for (const x of [-hw + 10, hw - 10]) {
+        B(g, x - 1, x + 1, 10, 30, -hd, -hd + 2, MAT.matteBlack); // crochets sur la main courante
+        B(g, x - 1, x + 1, 28, 30, -hd - 6, -hd, MAT.matteBlack);
+    }
+    const stem = std(0x7d8f63, {roughness: 0.8});
+    const flower = std(0x8a6fc0, {roughness: 0.7});
+    const base = new THREE.MeshStandardMaterial({color: 0x8fa07c, roughness: 0.85, flatShading: true});
+    for (let i = 0; i < 4; i++) foliage(g, -hw + 9 + i * ((w - 18) / 3), 20, 1, 8, base, 0.6);
+    for (let i = 0; i < 34; i++) {
+        const x = -hw + 4 + rnd() * (w - 8),
+            z = -hd + 5 + rnd() * (d - 9),
+            h = 16 + rnd() * 14;
+        const s = Cyl(g, 0.25, 0.3, h, x, 16 + h / 2, z, stem);
+        s.rotation.z = (rnd() - 0.5) * 0.4;
+        s.rotation.x = (rnd() - 0.5) * 0.4;
+        const tip = Cyl(g, 0.9, 0.6, 5, 0, h / 2, 0, flower);
+        g.remove(tip);
+        s.add(tip);
+        tip.position.set(0, (h / 2 + 1) / 100, 0);
+    }
+    return g;
+}
+
+// Petit pot d'aromatique en terre cuite : feuillage en touffes.
+function herbPot(g, x, y, z, r, color, rnd) {
+    const terracotta = std(0xb8613a, {roughness: 0.8});
+    const mat = new THREE.MeshStandardMaterial({color, roughness: 0.8, flatShading: true});
+    Cyl(g, r, r * 0.75, r * 1.6, x, y + r * 0.8, z, terracotta);
+    Cyl(g, r + 0.6, r + 0.6, 2, x, y + r * 1.6 - 1, z, terracotta);
+    for (let k = 0; k < 6; k++) foliage(g, x + (rnd() - 0.5) * r, y + r * 1.6 + 3 + rnd() * r * 0.8, z + (rnd() - 0.5) * r, r * 0.45 + rnd() * r * 0.3, mat, 0.9);
+}
+
+// Petite étagère d'angle en teck à deux niveaux, garnie d'aromatiques et d'un arrosoir.
+function herbShelf(w, d) {
+    const g = new THREE.Group(),
+        hw = w / 2,
+        hd = d / 2,
+        h = 72;
+    const rnd = seeded(23);
+    const teak = std(0x9a6a43, {roughness: 0.7});
+    for (const sx of [-1, 1])
+        for (const sz of [-1, 1]) {
+            const x = sx * (hw - 2),
+                z = sz * (hd - 2);
+            B(g, x - 2, x + 2, 0, h, z - 2, z + 2, teak);
+        }
+    // plateaux à lattes
+    for (const y of [25, h - 3]) {
+        const n = 5,
+            sw = d / n;
+        for (let i = 0; i < n; i++) B(g, -hw, hw, y, y + 2.5, -hd + i * sw + 0.4, -hd + (i + 1) * sw - 0.4, teak);
+    }
+    // basilic, romarin, thym, persil, menthe
+    const top = h - 0.5;
+    herbPot(g, -hw + 10, top, -2, 7.5, 0x4f8f3a, rnd);
+    herbPot(g, 1, top, 2, 6.5, 0x50663f, rnd);
+    herbPot(g, hw - 9, top, -3, 6, 0x6c7d4e, rnd);
+    herbPot(g, -hw + 12, 27.5, 0, 7, 0x3f8a3c, rnd);
+    herbPot(g, 6, 27.5, -2, 6.5, 0x5ea64a, rnd);
+    // arrosoir en zinc au sol
+    const zinc = std(0x9aa2a6, {metalness: 0.6, roughness: 0.4, envMap: MAT.chrome.envMap});
+    Cyl(g, 7, 8, 18, hw - 9, 9, 4, zinc);
+    const spout = Cyl(g, 0.8, 1.4, 20, hw - 9 + 9, 16, 4, zinc);
+    spout.rotation.z = -0.9;
+    return g;
+}
+
+// Couleur de la collection bistrot (vert sauge laqué).
+const bistroColor = () => std(0x6f9483, {roughness: 0.45, metalness: 0.3});
+
+// Tube droit entre deux points (cm), rayon r.
+function rod(g, a, b, r, mat) {
+    const A = new THREE.Vector3(...a).divideScalar(100),
+        Bv = new THREE.Vector3(...b).divideScalar(100);
+    const dir = Bv.clone().sub(A);
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(r / 100, r / 100, dir.length(), 10), mat);
+    m.position.copy(A).add(Bv).multiplyScalar(0.5);
+    m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+    m.castShadow = m.receiveShadow = true;
+    g.add(m);
+    return m;
+}
+
+// Table bistrot pliante : plateau rond en tôle laquée à rebord, pieds tubulaires en croix.
+function bistroTableRound(w, d) {
+    const g = new THREE.Group(),
+        r = Math.min(w, d) / 2,
+        h = 74;
+    const lac = bistroColor();
+    Cyl(g, r, r, 1, 0, h - 0.5, 0, lac);
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(r / 100, 0.01, 8, 48), lac);
+    rim.rotation.x = Math.PI / 2;
+    rim.position.y = (h - 1.2) / 100;
+    g.add(rim);
+    // 4 pieds : partent sous le plateau près du centre et s'écartent jusqu'au sol
+    const top = r * 0.3,
+        foot = r * 0.62;
+    for (let k = 0; k < 4; k++) {
+        const a = (k * Math.PI) / 2 + Math.PI / 4;
+        const c = Math.cos(a),
+            sn = Math.sin(a);
+        rod(g, [c * top, h - 1, sn * top], [c * foot, 0, sn * foot], 0.9, lac);
+    }
+    // anneau de rigidité à mi-hauteur
+    const ringY = 28,
+        ringR = top + (foot - top) * (1 - ringY / (h - 1));
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(ringR / 100, 0.006, 6, 32), lac);
+    ring.rotation.x = Math.PI / 2;
+    ring.position.y = ringY / 100;
+    g.add(ring);
+    // déco : bougie et petit pot
+    Cyl(g, 3.5, 3.5, 7, -8, h + 3.5, 4, std(0xf3efe6, {roughness: 0.9}));
+    Cyl(g, 4.5, 3.5, 8, 9, h + 4, -6, std(0xb8613a, {roughness: 0.8}));
+    foliage(g, 9, h + 11, -6, 5, new THREE.MeshStandardMaterial({color: 0x4f8f3a, roughness: 0.8, flatShading: true}));
+    return g;
+}
+
+// Chaise bistrot pliante (face avant +z) : deux cadres latéraux tubulaires, assise à lattes
+// transversales, dossier à deux lattes cintrées fixées sur les montants arrière inclinés.
+function bistroChair(w, d) {
+    const g = new THREE.Group(),
+        hw = w / 2,
+        hd = d / 2,
+        sh = 45, // hauteur d'assise
+        top = 88; // haut du dossier
+    const lac = bistroColor();
+    const lacDS = new THREE.MeshStandardMaterial({color: 0x6f9483, roughness: 0.45, metalness: 0.3, side: THREE.DoubleSide});
+    const xs = hw - 2.5; // écartement des cadres
+    // montant arrière incliné vers l'arrière : z(y) = zRear0 - lean * y / top
+    const zRear0 = -hd + 9,
+        lean = 8;
+    const zRear = (y) => zRear0 - (lean * y) / top;
+    const zFront = hd - 3;
+    for (const sx of [-1, 1]) {
+        const x = sx * xs;
+        rod(g, [x, 0, zRear0], [x, top, zRear(top)], 0.9, lac); // pied arrière + montant de dossier
+        rod(g, [x, 0, zFront], [x, sh - 1, zFront - 1], 0.9, lac); // pied avant
+        rod(g, [x, sh - 1.5, zFront - 1], [x, sh - 1.5, zRear(sh)], 0.8, lac); // longeron d'assise
+    }
+    // entretoises basses avant / arrière
+    rod(g, [-xs, 14, zFront - 0.3], [xs, 14, zFront - 0.3], 0.6, lac);
+    rod(g, [-xs, 14, zRear(14)], [xs, 14, zRear(14)], 0.6, lac);
+    // assise : lattes transversales (selon x), légèrement bombées
+    const n = 6,
+        z0 = zRear(sh) + 1.5,
+        z1 = zFront + 0.5;
+    for (let i = 0; i < n; i++) {
+        const zc = z0 + ((i + 0.5) * (z1 - z0)) / n;
+        const bump = Math.sin(((i + 0.5) / n) * Math.PI) * 0.6;
+        B(g, -xs - 0.8, xs + 0.8, sh - 1 + bump, sh + 0.2 + bump, zc - 2.4, zc + 2.4, lac);
+    }
+    // dossier : deux lattes cintrées (creuses vers l'avant) passant par les montants
+    const R = 32,
+        half = Math.asin((xs + 0.6) / R);
+    for (const y of [69, 81]) {
+        const zp = zRear(y);
+        const slat = new THREE.Mesh(new THREE.CylinderGeometry(R / 100, R / 100, 0.075, 28, 1, true, Math.PI - half, 2 * half), lacDS);
+        // le centre de l'arc est devant : les extrémités tombent sur les montants (x = ±xs, z = zp)
+        slat.position.set(0, y / 100, (zp + Math.sqrt(R * R - (xs + 0.6) ** 2)) / 100);
+        slat.castShadow = true;
+        g.add(slat);
+    }
+    return g;
+}
+
+// Trois pots d'aromatiques en terre cuite (basilic, romarin, thym).
+function herbPots(w, d) {
+    const g = new THREE.Group(),
+        hw = w / 2;
+    const rnd = seeded(11);
+    const terracotta = std(0xb8613a, {roughness: 0.8});
+    const greens = [0x4f8f3a, 0x50663f, 0x6c7d4e].map((c) => new THREE.MeshStandardMaterial({color: c, roughness: 0.8, flatShading: true}));
+    greens.forEach((mat, i) => {
+        const x = -hw + 10 + i * ((w - 20) / 2),
+            r = 9 - i;
+        Cyl(g, r, r * 0.75, 16, x, 8, 0, terracotta);
+        Cyl(g, r + 0.6, r + 0.6, 2.5, x, 15.5, 0, terracotta);
+        for (let k = 0; k < 6; k++) foliage(g, x + (rnd() - 0.5) * r, 20 + rnd() * 8, (rnd() - 0.5) * r, 4 + rnd() * 3, mat, 0.9);
+    });
+    return g;
+}
+
+// ---------- Étagères murales ----------
+
+// Tablette flottante en chêne fixée au mur (dos en -z), à la hauteur y (cm).
+function floatingShelf(g, w, d, y, mat = MAT.oak) {
+    B(g, -w / 2, w / 2, y - 3, y, -d / 2, d / 2, mat);
+}
+
+// Rangée de livres posés sur une tablette, de x0 à x1 (cm) ; renvoie la position x atteinte.
+function books(g, x0, x1, y, zBack, rnd) {
+    const colors = [0xb5563a, 0x2f3e5c, 0xd9a43a, 0x7c8f6b, 0xe8e0cf, 0x1d1d1f, 0x9b3d4f, 0x5d7f95, 0xc9b79c];
+    let x = x0;
+    while (x < x1 - 2) {
+        const bw = 1.8 + rnd() * 2.8,
+            bh = 17 + rnd() * 9,
+            bd = 14 + rnd() * 5;
+        if (x + bw > x1) break;
+        const c = colors[Math.floor(rnd() * colors.length)];
+        B(g, x, x + bw, y, y + bh, zBack, zBack + bd, std(c, {roughness: 0.8}));
+        x += bw + 0.15;
+    }
+    return x;
+}
+
+// Plante tombante (pothos) : pot blanc, lianes qui débordent de la tablette et retombent.
+function trailingPlant(g, x, y, zFront, rnd) {
+    Cyl(g, 7, 5.5, 11, x, y + 5.5, zFront - 9, std(0xf1eee8, {roughness: 0.35}));
+    const leafGeo = new THREE.SphereGeometry(0.022, 8, 6);
+    leafGeo.scale(1, 0.25, 1.25);
+    const leaves = [];
+    const vines = 7;
+    for (let v = 0; v < vines; v++) {
+        const a = (v / vines) * Math.PI - Math.PI * 0.05 + rnd() * 0.2; // vers l'avant (+z)
+        const spread = (Math.cos(a) * 14) / 100;
+        const drop = 25 + rnd() * 45;
+        const m = (px, py, pz) => new THREE.Vector3(px, py, pz);
+        const pts = [
+            m(x / 100, (y + 11) / 100, (zFront - 9) / 100),
+            m(x / 100 + spread * 0.6, (y + 13) / 100, (zFront - 2) / 100),
+            m(x / 100 + spread, (y + 4) / 100, (zFront + 3) / 100),
+            m(x / 100 + spread * 1.2, (y - drop * 0.5) / 100, (zFront + 4) / 100),
+            m(x / 100 + spread * 1.1 + (rnd() - 0.5) * 0.06, (y - drop) / 100, (zFront + 3) / 100),
+        ];
+        const curve = new THREE.CatmullRomCurve3(pts);
+        const vine = new THREE.Mesh(new THREE.TubeGeometry(curve, 30, 0.0025, 4), std(0x5f7d3a));
+        g.add(vine);
+        const n = 10 + Math.floor(drop / 6);
+        for (let i = 1; i <= n; i++) {
+            const p = curve.getPoint(i / (n + 1));
+            const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(rnd() * 1.2 - 0.6, rnd() * Math.PI * 2, rnd() * 0.8 - 0.4));
+            const s = 0.7 + rnd() * 0.6;
+            leaves.push(new THREE.Matrix4().compose(p, q, new THREE.Vector3(s, s, s)));
+        }
+    }
+    const inst = new THREE.InstancedMesh(leafGeo, std(0x4c8a35, {roughness: 0.5}), leaves.length);
+    leaves.forEach((mtx, i) => inst.setMatrixAt(i, mtx));
+    inst.castShadow = true;
+    g.add(inst);
+}
+
+// Petite lampe champignon colorée, allumée la nuit.
+function mushroomLamp(g, x, y, z, color) {
+    const lac = std(color, {roughness: 0.3});
+    Cyl(g, 5, 5.5, 1.2, x, y + 0.6, z, lac);
+    Cyl(g, 0.9, 1.2, 14, x, y + 8, z, lac);
+    const shade = new THREE.Mesh(new THREE.SphereGeometry(0.085, 24, 10, 0, Math.PI * 2, 0, Math.PI / 2), lac);
+    shade.position.set(x / 100, (y + 14) / 100, z / 100);
+    shade.castShadow = true;
+    g.add(shade);
+    const glow = std(0xfff1d8, {emissive: 0xffd9a0, emissiveIntensity: 0.25, side: THREE.BackSide});
+    glow.userData.night = 2;
+    const inner = new THREE.Mesh(new THREE.SphereGeometry(0.082, 24, 10, 0, Math.PI * 2, 0, Math.PI / 2), glow);
+    inner.position.copy(shade.position);
+    g.add(inner);
+    const light = new THREE.PointLight(0xffc98a, 1.2, 2.5, 1.6);
+    light.position.set(x / 100, (y + 12) / 100, z / 100);
+    light.userData.nightOnly = true;
+    light.visible = false;
+    g.add(light);
+}
+
+// Deux tablettes au-dessus du canapé : livres, lampe champignon, pothos.
+function sofaShelves(w, d) {
+    const g = new THREE.Group(),
+        hw = w / 2,
+        hd = d / 2;
+    const rnd = seeded(91);
+    const yA = 112,
+        yB = 152;
+    floatingShelf(g, w, d, yA);
+    floatingShelf(g, w, d, yB);
+    // tablette basse : livres à gauche, pile couchée, pothos à droite
+    let x = books(g, -hw + 4, -hw + 70, yA, -hd + 2, rnd);
+    for (let i = 0; i < 4; i++) B(g, x + 4, x + 26 - i * 1.5, yA + i * 3.2, yA + (i + 1) * 3.2 - 0.2, -hd + 3, -hd + 19 - i, std([0xe8e0cf, 0x2f3e5c, 0xb5563a, 0x7c8f6b][i], {roughness: 0.8}));
+    trailingPlant(g, hw - 22, yA, hd, rnd);
+    // tablette haute : lampe colorée à gauche, livres, vase
+    mushroomLamp(g, -hw + 16, yB, -2, 0xe8692e);
+    books(g, -hw + 40, hw - 30, yB, -hd + 2, rnd);
+    Cyl(g, 4, 3, 16, hw - 14, yB + 8, -1, std(0x3a3d41, {roughness: 0.5}));
+    return g;
+}
+
+// Grès émaillé moucheté (beige ou noir) : texture de petites taches.
+const speckleMats = {};
+function stoneware(kind) {
+    if (speckleMats[kind]) return speckleMats[kind];
+    const c = document.createElement('canvas');
+    c.width = c.height = 256;
+    const g = c.getContext('2d');
+    g.fillStyle = kind === 'black' ? '#1f1e1d' : '#d8ccb6';
+    g.fillRect(0, 0, 256, 256);
+    let seed = kind === 'black' ? 3 : 9;
+    const r = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    for (let i = 0; i < 900; i++) {
+        g.fillStyle = kind === 'black' ? `rgba(200,190,170,${0.15 + r() * 0.3})` : `rgba(70,50,35,${0.25 + r() * 0.5})`;
+        g.beginPath();
+        g.arc(r() * 256, r() * 256, 0.4 + r() * 1.3, 0, Math.PI * 2);
+        g.fill();
+    }
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    speckleMats[kind] = new THREE.MeshStandardMaterial({map: t, roughness: kind === 'black' ? 0.55 : 0.4, side: THREE.DoubleSide});
+    return speckleMats[kind];
+}
+
+// Bol en révolution (rayon r, hauteur h) posé en (x, y, z).
+function bowl(g, x, y, z, r, h, mat) {
+    const pts = [];
+    for (let i = 0; i <= 10; i++) {
+        const t = i / 10;
+        pts.push(new THREE.Vector2((r * 0.45 + r * 0.55 * Math.sin((t * Math.PI) / 2)) / 100, (h * t) / 100));
+    }
+    const m = new THREE.Mesh(new THREE.LatheGeometry([new THREE.Vector2(0, 0), ...pts], 28), mat);
+    m.position.set(x / 100, y / 100, z / 100);
+    m.castShadow = m.receiveShadow = true;
+    g.add(m);
+}
+
+// Pile d'assiettes à bord relevé.
+function plates(g, x, y, z, r, n, mat) {
+    for (let i = 0; i < n; i++) {
+        const pts = [new THREE.Vector2(0, 0), new THREE.Vector2((r * 0.7) / 100, 0), new THREE.Vector2(r / 100, 0.012), new THREE.Vector2(r / 100, 0.016)];
+        const m = new THREE.Mesh(new THREE.LatheGeometry(pts, 32), mat);
+        m.position.set(x / 100, (y + i * 1.6) / 100, z / 100);
+        m.castShadow = m.receiveShadow = true;
+        g.add(m);
+    }
+}
+
+// Étagère murale de l'entrée : grès beige et noir (assiettes, bols, tasses).
+function stonewareShelf(w, d) {
+    const g = new THREE.Group(),
+        hw = w / 2;
+    const y = 150;
+    floatingShelf(g, w, d, y);
+    const beige = stoneware('beige'),
+        black = stoneware('black');
+    plates(g, -hw + 13, y, -1, 11, 5, beige);
+    plates(g, -hw + 13, y + 8, -1, 9, 3, black);
+    bowl(g, -hw + 36, y, 0, 7, 6, black);
+    bowl(g, -hw + 36, y + 3.2, 0, 7, 6, beige);
+    bowl(g, -hw + 36, y + 6.4, 0, 7, 6, black);
+    bowl(g, hw - 30, y, -1, 8, 7, beige);
+    bowl(g, hw - 30, y + 3.6, -1, 8, 7, beige);
+    for (const [x, mat] of [[hw - 13, black], [hw - 7, beige]]) {
+        Cyl(g, 3.6, 3.2, 8.5, x, y + 4.25, 3, mat);
+    }
+    return g;
+}
+
 export const BUILDERS = {
+    sofaShelves,
+    stonewareShelf,
+    herbShelf,
+    bistroTableRound,
+    bistroChair,
+    stringLights,
+    oliveTree,
+    railPlanter,
+    herbPots,
+    arcLamp,
+    kitchenGrid,
     rug,
     macbookPro,
     monitor27,
