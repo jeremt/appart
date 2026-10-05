@@ -37,6 +37,7 @@ export const MAT = {
     plastic: std(0xf4f4f2, {roughness: 0.35}),
     groove: std(0x9a9a98, {roughness: 0.6}),
     chrome: std(0xf2f2f2, {metalness: 1, roughness: 0.12}),
+    matteBlack: std(0x151617, {roughness: 0.5, metalness: 0.3}),
     glass: new THREE.MeshPhysicalMaterial({
         color: 0xd8eef5,
         transparent: true,
@@ -168,7 +169,7 @@ function sofaL(w, d) {
     return g;
 }
 
-function kitchenBase(g, w, d) {
+function kitchenBase(g, w, d, hole) {
     const hw = w / 2,
         hd = d / 2;
     B(g, -hw, hw, 0, 9, -hd, hd - 6, MAT.dark);
@@ -181,7 +182,8 @@ function kitchenBase(g, w, d) {
         B(g, a, b, 10, 86, hd - 2, hd, MAT.front);
         B(g, a + 6, b - 6, 80, 81.5, hd, hd + 2, MAT.metal);
     }
-    B(g, -hw, hw, 87, 90, -hd, hd + 1, MAT.counter);
+    if (hole) holedTop(g, -hw, hw, -hd, hd + 1, 87, 90, hole, MAT.counter);
+    else B(g, -hw, hw, 87, 90, -hd, hd + 1, MAT.counter);
 }
 
 function wallCabinets(g, w, d) {
@@ -208,9 +210,10 @@ function counter(w, d) {
 function sink(w, d) {
     const g = new THREE.Group(),
         hd = d / 2;
-    kitchenBase(g, w, d);
-    B(g, -24, 24, 90, 90.4, -hd + 9, hd - 7, MAT.steel);
-    B(g, -21, 21, 90.4, 90.6, -hd + 12, hd - 10, MAT.dark);
+    // cuve inox encastrée de 18 cm de profondeur
+    const hole = {cx: 0, cz: 3, w: 44, d: hd * 2 - 22, r: 3};
+    kitchenBase(g, w, d, hole);
+    basin(g, hole, 90, 18, MAT.steel);
     Cyl(g, 1.4, 1.4, 28, 0, 104, -hd + 5, MAT.metal);
     B(g, -1.2, 1.2, 115, 118, -hd + 5, -hd + 22, MAT.metal);
     wallCabinets(g, w, d);
@@ -285,11 +288,39 @@ function bathtub(w, d) {
     B(g, -hw, hw, 14, h, hd - t, hd, MAT.ceramic);
     B(g, -hw, -hw + t, 14, h, -hd + t, hd - t, MAT.ceramic);
     B(g, hw - t, hw, 14, h, -hd + t, hd - t, MAT.ceramic);
-    Cyl(g, 2.5, 2.5, 0.4, -hw + 18, 17.2, 0, MAT.steel);
-    B(g, -9, 9, 72, 78, -hd - 1, -hd + 4, MAT.metal);
-    B(g, -1.2, 1.2, 70, 72.5, -hd + 2, -hd + 12, MAT.metal);
-    Cyl(g, 1.2, 1.2, 100, 30, 130, -hd + 2, MAT.metal);
-    Cyl(g, 7, 7, 1.5, 30, 181, -hd + 10, MAT.metal).rotation.x = 0.3;
+    Cyl(g, 2.5, 2.5, 0.4, hw - 18, 17.2, 0, MAT.steel);
+
+    // colonne de douche noire mat, fixée sur le mur d'extrémité (+x, mur de la chambre)
+    const blk = MAT.matteBlack,
+        wx = hw + 3; // face du mur derrière l'extrémité de la baignoire
+    B(g, wx - 2.5, wx, 100, 206, -1.2, 1.2, blk);
+    B(g, wx - 30, wx, 204, 206, -1, 1, blk);
+    Cyl(g, 12, 12, 1.5, wx - 30, 202.5, 0, blk);
+    Cyl(g, 2.6, 2.6, 30, wx - 2, 100, 0, blk, true);
+    Cyl(g, 3.2, 3.2, 3, wx - 2, 100, -15, blk, true);
+    Cyl(g, 3.2, 3.2, 3, wx - 2, 100, 15, blk, true);
+    Cyl(g, 1.2, 1.4, 18, wx - 4, 150, 2, blk);
+    Cyl(g, 4, 2, 5, wx - 4, 161, 2, blk);
+    B(g, wx - 3, wx, 162, 166, 0, 4, blk);
+
+    // pare-baignoire verrière : cadre noir 85 x 140 cm sur le rebord avant, côté mur (+x)
+    const s1 = hw,
+        s0 = hw - 85,
+        zs = hd - 3.5,
+        y0 = h,
+        y1 = h + 140,
+        f = 2.2;
+    const frame = (x1, x2, ya, yb) => B(g, x1, x2, ya, yb, zs - 1, zs + 1, blk);
+    frame(s0, s0 + f, y0, y1);
+    frame(s1 - f, s1, y0, y1);
+    frame(s0, s1, y1 - f, y1);
+    frame(s0, s1, y0, y0 + f);
+    const mid = s0 + 85 * 0.55;
+    frame(mid - f / 2, mid + f / 2, y0, y1);
+    B(g, s0 + f, s1 - f, y0 + f, y1 - f, zs - 0.4, zs + 0.4, MAT.glass);
+    // porte-serviette côté extérieur
+    B(g, s0 + 2, mid - 2, y0 + 80, y0 + 82.5, zs + 5, zs + 7.5, blk);
+    for (const x of [s0 + 3, mid - 3]) B(g, x - 1, x + 1, y0 + 80, y0 + 82.5, zs + 1, zs + 5, blk);
     return g;
 }
 
@@ -633,7 +664,10 @@ function vanityWasher(w, d) {
         hd = d / 2,
         top = 88,
         ww = 60;
-    B(g, -hw, hw, top - 4, top, -hd, hd, MAT.gloss);
+    const cx = (-hw + 1 + ww - 2 + hw) / 2;
+    const hole = {cx, cz: 3, w: 40, d: d - 20, r: 9};
+    holedTop(g, -hw, hw, -hd, hd, top - 4, top, hole, MAT.gloss);
+    basin(g, hole, top, 14, MAT.ceramic);
     // lave-linge
     const x0 = -hw + 1,
         x1 = x0 + ww - 2;
@@ -644,9 +678,7 @@ function vanityWasher(w, d) {
     // caisson à tiroirs suspendu
     B(g, x1 + 1, hw, 30, top - 4, -hd, hd - 1, MAT.gloss);
     for (const y of [32, 50, 68]) B(g, x1 + 1.5, hw - 0.5, y, y + 16.5, hd - 1, hd, MAT.plastic);
-    // vasque intégrée + mitigeur
-    const cx = (x1 + hw) / 2;
-    B(g, cx - 18, cx + 18, top, top + 0.3, -hd + 12, hd - 6, MAT.counter);
+    // mitigeur
     Cyl(g, 1.3, 1.3, 16, cx, top + 8, -hd + 6, MAT.metal);
     B(g, cx - 1, cx + 1, top + 14, top + 16, -hd + 6, -hd + 15, MAT.metal);
     // miroir
@@ -897,7 +929,340 @@ function tvUnit65(w, d) {
     return g;
 }
 
+// ---------- Vasques creusées ----------
+
+const rrect = (P, cx, cy, w, h, r) => {
+    const p = new P(),
+        x = cx - w / 2,
+        y = cy - h / 2;
+    p.moveTo(x + r, y);
+    p.lineTo(x + w - r, y);
+    p.quadraticCurveTo(x + w, y, x + w, y + r);
+    p.lineTo(x + w, y + h - r);
+    p.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    p.lineTo(x + r, y + h);
+    p.quadraticCurveTo(x, y + h, x, y + h - r);
+    p.lineTo(x, y + r);
+    p.quadraticCurveTo(x, y, x + r, y);
+    return p;
+};
+const cm = (v) => v / 100;
+
+// Plan percé : rectangle [x1, x2] x [z1, z2] (cm) d'épaisseur y0 -> y1, trou arrondi `hole`.
+function holedTop(g, x1, x2, z1, z2, y0, y1, hole, mat) {
+    // contour dans le repère de la forme : sy = -z
+    const s = rrect(THREE.Shape, cm((x1 + x2) / 2), cm(-(z1 + z2) / 2), cm(x2 - x1), cm(z2 - z1), 0);
+    s.holes.push(rrect(THREE.Path, cm(hole.cx), cm(-hole.cz), cm(hole.w), cm(hole.d), cm(hole.r)));
+    return prism(g, s, y0, y1, mat);
+}
+
+// Cuve sous le trou : parois de 1,2 cm, fond et bonde.
+function basin(g, hole, yTop, depth, mat) {
+    const t = 1.2;
+    const ring = rrect(THREE.Shape, cm(hole.cx), cm(-hole.cz), cm(hole.w + 2 * t), cm(hole.d + 2 * t), cm(hole.r + t));
+    ring.holes.push(rrect(THREE.Path, cm(hole.cx), cm(-hole.cz), cm(hole.w), cm(hole.d), cm(hole.r)));
+    prism(g, ring, yTop - depth, yTop - 0.05, mat);
+    prism(g, rrect(THREE.Shape, cm(hole.cx), cm(-hole.cz), cm(hole.w), cm(hole.d), cm(hole.r)), yTop - depth - t, yTop - depth, mat);
+    Cyl(g, 2.2, 2.2, 0.3, hole.cx, yTop - depth + 0.15, hole.cz, MAT.metal);
+    Cyl(g, 1.2, 1.2, 0.4, hole.cx, yTop - depth + 0.25, hole.cz, MAT.dark);
+}
+
+// ---------- Monstera ----------
+
+// Feuille de monstera : cœur pointu percé de fenêtres allongées, creusée et retombante.
+// Repère local : base en (0, 0), pointe en (0, L) sur l'axe y, face vers +z.
+function monsteraLeaf(L, W, rnd) {
+    const half = [
+        [0, 0.1],
+        [0.17, 0],
+        [0.35, 0.05],
+        [0.47, 0.2],
+        [0.5, 0.4],
+        [0.47, 0.6],
+        [0.37, 0.79],
+        [0.21, 0.92],
+        [0, 1],
+    ];
+    const s = new THREE.Shape();
+    const pts = [...half.map(([x, y]) => [x, y]), ...half.slice(1, -1).reverse().map(([x, y]) => [-x, y])];
+    pts.forEach(([x, y], i) => (i ? s.lineTo(x * W, y * L) : s.moveTo(x * W, y * L)));
+    // fenêtres : fentes partant près de la nervure vers le bord, de chaque côté
+    const n = 3 + Math.floor(rnd() * 2);
+    for (const side of [-1, 1])
+        for (let i = 0; i < n; i++) {
+            const y0 = 0.2 + (i * 0.6) / n + rnd() * 0.04;
+            const x0 = 0.07 + rnd() * 0.04,
+                x1 = 0.36 + rnd() * 0.07;
+            const y1 = y0 + 0.08 + rnd() * 0.05,
+                hw = 0.018 + rnd() * 0.01;
+            const h = new THREE.Path();
+            h.moveTo(side * x0 * W, (y0 - hw) * L);
+            h.lineTo(side * x1 * W, (y1 - hw) * L);
+            h.lineTo(side * (x1 + 0.02) * W, y1 * L);
+            h.lineTo(side * x1 * W, (y1 + hw) * L);
+            h.lineTo(side * x0 * W, (y0 + hw) * L);
+            if (side > 0) h.closePath();
+            s.holes.push(side > 0 ? h : new THREE.Path(h.getPoints().reverse()));
+        }
+    const geo = new THREE.ShapeGeometry(s, 6);
+    // courbure : creusée de part et d'autre de la nervure + pointe qui retombe
+    const p = geo.attributes.position;
+    for (let i = 0; i < p.count; i++) {
+        const x = p.getX(i) / W,
+            y = p.getY(i) / L;
+        p.setZ(i, (x * x * 0.35 * W - y * y * 0.28 * L) * 0.6);
+    }
+    geo.computeVertexNormals();
+    return geo;
+}
+
+function monstera(w, d) {
+    const g = new THREE.Group();
+    let seed = 2024;
+    const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    const terracotta = std(0xc4552b, {roughness: 0.55});
+    const leafMat = new THREE.MeshStandardMaterial({color: 0x245f29, roughness: 0.55, side: THREE.DoubleSide});
+    const stemMat = std(0x6f9a3e, {roughness: 0.6});
+    const potH = 30;
+    Cyl(g, 16, 12, potH, 0, potH / 2, 0, terracotta);
+    Cyl(g, 16.6, 16.6, 2, 0, potH - 1, 0, terracotta);
+    Cyl(g, 15.2, 15.2, 1, 0, potH - 2, 0, std(0x3a2a1e, {roughness: 1}));
+
+    const up = new THREE.Vector3(0, 1, 0);
+    const count = 17;
+    for (let i = 0; i < count; i++) {
+        const phi = i * 2.39996 + rnd() * 0.4; // angle d'or : feuilles bien réparties
+        const young = i >= count - 3;
+        const h = young ? 45 + rnd() * 20 : 50 + rnd() * 55;
+        const r = young ? 6 + rnd() * 8 : 12 + rnd() * 22;
+        const base = new THREE.Vector3((Math.cos(phi) * 3) / 100, (potH - 2) / 100, (Math.sin(phi) * 3) / 100);
+        const end = new THREE.Vector3((Math.cos(phi) * r) / 100, (potH + h) / 100, (Math.sin(phi) * r) / 100);
+        const mid = new THREE.Vector3((Math.cos(phi) * r * 0.35) / 100, (potH + h * 0.65) / 100, (Math.sin(phi) * r * 0.35) / 100);
+        const stem = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([base, mid, end]), 12, 0.0075, 6), stemMat);
+        stem.castShadow = true;
+        g.add(stem);
+
+        const L = young ? 20 + rnd() * 8 : 36 + rnd() * 18;
+        const leaf = new THREE.Mesh(monsteraLeaf(L / 100, (L * (0.85 + rnd() * 0.1)) / 100, rnd), leafMat);
+        // orientation : la feuille part vers l'extérieur, légèrement inclinée vers le bas, face au ciel
+        const tilt = young ? -0.3 + rnd() * 0.3 : 0.1 + rnd() * 0.45;
+        const dir = new THREE.Vector3(Math.cos(phi) * Math.cos(tilt), -Math.sin(tilt), Math.sin(phi) * Math.cos(tilt)).normalize();
+        const xAxis = new THREE.Vector3().crossVectors(up, dir).normalize();
+        const zAxis = new THREE.Vector3().crossVectors(xAxis, dir).normalize();
+        if (zAxis.y < 0) zAxis.negate(), xAxis.negate();
+        leaf.matrixAutoUpdate = false;
+        leaf.matrix.makeBasis(xAxis, dir, zAxis).setPosition(end);
+        leaf.castShadow = leaf.receiveShadow = true;
+        g.add(leaf);
+        // nervure centrale plus claire
+        const rib = new THREE.Mesh(new THREE.BoxGeometry(0.004, (L * 0.9) / 100, 0.003), stemMat);
+        rib.position.set(0, (L * 0.45) / 100, 0.002);
+        leaf.add(rib);
+    }
+    // taille proportionnelle à l'emprise (70 cm = grande plante)
+    g.scale.setScalar(Math.min(w, d) / 70);
+    return g;
+}
+
+// ---------- Onewheel sur son support ----------
+
+// Onewheel rangé debout (nez en haut) dans un support métal noir.
+// Planche ~70 x 23 cm, roue de 29 cm de diamètre et 15 cm de large au centre, essieu selon x.
+function onewheelStand(w, d) {
+    const g = new THREE.Group();
+    const rail = std(0x6a6f77, {roughness: 0.35, metalness: 0.7, envMap: MAT.chrome.envMap});
+    const grip = std(0x111112, {roughness: 0.95});
+    const rubber = std(0x161616, {roughness: 0.85});
+    const hub = std(0xc4c8cc, {roughness: 0.3, metalness: 0.85, envMap: MAT.chrome.envMap});
+    const blk = MAT.matteBlack;
+
+    // support : socle, berceau et montants qui enserrent les rails
+    B(g, -18, 18, 0, 2, -14, 14, blk);
+    B(g, -14, 14, 2, 10, -7.5, -6, blk);
+    B(g, -14, 14, 2, 10, 6, 7.5, blk);
+    for (const sx of [-1, 1]) B(g, sx * 13, sx * 15, 2, 46, -3, 3, blk);
+
+    // planche : rails latéraux, plateaux, patins, boîtiers batterie / contrôleur sous le deck
+    const y0 = 4,
+        y1 = 74,
+        yc = (y0 + y1) / 2;
+    for (const sx of [-1, 1]) B(g, sx * 10, sx * 12.5, y0, y1, -2.5, 2.5, rail);
+    B(g, -10, 10, y0, yc - 10, -1.5, 1.5, rail);
+    B(g, -10, 10, yc + 10, y1, -1.5, 1.5, rail);
+    B(g, -10, 10, y0 + 2, yc - 11, 1.5, 3, grip); // patin arrière
+    B(g, -10, 10, yc + 11, y1 - 2, 1.5, 3, grip); // patin avant (capteur)
+    B(g, -9, 9, y0 + 4, yc - 12, -5, -1.5, rail);
+    B(g, -9, 9, yc + 12, y1 - 4, -5, -1.5, rail);
+    B(g, -11.5, 11.5, y0 - 2, y0, -3, 3, rubber); // pare-chocs
+    B(g, -11.5, 11.5, y1, y1 + 2, -3, 3, rubber);
+    // phares : blanc à l'avant (en haut), rouge à l'arrière
+    B(g, -6, 6, y1 + 0.5, y1 + 2.3, 1, 3.2, std(0xffffff, {emissive: 0xffffff, emissiveIntensity: 1.2}));
+    B(g, -6, 6, y0 - 2.3, y0 - 0.5, 1, 3.2, std(0xff2a1a, {emissive: 0xff2a1a, emissiveIntensity: 0.9}));
+
+    // roue : pneu, moyeu, garde-boue au-dessus du deck
+    Cyl(g, 14.5, 14.5, 15, 0, yc, 0, rubber).rotation.z = Math.PI / 2;
+    Cyl(g, 15.2, 15.2, 9, 0, yc, 0, rubber).rotation.z = Math.PI / 2;
+    Cyl(g, 8.5, 8.5, 16, 0, yc, 0, hub).rotation.z = Math.PI / 2;
+    const fender = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.168, 0.168, 0.14, 28, 1, true, -Math.PI / 2, Math.PI),
+        new THREE.MeshStandardMaterial({color: 0x151515, roughness: 0.6, side: THREE.DoubleSide}),
+    );
+    fender.rotation.z = Math.PI / 2;
+    fender.position.y = yc / 100;
+    fender.castShadow = true;
+    g.add(fender);
+    return g;
+}
+
+// ---------- Bureau assis-debout ----------
+
+// Plateau w x d (160 x 80), piètement noir à deux colonnes télescopiques, pieds en T.
+// Réglé en position assise (plateau à 74 cm) ; `h` permet de le monter.
+function standingDesk(w, d, h = 74) {
+    const g = new THREE.Group(),
+        hw = w / 2,
+        hd = d / 2,
+        t = 2.5;
+    const frame = std(0x1b1c1e, {roughness: 0.45, metalness: 0.4});
+    B(g, -hw, hw, h - t, h, -hd, hd, MAT.oak); // plateau
+    const lx = hw - 18; // colonnes en retrait des bords
+    for (const sx of [-1, 1]) {
+        const x = sx * lx;
+        B(g, x - 3.5, x + 3.5, 0, 3, -hd + 6, hd - 6, frame); // pied
+        for (const z of [-hd + 6, hd - 6]) B(g, x - 3.5, x + 3.5, -0.5, 0, z - 2, z + 2, frame); // patins
+        B(g, x - 3.5, x + 3.5, 3, 45, -2.5, 2.5, frame); // colonne basse
+        B(g, x - 3, x + 3, 45, h - t - 3, -2, 2, frame); // colonne haute
+        B(g, x - 3.5, x + 3.5, h - t - 3, h - t, -hd + 10, hd - 10, frame); // bras sous plateau
+    }
+    B(g, -lx, lx, h - t - 6, h - t - 1, -3, 3, frame); // traverse moteur
+    B(g, hw - 30, hw - 18, h - t - 2.5, h - t, hd - 6, hd - 1, frame); // boîtier de commande
+    return g;
+}
+
+// ---------- Bureau : MacBook Pro + écran ----------
+
+const screenOn = () =>
+    std(0x16223a, {roughness: 0.15, emissive: 0x2c4778, emissiveIntensity: 0.55});
+
+// MacBook Pro 14" (31,3 x 22,1 x 1,55 cm), ouvert, écran vers l'arrière, clavier côté +z.
+function macbookPro(w, d) {
+    const g = new THREE.Group(),
+        hw = w / 2,
+        hd = d / 2,
+        t = 1.55;
+    const alu = std(0x3a3b3f, {roughness: 0.35, metalness: 0.7, envMap: MAT.chrome.envMap});
+    B(g, -hw, hw, 0, t, -hd, hd, alu);
+    B(g, -hw + 2, hw - 2, t, t + 0.05, -hd + 2.5, -hd + 12, MAT.black); // clavier
+    B(g, -6.5, 6.5, t, t + 0.05, hd - 9.5, hd - 1.5, std(0x47484c, {roughness: 0.25})); // trackpad
+    const lid = new THREE.Group();
+    lid.position.set(0, t / 100, -hd / 100);
+    lid.rotation.x = -0.3; // ouvert à ~105°
+    B(lid, -hw, hw, 0, d - 0.5, -0.6, 0, alu);
+    B(lid, -hw + 0.6, hw - 0.6, 0.6, d - 1.1, 0, 0.05, MAT.black);
+    B(lid, -hw + 1.2, hw - 1.2, 1.4, d - 1.6, 0.05, 0.1, screenOn());
+    g.add(lid);
+    return g;
+}
+
+// Écran 27" (panneau 61,4 x 36,3 cm) sur pied aluminium, dalle vers +z.
+function monitor27(w, d) {
+    const g = new THREE.Group(),
+        hw = w / 2,
+        hd = d / 2;
+    const alu = std(0xb9bcc0, {roughness: 0.3, metalness: 0.8, envMap: MAT.chrome.envMap});
+    B(g, -11, 11, 0, 1, -hd, -hd + 18, alu); // pied
+    B(g, -3.5, 3.5, 1, 30, -hd + 2, -hd + 4.5, alu); // bras
+    B(g, -hw, hw, 9, 9 + 36.3, -hd + 4.5, -hd + 7, MAT.dark); // dos + cadre
+    B(g, -hw + 0.8, hw - 0.8, 9.8, 8.2 + 36.3, -hd + 7, -hd + 7.1, screenOn());
+    return g;
+}
+
+// ---------- Tapis tissé en laine ----------
+
+// Tissage plat à grosses mailles : rangs de boucles crème chinées de gris, liseré uni sur les bords.
+let rugMaps = null;
+function rugWeave() {
+    if (rugMaps) return rugMaps;
+    const S = 512; // 512 px = 40 cm
+    const color = document.createElement('canvas'),
+        bump = document.createElement('canvas');
+    color.width = color.height = bump.width = bump.height = S;
+    const g = color.getContext('2d'),
+        b = bump.getContext('2d');
+    g.fillStyle = '#c9c1b2';
+    g.fillRect(0, 0, S, S);
+    b.fillStyle = '#202020';
+    b.fillRect(0, 0, S, S);
+    let seed = 77;
+    const r = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    const rowH = 8,
+        loopW = 6.4;
+    for (let y = 0; y < S; y += rowH) {
+        const shift = (y / rowH) % 2 ? loopW / 2 : 0;
+        for (let x = -loopW; x < S + loopW; x += loopW) {
+            const t = r();
+            // crème dominant, chiné de gris clair et de rares fils foncés
+            const l = t < 0.03 ? 52 + r() * 10 : t < 0.17 ? 74 + r() * 8 : 87 + r() * 5;
+            g.fillStyle = `hsl(${38 + r() * 6}, ${t < 0.17 ? 5 : 22}%, ${l}%)`;
+            g.beginPath();
+            g.ellipse(x + shift, y + rowH / 2, loopW * 0.48, rowH * 0.5, 0, 0, Math.PI * 2);
+            g.fill();
+            const v = 170 + r() * 85;
+            b.fillStyle = `rgb(${v},${v},${v})`;
+            b.beginPath();
+            b.ellipse(x + shift, y + rowH / 2, loopW * 0.42, rowH * 0.42, 0, 0, Math.PI * 2);
+            b.fill();
+        }
+    }
+    const mk = (c, srgb) => {
+        const t = new THREE.CanvasTexture(c);
+        t.wrapS = t.wrapT = THREE.RepeatWrapping;
+        t.anisotropy = 8;
+        if (srgb) t.colorSpace = THREE.SRGBColorSpace;
+        return t;
+    };
+    rugMaps = {map: mk(color, true), bumpMap: mk(bump, false)};
+    return rugMaps;
+}
+
+function rug(w, d) {
+    const g = new THREE.Group(),
+        hw = w / 2,
+        hd = d / 2,
+        h = 1.2,
+        border = 4;
+    const {map, bumpMap} = rugWeave();
+    const tile = 40; // cm couverts par la texture
+    const weave = (rw, rd) => {
+        const m = map.clone(),
+            bm = bumpMap.clone();
+        for (const t of [m, bm]) {
+            t.needsUpdate = true;
+            t.repeat.set(rw / tile, rd / tile);
+        }
+        return new THREE.MeshStandardMaterial({map: m, bumpMap: bm, bumpScale: 3, roughness: 1});
+    };
+    const body = B(g, -hw + border, hw - border, 0, h, -hd + border, hd - border, weave(w - 2 * border, d - 2 * border));
+    body.castShadow = false;
+    // liseré tressé un ton plus clair
+    const edge = std(0xe2dccf, {roughness: 1});
+    for (const [x1, x2, z1, z2] of [
+        [-hw, hw, -hd, -hd + border],
+        [-hw, hw, hd - border, hd],
+        [-hw, -hw + border, -hd + border, hd - border],
+        [hw - border, hw, -hd + border, hd - border],
+    ])
+        B(g, x1, x2, 0, h * 0.9, z1, z2, edge).castShadow = false;
+    return g;
+}
+
 export const BUILDERS = {
+    rug,
+    macbookPro,
+    monitor27,
+    standingDesk,
+    onewheelStand,
+    monstera,
     tvUnit65,
     zelligeBar,
     teddy,

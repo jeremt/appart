@@ -48,7 +48,7 @@ export const openings = [
     {id: 'fixe-sejour', kind: 'window', x1: IW, y1: 419, x2: IW + EXT, y2: 581, bottom: 0, top: 215},
     {id: 'pf-chambre', kind: 'door', name: 'Porte-fenêtre chambre', x1: IW, y1: 156, x2: IW + EXT, y2: 243, top: 215, leaves: ['end'], swing: -1, open: false, style: 'glass'},
     {id: 'p-chambre', kind: 'door', name: 'Porte chambre', x1: BATH_X + INT, y1: SPLIT_Y, x2: 307, y2: SPLIT_Y + INT, top: 205, leaves: ['start'], swing: -1, open: true},
-    {id: 'p-sdb', kind: 'door', name: 'Porte salle de bain', x1: BATH_X, y1: 143, x2: BATH_X + INT, y2: 224, top: 205, leaves: ['start'], swing: 1, open: true},
+    {id: 'p-sdb', kind: 'door', name: 'Porte salle de bain', x1: BATH_X, y1: 143, x2: BATH_X + INT, y2: 224, top: 205, leaves: ['start'], swing: 1, open: true, style: 'frosted'},
 ];
 
 // Pièces : `area` = surface indiquée sur le plan.
@@ -116,14 +116,20 @@ export const furnitureDefs = [
     // Séjour
     {id: 'canape', type: 'teddy', name: 'Canapé OMHU Teddy', r: [400, SPLIT_Y + INT, 600, SPLIT_Y + INT + 100], rot: 0},
     {id: 'affiche', type: 'poster', name: 'Affiche', r: [415, SPLIT_Y + INT, 470, 322], rot: 0},
+    {id: 'tapis', type: 'rug', name: 'Tapis laine 200 x 140', r: [400, 405, 600, 545], rot: 0},
     {id: 'table-basse', type: 'coffeeTable', name: 'Table basse', r: [448, 448, 553, 503], rot: 0},
     {id: 'meuble-tv', type: 'tvUnit65', name: 'Meuble TV + TCL 65" (65P89L)', r: [410, 588, 590, 628], rot: 180},
     {id: 'plante-haute', type: 'plantTall', name: 'Dracaena', r: [305, 582, 350, 627], rot: 0},
-    {id: 'plante-basse', type: 'plantSmall', name: 'Plante', r: [352, 555, 392, 595], rot: 0},
+    {id: 'monstera', type: 'monstera', name: 'Monstera', r: [355, 540, 405, 590], rot: 0},
+    {id: 'onewheel', type: 'onewheelStand', name: 'Onewheel sur support', r: [182, 598, 222, 628], rot: 180},
     {id: 'meuble-chaussures', type: 'shoeRack', name: 'Meuble à chaussures', r: [95, 598, 175, 628], rot: 180},
     // Chambre
     {id: 'lit', type: 'bed', name: 'Lit 160 x 200', r: [330, 2, 535, 164], rot: 90},
     {id: 'armoire', type: 'wardrobeGrid', name: 'Armoire', r: [BATH_X + INT, 30, 285, 140], rot: 90},
+    {id: 'bureau', type: 'standingDesk', name: 'Bureau assis-debout 160 x 70', r: [320, SPLIT_Y - 70, 480, SPLIT_Y], rot: 180},
+    // posés sur le bureau (plateau à 74 cm)
+    {id: 'ecran', type: 'monitor27', name: 'Écran 27"', r: [369, SPLIT_Y - 22, 431, SPLIT_Y - 2], rot: 180, elev: 74},
+    {id: 'macbook', type: 'macbookPro', name: 'MacBook Pro 14"', r: [438, SPLIT_Y - 60, 469.3, SPLIT_Y - 37.9], rot: 180, elev: 74},
     {id: 'chevet', type: 'nightstand', name: 'Chevet', r: [290, 2, 326, 40], rot: 90},
     // Balcon
     {id: 'table-balcon', type: 'bistroTable', name: 'Table de balcon', c: [735, 545], size: [70, 70], rot: 0},

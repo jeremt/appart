@@ -16,7 +16,7 @@ const viewport = $('#viewport');
 const renderer = new THREE.WebGLRenderer({antialias: true});
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = THREE.PCFShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
 viewport.appendChild(renderer.domElement);
@@ -31,10 +31,12 @@ scene.add(new THREE.HemisphereLight(0xeaf4ff, 0x7a6a55, 1.1));
 const sun = new THREE.DirectionalLight(0xfff3e0, 2.4);
 sun.position.set(6, 14, 8);
 sun.castShadow = true;
-sun.shadow.mapSize.set(4096, 4096);
+// ombres douces : carte plus petite + gros rayon de filtrage = pénombre de ~10 cm
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.radius = 4;
 Object.assign(sun.shadow.camera, {left: -13, right: 13, top: 13, bottom: -13, near: 1, far: 50});
 sun.shadow.bias = -0.0004;
-sun.shadow.normalBias = 0.02;
+sun.shadow.normalBias = 0.03;
 scene.add(sun);
 
 // environnement réfléchi pour les chromes (uniquement sur ce matériau)
@@ -77,13 +79,14 @@ const items = furnitureDefs.map((def) => {
         item.h = Math.round(new THREE.Box3().setFromObject(group).getSize(new THREE.Vector3()).y * 100);
         collidersDirty = true;
         if (selected === item) updateSelection();
+        scheduleReflections();
     };
     return item;
 });
 
 function applyState(item) {
     const p = toWorld(item.state.x, item.state.y);
-    item.group.position.set(p.x, 0, p.z);
+    item.group.position.set(p.x, (item.def.elev ?? 0) / 100, p.z); // `elev` : posé sur un meuble
     item.group.rotation.y = THREE.MathUtils.degToRad(item.state.rot);
     if (item.state.deleted) furnRoot.remove(item.group);
     else furnRoot.add(item.group);
@@ -126,6 +129,7 @@ function afterChange() {
     if (selected?.state.deleted) select(null);
     updateSelection();
     renderTrash();
+    scheduleReflections();
 }
 function undo() {
     const s = undoStack.pop();
@@ -329,14 +333,77 @@ function updateSelection() {
     }
 }
 
+// ---------- Collisions meubles / murs ----------
+// Emprise au sol d'un meuble (rectangle déclaré, tourné) contre les morceaux de mur pleins.
+// Les ouvertures de portes restent franchissables pour passer d'une pièce à l'autre.
+const WALL_TOL = 1; // cm de chevauchement toléré (meubles posés pile contre un mur)
+const wallRects = structure.colliders.map((c) => {
+    const a = toPlan(c.minX, c.minZ),
+        b = toPlan(c.maxX, c.maxZ);
+    return {x1: a.x, y1: a.y, x2: b.x, y2: b.y};
+});
+
+function halfExtents(item, rot) {
+    const r = THREE.MathUtils.degToRad(rot),
+        c = Math.abs(Math.cos(r)),
+        s = Math.abs(Math.sin(r));
+    return {hx: (item.w * c + item.d * s) / 2, hy: (item.w * s + item.d * c) / 2};
+}
+
+function fits(item, st) {
+    const {hx, hy} = halfExtents(item, st.rot);
+    const t = WALL_TOL;
+    return !wallRects.some(
+        (w) => st.x - hx + t < w.x2 && st.x + hx - t > w.x1 && st.y - hy + t < w.y2 && st.y + hy - t > w.y1,
+    );
+}
+
+// Déplace le long d'un axe en s'arrêtant au contact du premier mur rencontré (pas d'effet tunnel).
+function moveAxis(item, st, axis, target) {
+    const {hx, hy} = halfExtents(item, st.rot);
+    const t = WALL_TOL;
+    const [pos, h, o, ho] = axis === 'x' ? [st.x, hx, st.y, hy] : [st.y, hy, st.x, hx];
+    const delta = target - pos;
+    if (!delta) return pos;
+    let limit = target;
+    for (const w of wallRects) {
+        const [a1, a2, b1, b2] = axis === 'x' ? [w.x1, w.x2, w.y1, w.y2] : [w.y1, w.y2, w.x1, w.x2];
+        if (!(o - ho + t < b2 && o + ho - t > b1)) continue; // mur hors de la bande parcourue
+        if (delta > 0 && a1 >= pos + h - t) limit = Math.min(limit, a1 - h);
+        if (delta < 0 && a2 <= pos - h + t) limit = Math.max(limit, a2 + h);
+    }
+    return delta > 0 ? Math.max(pos, limit) : Math.min(pos, limit);
+}
+
+// Applique une modification seulement si le meuble ne se retrouve pas dans un mur
+// (sauf s'il y était déjà, pour ne jamais le bloquer).
+function tryChange(item, patch) {
+    const next = {...item.state, ...patch};
+    if (!fits(item, next) && fits(item, item.state)) {
+        flashBlocked();
+        return false;
+    }
+    change(() => Object.assign(item.state, patch));
+    return true;
+}
+
+let flashTimer;
+function flashBlocked() {
+    selBox.material.color.set(0xef4444);
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(() => selBox.material.color.set(0xf59e0b), 350);
+}
+
 const rotate = (deg) =>
-    selected && change(() => (selected.state.rot = (((selected.state.rot + deg + 180) % 360) + 360) % 360 - 180));
-const nudge = (dx, dy) =>
-    selected &&
-    change(() => {
-        selected.state.x += dx;
-        selected.state.y += dy;
-    });
+    selected && tryChange(selected, {rot: (((selected.state.rot + deg + 180) % 360) + 360) % 360 - 180});
+const nudge = (dx, dy) => {
+    if (!selected) return;
+    const st = selected.state;
+    const x = moveAxis(selected, st, 'x', st.x + dx);
+    const y = moveAxis(selected, {...st, x}, 'y', st.y + dy);
+    if (x === st.x && y === st.y) return flashBlocked();
+    change(() => Object.assign(st, {x, y}));
+};
 const removeSelected = () => selected && change(() => (selected.state.deleted = true));
 
 $('#p-rotl').addEventListener('click', () => rotate(-90));
@@ -349,7 +416,7 @@ for (const [id, key] of [
 ])
     $(id).addEventListener('change', (e) => {
         const v = parseFloat(e.target.value);
-        if (selected && Number.isFinite(v)) change(() => (selected.state[key] = v));
+        if (selected && Number.isFinite(v) && !tryChange(selected, {[key]: v})) updateSelection();
     });
 
 function renderTrash() {
@@ -428,6 +495,11 @@ window.addEventListener('pointermove', (e) => {
         x = Math.round(x / step) * step;
         y = Math.round(y / step) * step;
         const s = drag.item.state;
+        // glisse le long des murs au lieu de les traverser
+        if (fits(drag.item, s)) {
+            x = moveAxis(drag.item, s, 'x', x);
+            y = moveAxis(drag.item, {...s, x}, 'y', y);
+        }
         if (x !== s.x || y !== s.y) {
             s.x = x;
             s.y = y;
@@ -634,6 +706,43 @@ document.addEventListener('mousedown', (e) => {
     if (mode === 'fps' && fps.isLocked && e.button === 0) interact();
 });
 
+// ---------- Reflets du carrelage ----------
+// Une sonde cubique par zone capture la pièce (plafond compris) ; PMREM la floute selon la rugosité
+// du carrelage, ce qui donne un reflet léger et diffus des murs, meubles et baies.
+const pmrem = new THREE.PMREMGenerator(renderer);
+const probes = [
+    {pos: toWorld(306, 470, 120), mat: tex.tileLight.material, intensity: 0.65, roughness: 0.26},
+    {pos: toWorld(420, 160, 120), mat: tex.tileDark.material, intensity: 0.6, roughness: 0.26},
+    // miroir de la salle de bain : sonde au centre de la pièce
+    {pos: toWorld(130, 170, 150), mat: MAT.mirror, intensity: 1, roughness: 0.04},
+].map((p) => ({...p, cam: new THREE.CubeCamera(0.05, 40, new THREE.WebGLCubeRenderTarget(256, {type: THREE.HalfFloatType}))}));
+
+function captureReflections() {
+    const saved = [selBox.visible, dimLines.visible, structure.ceiling.visible, env.soffit.visible];
+    selBox.visible = dimLines.visible = false;
+    structure.ceiling.visible = env.soffit.visible = true;
+    for (const p of probes) p.mat.envMap = null;
+    for (const p of probes) {
+        p.cam.position.copy(p.pos);
+        scene.add(p.cam);
+        p.cam.update(renderer, scene);
+        scene.remove(p.cam);
+        p.env?.dispose();
+        p.env = pmrem.fromCubemap(p.cam.renderTarget.texture);
+    }
+    for (const p of probes) {
+        Object.assign(p.mat, {envMap: p.env.texture, envMapIntensity: p.intensity, roughness: p.roughness});
+        p.mat.needsUpdate = true;
+    }
+    [selBox.visible, dimLines.visible, structure.ceiling.visible, env.soffit.visible] = saved;
+}
+let reflTimer;
+function scheduleReflections() {
+    clearTimeout(reflTimer);
+    reflTimer = setTimeout(captureReflections, 300);
+}
+scheduleReflections();
+
 // ---------- Boucle ----------
 function resize() {
     const w = viewport.clientWidth,
@@ -670,3 +779,6 @@ renderer.setAnimationLoop(() => {
     renderer.render(scene, cam);
     labelRenderer.render(scene, cam);
 });
+
+// accès debug en développement (positionner la caméra depuis la console)
+if (import.meta.env.DEV) window.__appart = {persp, orbit, fpsCam, setMode, toWorld, items, fits, moveAxis};

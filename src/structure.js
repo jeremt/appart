@@ -96,12 +96,12 @@ function buildLeaf(L, H, style, ext, door) {
         m.receiveShadow = true;
         g.add(m);
     };
-    if (style === 'glass') {
+    if (style === 'glass' || style === 'frosted') {
         add(0, 6, 0, H, -2.5, 2.5, M.alu);
         add(L - 6, L, 0, H, -2.5, 2.5, M.alu);
         add(6, L - 6, 0, 10, -2.5, 2.5, M.alu);
         add(6, L - 6, H - 6, H, -2.5, 2.5, M.alu);
-        add(6, L - 6, 10, H - 6, -0.6, 0.6, MAT.glass);
+        add(6, L - 6, 10, H - 6, -0.6, 0.6, style === 'frosted' ? M.frosted : MAT.glass);
     } else {
         add(0, L, 0, H, -2, 2, ext ? M.leafOut : M.leafIn);
     }
@@ -120,7 +120,7 @@ function buildDoor(o, group, doors, doorMeshes) {
     const mid = (t1 + t2) / 2;
     const R = along(horiz);
     const J = 4;
-    const fm = o.style === 'glass' ? M.alu : o.exterior ? M.leafOut : M.frame;
+    const fm = o.style === 'glass' || o.style === 'frosted' ? M.alu : o.exterior ? M.leafOut : M.frame;
     group.add(R(a1, a1 + J, t1 - 1, t2 + 1, 0, o.top, fm));
     group.add(R(a2 - J, a2, t1 - 1, t2 + 1, 0, o.top, fm));
     group.add(R(a1, a2, t1 - 1, t2 + 1, o.top - J, o.top, fm));
