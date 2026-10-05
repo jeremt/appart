@@ -173,13 +173,13 @@ export function makeTextures(renderer) {
         aniso,
     );
     // séjour : grands carreaux 60x60 gris clair
-    const tileLight = canvasTexture(1024, (g, s) => tileGrid(g, s, 2, 2, [42, 6, 88], '#c4c0b9', 31), aniso);
+    const tileLight = canvasTexture(1024, (g, s) => tileGrid(g, s, 2, 2, [38, 5, 70], '#9d9992', 31), aniso);
     // chambre, salle de bain, palier : carreaux 60x60 anthracite
     const tileDark = canvasTexture(1024, (g, s) => tileGrid(g, s, 2, 2, [210, 3, 33], '#2c2d2f', 41), aniso);
     // faïence autour de la baignoire : 30x60 grège
     const wallTile = canvasTexture(1024, (g, s) => tileGrid(g, s, 2, 4, [35, 9, 58], '#8d877e', 51), aniso);
 
-    return {
+    const out = {
         parquet: mk(parquet, 1.6, 0.55),
         tiles: mk(tiles, 1.2, 0.35),
         grass: mk(grass, 2.5, 0.95),
@@ -189,4 +189,7 @@ export function makeTextures(renderer) {
         tileDark: mk(tileDark, 1.2, 0.35),
         wallTile: mk(wallTile, 1.2, 0.3),
     };
+    // carrelage du séjour : teinte légèrement assombrie pour ne pas paraître blanc sous le soleil
+    out.tileLight.material.color.setScalar(0.58);
+    return out;
 }

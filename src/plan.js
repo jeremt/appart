@@ -108,6 +108,7 @@ export const furnitureDefs = [
     {id: 'baignoire', type: 'bathtub', name: 'Baignoire', r: [42, BATH_TOP, 212, 101], rot: 0},
     {id: 'meuble-vasque', type: 'vanityWasher', name: 'Meuble vasque + lave-linge', r: [0, 104, 52, 226], rot: 90},
     {id: 'wc', type: 'toilet', name: 'WC', r: [56, 257, 121, 296], rot: 90},
+    {id: 'colonne-sdb', type: 'bathColumn', name: 'Colonne de rangement', r: [180, 256, 215, 296], rot: -90},
     // Cuisine
     {id: 'evier', type: 'sink', name: 'Évier', r: [0, SPLIT_Y + INT, 63, 402], rot: 90},
     {id: 'plan-travail', type: 'counter', name: 'Plan de travail', r: [0, 402, 63, 464], rot: 90},
@@ -122,6 +123,7 @@ export const furnitureDefs = [
     {id: 'tapis', type: 'rug', name: 'Tapis laine 200 x 140', r: [320, 395, 520, 535], rot: 0},
     {id: 'table-basse', type: 'coffeeTable', name: 'Table basse', r: [367, 447, 472, 502], rot: 0},
     {id: 'meuble-tv', type: 'tvUnit65', name: 'Meuble TV + TCL 65" (65P89L)', r: [330, 588, 510, 628], rot: 180},
+    {id: 'colonne-salon', type: 'storageColumn', name: 'Colonne de rangement', r: [295, 593, 330, 628], rot: 180},
     {id: 'monstera', type: 'monstera', name: 'Monstera', r: [550, 559, 600, 609], rot: 0},
     {id: 'onewheel', type: 'onewheelStand', name: 'Onewheel sur support', r: [182, 598, 222, 628], rot: 180},
     {id: 'etagere-gres', type: 'stonewareShelf', name: 'Étagère vaisselle en grès', r: [90, 606, 180, 628], rot: 180},

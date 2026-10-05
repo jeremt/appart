@@ -1925,7 +1925,96 @@ function stonewareShelf(w, d) {
     return g;
 }
 
+// ---------- Colonnes de rangement ----------
+
+// Lampe en papier type Akari : lanterne ovoïde nervurée sur un pied métal, s'allume la nuit.
+function paperLamp(g, x, y, z, r = 9, h = 24) {
+    const paper = std(0xf6f1e6, {roughness: 0.9, emissive: 0xffe4b8, emissiveIntensity: 0.06, side: THREE.DoubleSide});
+    paper.userData.night = 1.6;
+    const pts = [];
+    for (let i = 0; i <= 16; i++) {
+        const t = i / 16;
+        pts.push(new THREE.Vector2((r * Math.sin(Math.PI * (0.08 + t * 0.84))) / 100, (h * t) / 100));
+    }
+    const shade = new THREE.Mesh(new THREE.LatheGeometry(pts, 32), paper);
+    shade.position.set(x / 100, (y + 3) / 100, z / 100);
+    g.add(shade);
+    for (let i = 1; i < 8; i++) {
+        const t = i / 8;
+        const rr = r * Math.sin(Math.PI * (0.08 + t * 0.84));
+        const rib = new THREE.Mesh(new THREE.TorusGeometry(rr / 100, 0.0015, 4, 32), std(0xe6dccb));
+        rib.rotation.x = Math.PI / 2;
+        rib.position.set(x / 100, (y + 3 + h * t) / 100, z / 100);
+        g.add(rib);
+    }
+    for (const a of [0, (Math.PI * 2) / 3, (Math.PI * 4) / 3]) rod(g, [x, y, z], [x + Math.cos(a) * 5, y + 3, z + Math.sin(a) * 5], 0.25, MAT.matteBlack);
+    const light = new THREE.PointLight(0xffd29a, 1, 2.2, 1.6);
+    light.position.set(x / 100, (y + 3 + h / 2) / 100, z / 100);
+    light.userData.nightOnly = true;
+    light.visible = false;
+    g.add(light);
+}
+
+// Boîte de rangement (tissu ou kraft) avec poignée découpée en façade (+z).
+function storageBox(g, x0, x1, y, z0, z1, h, color) {
+    B(g, x0, x1, y, y + h, z0, z1, std(color, {roughness: 0.95}));
+    B(g, (x0 + x1) / 2 - 4, (x0 + x1) / 2 + 4, y + h - 7, y + h - 4.5, z1, z1 + 0.2, MAT.dark);
+}
+
+// Colonne ouverte chêne / métal noir : boîtes en bas, plante au milieu, lampe en papier en haut.
+function storageColumn(w, d) {
+    const g = new THREE.Group(),
+        hw = w / 2,
+        hd = d / 2,
+        h = 180;
+    for (const sx of [-1, 1])
+        for (const sz of [-1, 1]) B(g, sx * hw - (sx > 0 ? 2 : 0), sx * hw + (sx < 0 ? 2 : 0), 0, h, sz * hd - (sz > 0 ? 2 : 0), sz * hd + (sz < 0 ? 2 : 0), MAT.blackMetal);
+    const levels = [4, 40, 76, 112, 148, h - 2];
+    for (const y of levels) B(g, -hw + 0.5, hw - 0.5, y, y + 2, -hd + 0.5, hd - 0.5, MAT.oak);
+    B(g, -hw + 2, hw - 2, levels[0] + 2, h - 2, -hd, -hd + 0.6, MAT.oak); // fond
+    // boîtes de rangement (lin beige et kraft)
+    storageBox(g, -hw + 2.5, hw - 2.5, 6, -hd + 2, hd - 3, 27, 0xcdbfa6);
+    storageBox(g, -hw + 2.5, hw - 2.5, 42, -hd + 2, hd - 3, 27, 0xa37a50);
+    // plante au milieu
+    const rnd = seeded(57);
+    herbPot(g, 0, 78, 0, 8, 0x3f7f3a, rnd);
+    // lampe en papier
+    paperLamp(g, 0, 114, 0, 10, 26);
+    // dessus : deux livres et une petite boîte
+    B(g, -hw + 3, -hw + 20, h, h + 3, -hd + 4, hd - 6, std(0x2f3e5c, {roughness: 0.8}));
+    B(g, -hw + 4, -hw + 19, h + 3, h + 5.5, -hd + 5, hd - 7, std(0xe8e0cf, {roughness: 0.8}));
+    return g;
+}
+
+// Colonne de salle de bain blanche : porte en bas, niches ouvertes avec serviettes et papier.
+function bathColumn(w, d) {
+    const g = new THREE.Group(),
+        hw = w / 2,
+        hd = d / 2,
+        h = 180;
+    const white = MAT.gloss;
+    B(g, -hw, hw, 0, h, -hd, -hd + 1.5, white); // fond
+    for (const sx of [-1, 1]) B(g, sx > 0 ? hw - 1.8 : -hw, sx > 0 ? hw : -hw + 1.8, 0, h, -hd, hd, white); // côtés
+    for (const y of [8, 82, 118, 152, h - 2]) B(g, -hw, hw, y - 1.8, y, -hd, hd, white);
+    B(g, -hw, hw, 0, 8, -hd + 2, hd - 2, MAT.dark); // socle
+    B(g, -hw + 0.3, hw - 0.3, 8.3, 80, hd - 1.8, hd, white); // porte
+    B(g, hw - 5, hw - 3.5, 55, 75, hd, hd + 1.5, MAT.metal);
+    // serviettes roulées (deux niveaux)
+    const towel = [0xe9e3d6, 0xb9a88e, 0xe9e3d6];
+    for (let i = 0; i < 3; i++) {
+        const x = -hw + 7 + i * ((w - 14) / 2);
+        Cyl(g, 5.5, 5.5, d - 6, x, 82 + 5.5, 1, std(towel[i], {roughness: 1}), true);
+    }
+    B(g, -hw + 3, hw - 3, 118, 128, -hd + 3, hd - 4, std(0xb9a88e, {roughness: 1})); // serviettes pliées
+    B(g, -hw + 4, hw - 4, 128, 136, -hd + 4, hd - 5, std(0xe9e3d6, {roughness: 1}));
+    // rouleaux de papier toilette
+    for (const [x, y] of [[-8, 152], [4, 152], [-2, 162]]) Cyl(g, 5.5, 5.5, 10, x, y + 5, 0, std(0xfbfbf8, {roughness: 1}));
+    return g;
+}
+
 export const BUILDERS = {
+    storageColumn,
+    bathColumn,
     sofaShelves,
     stonewareShelf,
     herbShelf,

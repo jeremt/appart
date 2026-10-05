@@ -715,7 +715,7 @@ document.addEventListener('mousedown', (e) => {
 // du carrelage, ce qui donne un reflet léger et diffus des murs, meubles et baies.
 const pmrem = new THREE.PMREMGenerator(renderer);
 const probes = [
-    {pos: toWorld(306, 470, 120), mat: tex.tileLight.material, intensity: 0.65, roughness: 0.26},
+    {pos: toWorld(306, 470, 120), mat: tex.tileLight.material, intensity: 0.3, roughness: 0.28},
     {pos: toWorld(420, 160, 120), mat: tex.tileDark.material, intensity: 0.6, roughness: 0.26},
     // miroir de la salle de bain : sonde au centre de la pièce
     {pos: toWorld(130, 170, 150), mat: MAT.mirror, intensity: 1, roughness: 0.04},
@@ -868,4 +868,4 @@ renderer.setAnimationLoop(() => {
 });
 
 // accès debug en développement (positionner la caméra depuis la console)
-if (import.meta.env.DEV) window.__appart = {persp, orbit, fpsCam, setMode, toWorld, items, fits, moveAxis};
+if (import.meta.env.DEV) window.__appart = {persp, orbit, fpsCam, setMode, toWorld, items, fits, moveAxis, tex, renderer, scene};
