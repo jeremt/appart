@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 
 // Chaque constructeur reçoit (largeur, profondeur) en cm et renvoie un Group :
 // origine au centre de l'emprise au sol, face avant orientée vers +z.
@@ -56,6 +57,15 @@ function B(g, x1, x2, y1, y2, z1, z2, mat) {
     m.position.set((x1 + x2) / 200, (y1 + y2) / 200, (z1 + z2) / 200);
     m.castShadow = mat !== MAT.glass;
     m.receiveShadow = true;
+    g.add(m);
+    return m;
+}
+
+// Boîte à arêtes arrondies (textiles, coussins) : mêmes conventions que B, rayon r en cm.
+function RB(g, x1, x2, y1, y2, z1, z2, r, mat) {
+    const m = new THREE.Mesh(new RoundedBoxGeometry((x2 - x1) / 100, (y2 - y1) / 100, (z2 - z1) / 100, 4, r / 100), mat);
+    m.position.set((x1 + x2) / 200, (y1 + y2) / 200, (z1 + z2) / 200);
+    m.castShadow = m.receiveShadow = true;
     g.add(m);
     return m;
 }
@@ -187,6 +197,28 @@ function kitchenBase(g, w, d, hole) {
     else B(g, -hw, hw, 87, 90, -hd, hd + 1, MAT.counter);
 }
 
+// ---------- Rubans LED ----------
+// Ruban : diffuseur opalin blanc chaud, éteint le jour, lumineux la nuit (mode nuit).
+const ledMat = std(0xfff6e8, {roughness: 0.4, emissive: 0xffdcae, emissiveIntensity: 0.02});
+ledMat.userData.night = 3.5;
+
+function ledStrip(g, x1, x2, y1, y2, z1, z2) {
+    const m = B(g, x1, x2, y1, y2, z1, z2, ledMat);
+    m.castShadow = false;
+    return m;
+}
+
+// Lumière surfacique (RectAreaLight) émise par un ruban : `pos` / `target` en cm, allumée la nuit.
+function stripLight(g, w, h, pos, target, intensity) {
+    const l = new THREE.RectAreaLight(0xffdcae, intensity, w / 100, h / 100);
+    l.position.set(pos[0] / 100, pos[1] / 100, pos[2] / 100);
+    l.lookAt(target[0] / 100, target[1] / 100, target[2] / 100);
+    l.userData.nightOnly = true;
+    l.visible = false;
+    g.add(l);
+    return l;
+}
+
 function wallCabinets(g, w, d) {
     const hw = w / 2,
         hd = d / 2;
@@ -199,6 +231,9 @@ function wallCabinets(g, w, d) {
         B(g, a, b, 151, 214, -hd + 33, -hd + 35, MAT.front);
         B(g, a + 6, b - 6, 153, 154.5, -hd + 35, -hd + 37, MAT.metal);
     }
+    // ruban LED sous les meubles hauts, côté façade, qui éclaire le plan de travail
+    ledStrip(g, -hw + 1, hw - 1, 149.4, 150, -hd + 27, -hd + 30);
+    stripLight(g, w - 2, 3, [0, 149, -hd + 28.5], [0, 0, -hd + 28.5], 6);
 }
 
 function counter(w, d) {
@@ -588,12 +623,16 @@ function bed(w, d) {
     for (const sx of [-1, 1])
         for (const sz of [-1, 1]) B(g, sx * (hw - 6) - 2, sx * (hw - 6) + 2, 0, 10, sz * (hd - 6) - 2, sz * (hd - 6) + 2, MAT.metal);
     const {duvet, pillow, sheet} = gauze();
-    B(g, -hw, hw, 10, 32, -hd, hd, MAT.dark);
-    B(g, -hw + 1, hw - 1, 32, 50, -hd + 1, hd - 1, sheet);
-    B(g, -hw - 2, hw + 2, 24, 55, -hd + 45, hd + 2, duvet);
-    B(g, -hw + 2, hw - 2, 55, 56.5, -hd + 45, -hd + 70, duvet); // retour de couette replié
-    B(g, -hw + 7, -3, 50, 64, -hd + 6, -hd + 42, pillow);
-    B(g, 3, hw - 7, 50, 64, -hd + 6, -hd + 42, pillow);
+    RB(g, -hw, hw, 10, 32, -hd, hd, 2, MAT.dark); // sommier tapissier
+    RB(g, -hw + 1, hw - 1, 31, 50, -hd + 1, hd - 1, 5, sheet); // matelas + drap
+    RB(g, -hw - 2, hw + 2, 24, 55, -hd + 45, hd + 2, 6, duvet); // couette qui retombe sur les côtés
+    RB(g, -hw + 1, hw - 1, 53, 57.5, -hd + 43, -hd + 72, 2, duvet); // retour de couette replié
+    // oreillers bombés et légèrement inclinés contre la tête de lit
+    for (const [x1, x2] of [[-hw + 7, -3], [3, hw - 7]]) {
+        const p = RB(g, x1, x2, 49, 64, -hd + 5, -hd + 41, 6.5, pillow);
+        p.scale.y = 0.95;
+        p.rotation.x = -0.12;
+    }
     return g;
 }
 
@@ -684,6 +723,14 @@ function vanityWasher(w, d) {
     B(g, cx - 1, cx + 1, top + 14, top + 16, -hd + 6, -hd + 15, MAT.metal);
     // miroir
     B(g, -hw + 2, hw - 2, 105, 185, -hd, -hd + 1, MAT.mirror);
+    // ruban LED tout autour du miroir (rétroéclairage en bordure)
+    const zl = -hd + 0.2,
+        zl2 = -hd + 1.4;
+    ledStrip(g, -hw + 1, hw - 1, 185, 186.2, zl, zl2);
+    ledStrip(g, -hw + 1, hw - 1, 103.8, 105, zl, zl2);
+    ledStrip(g, -hw + 0.8, -hw + 2, 105, 185, zl, zl2);
+    ledStrip(g, hw - 2, hw - 0.8, 105, 185, zl, zl2);
+    stripLight(g, w - 4, 80, [0, 145, -hd + 3], [0, 145, hd + 50], 1.6); // éclairage du visage / plan vasque
     return g;
 }
 

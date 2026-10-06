@@ -6,8 +6,12 @@ import {CSS2DRenderer, CSS2DObject} from 'three/addons/renderers/CSS2DRenderer.j
 import {furnitureDefs, rooms, dimensions, walkable, spawn as spawnPoint, toWorld, toPlan} from './plan.js';
 import {BUILDERS, MAT} from './furniture.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
+import {RectAreaLightUniformsLib} from 'three/addons/lights/RectAreaLightUniformsLib.js';
+
+RectAreaLightUniformsLib.init(); // requis pour les rubans LED (RectAreaLight)
 import {buildStructure, buildEnvironment, applyDoor} from './structure.js';
 import {makeTextures} from './textures.js';
+import {FloorReflection, HQPipeline, halton} from './render.js';
 
 const $ = (s) => document.querySelector(s);
 const viewport = $('#viewport');
@@ -17,8 +21,9 @@ const renderer = new THREE.WebGLRenderer({antialias: true});
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.05;
+// tone mapping « Khronos PBR Neutral » : couleurs fidèles, hautes lumières moins brûlées qu'ACES
+renderer.toneMapping = THREE.NeutralToneMapping;
+renderer.toneMappingExposure = 0.95;
 viewport.appendChild(renderer.domElement);
 
 const labelRenderer = new CSS2DRenderer();
@@ -27,26 +32,50 @@ viewport.appendChild(labelRenderer.domElement);
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xcfe2f1);
-const hemi = new THREE.HemisphereLight(0xeaf4ff, 0x7a6a55, 1.1);
+// contraste réduit : soleil moins dur, plus de lumière d'ambiance (ciel + environnement, voir plus bas)
+const hemi = new THREE.HemisphereLight(0xeaf4ff, 0x8a7a66, 0.6);
 scene.add(hemi);
-const sun = new THREE.DirectionalLight(0xfff3e0, 2.4);
+const sun = new THREE.DirectionalLight(0xfff3e0, 1.7);
 sun.position.set(6, 14, 8);
 sun.castShadow = true;
-// ombres douces : carte plus petite + gros rayon de filtrage = pénombre de ~10 cm
+// ombres douces : carte 2048 + gros rayon de filtrage = pénombre de ~15 cm
 sun.shadow.mapSize.set(2048, 2048);
-sun.shadow.radius = 4;
+sun.shadow.radius = 7;
+sun.shadow.intensity = 0.85; // les ombres ne sont jamais totalement noires (lumière rebondie)
 Object.assign(sun.shadow.camera, {left: -13, right: 13, top: 13, bottom: -13, near: 1, far: 50});
 sun.shadow.bias = -0.0004;
 sun.shadow.normalBias = 0.03;
 scene.add(sun);
 
-// environnement réfléchi pour les chromes (uniquement sur ce matériau)
-MAT.chrome.envMap = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+// environnement « pièce blanche » : éclairage d'ambiance diffus (lumière rebondie) et reflets
+// doux sur tous les matériaux, en plus des chromes
+const roomEnv = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+MAT.chrome.envMap = roomEnv;
+scene.environment = roomEnv;
+scene.environmentIntensity = 0.5;
 
 const tex = makeTextures(renderer);
 const structure = buildStructure(tex);
 const env = buildEnvironment(tex);
 scene.add(structure.group, structure.ceiling, env.group);
+
+// ---------- Rendu haute qualité (option « HD ») ----------
+renderer.shadowMap.autoUpdate = false; // carte d'ombre recalculée une seule fois par image (voir la boucle)
+const floorRefl = new FloorReflection(renderer);
+floorRefl.attach(tex.tileLight.material, {strength: 0.24, blur: 2.5});
+floorRefl.attach(tex.tileDark.material, {strength: 0.3, blur: 2.5});
+scene.traverse((o) => o.userData.floor && floorRefl.hidden.push(o));
+floorRefl.shown.push(structure.ceiling, env.soffit);
+const pipeline = new HQPipeline(renderer, scene);
+const HQ_KEY = 'appart3d:hq';
+let hq = true;
+try {
+    hq = localStorage.getItem(HQ_KEY) !== '0';
+} catch {}
+// toute modification visible relance l'accumulation progressive
+function markDirty() {
+    pipeline.reset();
+}
 
 // ---------- Meubles ----------
 const furnRoot = new THREE.Group();
@@ -86,6 +115,7 @@ const items = furnitureDefs.map((def) => {
 });
 
 function applyState(item) {
+    markDirty();
     const p = toWorld(item.state.x, item.state.y);
     item.group.position.set(p.x, (item.def.elev ?? 0) / 100, p.z); // `elev` : posé sur un meuble
     item.group.rotation.y = THREE.MathUtils.degToRad(item.state.rot);
@@ -238,6 +268,7 @@ const HELP = {
 };
 
 function setMode(m) {
+    markDirty();
     mode = m;
     orbit.enabled = m === 'orbit';
     planCtl.enabled = m === 'plan';
@@ -313,6 +344,7 @@ function select(item) {
 }
 
 function updateSelection() {
+    markDirty();
     const panel = $('#panel');
     if (!selected) {
         selBox.visible = false;
@@ -395,6 +427,7 @@ function tryChange(item, patch) {
 
 let flashTimer;
 function flashBlocked() {
+    markDirty();
     selBox.material.color.set(0xef4444);
     clearTimeout(flashTimer);
     flashTimer = setTimeout(() => selBox.material.color.set(0xf59e0b), 350);
@@ -719,14 +752,15 @@ document.addEventListener('mousedown', (e) => {
 // du carrelage, ce qui donne un reflet léger et diffus des murs, meubles et baies.
 const pmrem = new THREE.PMREMGenerator(renderer);
 const probes = [
-    {pos: toWorld(306, 470, 120), mat: tex.tileLight.material, intensity: 0.3, roughness: 0.28},
-    {pos: toWorld(420, 160, 120), mat: tex.tileDark.material, intensity: 0.6, roughness: 0.26},
+    {pos: toWorld(306, 470, 120), mat: tex.tileLight.material, intensity: 0.3, roughness: 0.28, floor: true},
+    {pos: toWorld(420, 160, 120), mat: tex.tileDark.material, intensity: 0.6, roughness: 0.26, floor: true},
     // miroir de la salle de bain : sonde au centre de la pièce
     {pos: toWorld(130, 170, 150), mat: MAT.mirror, intensity: 1, roughness: 0.04},
 ].map((p) => ({...p, cam: new THREE.CubeCamera(0.05, 40, new THREE.WebGLCubeRenderTarget(256, {type: THREE.HalfFloatType}))}));
 
 function captureReflections() {
     const saved = [selBox.visible, dimLines.visible, structure.ceiling.visible, env.soffit.visible];
+    floorRefl.setEnabled(false); // pas de reflet planaire dans les sondes
     selBox.visible = dimLines.visible = false;
     structure.ceiling.visible = env.soffit.visible = true;
     for (const p of probes) p.mat.envMap = null;
@@ -739,10 +773,14 @@ function captureReflections() {
         p.env = pmrem.fromCubemap(p.cam.renderTarget.texture);
     }
     for (const p of probes) {
-        Object.assign(p.mat, {envMap: p.env.texture, envMapIntensity: p.intensity, roughness: p.roughness});
+        // en HD le reflet planaire prend le relais : la sonde ne garde qu'un léger lustre
+        const k = hq && p.floor ? 0.35 : 1;
+        Object.assign(p.mat, {envMap: p.env.texture, envMapIntensity: p.intensity * k, roughness: p.roughness});
         p.mat.needsUpdate = true;
     }
     [selBox.visible, dimLines.visible, structure.ceiling.visible, env.soffit.visible] = saved;
+    floorRefl.setEnabled(hq);
+    markDirty();
 }
 let reflTimer;
 function scheduleReflections() {
@@ -795,6 +833,7 @@ ceilingLight(-140, 570, 8, {shadow: false}); // palier
 ceilingLight(708, 375, 6, {shadow: false, h: 265, angle: Math.PI / 2.4}); // applique du balcon
 
 function setNight(on) {
+    markDirty();
     night = on;
     $('#btn-night').classList.toggle('active', on);
     $('#btn-night').textContent = on ? '☀ Jour' : '☾ Nuit';
@@ -807,7 +846,9 @@ function setNight(on) {
         hemi.color.set(0x2c3a63);
         hemi.groundColor.set(0x14110e);
         hemi.intensity = 0.25;
+        scene.environmentIntensity = 0.04;
     } else {
+        scene.environmentIntensity = 0.5;
         sun.color.copy(DAY.sun[0]);
         sun.intensity = DAY.sun[1];
         sun.position.copy(DAY.sun[2]);
@@ -822,7 +863,7 @@ function setNight(on) {
         if (o.userData.nightOnly) o.visible = on; // ex. ampoules de la guirlande
         else if (o.isSpotLight || o.isPointLight) {
             o.userData.dayIntensity ??= o.intensity;
-            o.intensity = o.userData.dayIntensity * (on ? 3 : 1);
+            o.intensity = o.userData.dayIntensity * (on ? 1.8 : 1);
         }
         if (o.isMesh && o.material.emissiveIntensity > 0) {
             const mat = o.material;
@@ -848,28 +889,91 @@ function resize() {
     const vh = Math.max(9, 12.5 / aspect);
     Object.assign(ortho, {left: (-vh * aspect) / 2, right: (vh * aspect) / 2, top: vh / 2, bottom: -vh / 2});
     ortho.updateProjectionMatrix();
+    const pr = renderer.getPixelRatio();
+    floorRefl.setSize(w * pr, h * pr);
+    pipeline.setSize(w, h, pr);
 }
 window.addEventListener('resize', resize);
+
+// ---------- Bascule HD ----------
+function setHQ(on) {
+    hq = on;
+    try {
+        localStorage.setItem(HQ_KEY, on ? '1' : '0');
+    } catch {}
+    $('#btn-hq').classList.toggle('active', on);
+    floorRefl.setEnabled(on);
+    scheduleReflections(); // ajuste l'intensité des sondes du sol
+    markDirty();
+}
+$('#btn-hq').addEventListener('click', () => setHQ(!hq));
+setHQ(hq);
+
+// Variations d'un échantillon d'accumulation : soleil (lune) dans un disque et plafonniers
+// légèrement déplacés → ombres d'aire douces une fois moyennées.
+const sunBase = new THREE.Vector3();
+const lightBases = new Map();
+const tmpU = new THREE.Vector3(),
+    tmpV = new THREE.Vector3();
+function jitterLights(i) {
+    sunBase.copy(sun.position);
+    const dir = sun.position.clone().normalize();
+    tmpU.crossVectors(dir, new THREE.Vector3(0, 1, 0)).normalize();
+    tmpV.crossVectors(dir, tmpU).normalize();
+    const a = halton(i, 5) * Math.PI * 2,
+        r = Math.sqrt(halton(i, 7)) * 2.4; // grand disque : pénombres larges et réalistes
+    sun.position.addScaledVector(tmpU, Math.cos(a) * r).addScaledVector(tmpV, Math.sin(a) * r);
+    sun.shadow.radius = 1;
+    if (night)
+        interiorLights.traverse((l) => {
+            if (!l.isSpotLight) return;
+            if (!lightBases.has(l)) lightBases.set(l, l.position.clone());
+            l.position.copy(lightBases.get(l)).add(new THREE.Vector3(Math.cos(a) * r * 0.08, 0, Math.sin(a) * r * 0.08));
+        });
+}
+function restoreLights() {
+    sun.position.copy(sunBase);
+    sun.shadow.radius = 7;
+    for (const [l, p] of lightBases) l.position.copy(p);
+}
 resize();
 renderTrash();
 setMode('plan');
 
 const clock = new THREE.Clock();
+let lastCamSig = '';
 renderer.setAnimationLoop(() => {
     const dt = Math.min(clock.getDelta(), 0.05);
     for (const d of structure.doors)
         if (d.t !== d.target) {
             d.t = THREE.MathUtils.clamp(d.t + Math.sign(d.target - d.t) * dt * 1.8, 0, 1);
             applyDoor(d);
+            markDirty();
         }
     if (mode === 'fps') {
         updateFps(dt);
         updateHint();
     } else if (mode === 'orbit') orbit.update();
     const cam = activeCam();
-    renderer.render(scene, cam);
+    renderer.shadowMap.needsUpdate = true;
+    if (hq) {
+        // relance l'accumulation dès que la caméra bouge
+        cam.updateMatrixWorld();
+        const sig = cam.matrixWorld.elements.join() + cam.projectionMatrix.elements.join();
+        if (sig !== lastCamSig) {
+            lastCamSig = sig;
+            pipeline.reset();
+        }
+        pipeline.render(cam, {
+            ao: mode !== 'plan',
+            bloom: night,
+            jitter: jitterLights,
+            restore: restoreLights,
+            beforeScene: (c) => floorRefl.update(scene, c),
+        });
+    } else renderer.render(scene, cam);
     labelRenderer.render(scene, cam);
 });
 
 // accès debug en développement (positionner la caméra depuis la console)
-if (import.meta.env.DEV) window.__appart = {persp, orbit, fpsCam, setMode, toWorld, items, fits, moveAxis, tex, renderer, scene};
+if (import.meta.env.DEV) window.__appart = {persp, orbit, fpsCam, setMode, toWorld, items, fits, moveAxis, tex, renderer, scene, floorRefl, pipeline};

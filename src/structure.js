@@ -55,6 +55,7 @@ export function texturedPlane(x1, y1, x2, y2, t, hcm = 0) {
     const mesh = new THREE.Mesh(geo, t.material);
     mesh.position.copy(c);
     mesh.receiveShadow = true;
+    mesh.userData.floor = true;
     return mesh;
 }
 

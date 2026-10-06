@@ -190,6 +190,6 @@ export function makeTextures(renderer) {
         wallTile: mk(wallTile, 1.2, 0.3),
     };
     // carrelage du séjour : teinte légèrement assombrie pour ne pas paraître blanc sous le soleil
-    out.tileLight.material.color.setScalar(0.58);
+    out.tileLight.material.color.setScalar(0.78);
     return out;
 }

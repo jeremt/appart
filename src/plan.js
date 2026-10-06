@@ -113,16 +113,16 @@ export const furnitureDefs = [
     {id: 'evier', type: 'sink', name: 'Évier', r: [0, SPLIT_Y + INT, 63, 402], rot: 90},
     {id: 'plan-travail', type: 'counter', name: 'Plan de travail', r: [0, 402, 63, 464], rot: 90},
     {id: 'plaques', type: 'cooker', name: 'Plaques de cuisson', r: [0, 464, 63, 503], rot: 90},
-    {id: 'grille-cuisine', type: 'kitchenGrid', name: 'Grille murale ustensiles', r: [66, SPLIT_Y + INT, 136, SPLIT_Y + INT + 20], rot: 0},
-    {id: 'bar', type: 'plywoodBar', name: 'Bar en contreplaqué', r: [140, SPLIT_Y + INT, 190, SPLIT_Y + INT + 125], rot: 90},
+    {id: 'grille-cuisine', type: 'kitchenGrid', name: 'Grille murale ustensiles', r: [91, SPLIT_Y + INT, 161, SPLIT_Y + INT + 20], rot: 0},
+    {id: 'bar', type: 'plywoodBar', name: 'Bar en contreplaqué', r: [165, SPLIT_Y + INT, 215, SPLIT_Y + INT + 125], rot: 90},
     // Séjour
-    {id: 'canape', type: 'teddy', name: 'Canapé OMHU Teddy', r: [320, SPLIT_Y + INT, 520, SPLIT_Y + INT + 100], rot: 0, url: 'https://omhucph.com/en-fr/products/teddy?variant=41248910508141'},
+    {id: 'canape', type: 'teddy', name: 'Canapé OMHU Teddy', r: [325, SPLIT_Y + INT, 525, SPLIT_Y + INT + 100], rot: 0, url: 'https://omhucph.com/en-fr/products/teddy?variant=41248910508141'},
     // lampadaire arc à droite du canapé, arc orienté vers la table basse
-    {id: 'lampadaire', type: 'arcLamp', name: 'Lampadaire arc', c: [548, 345], size: [36, 36], rot: -45},
+    {id: 'lampadaire', type: 'arcLamp', name: 'Lampadaire arc', c: [555, 345], size: [36, 36], rot: -45},
     {id: 'etageres-canape', type: 'sofaShelves', name: 'Étagères au-dessus du canapé', r: [330, SPLIT_Y + INT, 510, SPLIT_Y + INT + 22], rot: 0},
     {id: 'tapis', type: 'rug', name: 'Tapis laine 200 x 140', r: [320, 395, 520, 535], rot: 0},
     {id: 'table-basse', type: 'matikaTable', name: 'Table basse rehaussable Matika L120', r: [360, 435, 480, 515], rot: 0, url: 'https://www.maisonsdumonde.com/FR/fr/p/table-basse-rehaussable-en-bois-et-acier-noir-l120-matika-M22179481.htm'},
-    {id: 'meuble-tv', type: 'tvUnit65', name: 'Meuble TV + TCL 65" (65P89L)', r: [330, 588, 510, 628], rot: 180},
+    {id: 'meuble-tv', type: 'tvUnit65', name: 'Meuble TV + TCL 65" (65P89L)', r: [350, 588, 530, 628], rot: 180},
     {id: 'colonne-salon', type: 'storageColumn', name: 'Colonne de rangement', r: [295, 593, 330, 628], rot: 180},
     {id: 'monstera', type: 'monstera', name: 'Monstera', r: [550, 559, 600, 609], rot: 0},
     {id: 'onewheel', type: 'onewheelStand', name: 'Onewheel sur support', r: [182, 598, 222, 628], rot: 180},
@@ -131,11 +131,11 @@ export const furnitureDefs = [
     // Chambre
     {id: 'lit', type: 'bed', name: 'Lit 160 x 200', r: [407, 2, 612, 164], rot: -90},
     {id: 'armoire', type: 'wardrobeGrid', name: 'Armoire', r: [BATH_X + INT, 30, 285, 140], rot: 90},
-    {id: 'bureau', type: 'standingDesk', name: 'Bureau assis-debout 160 x 70', r: [355, SPLIT_Y - 70, 515, SPLIT_Y], rot: 180},
+    {id: 'bureau', type: 'standingDesk', name: 'Bureau assis-debout 160 x 70', r: [370, SPLIT_Y - 70, 530, SPLIT_Y], rot: 180},
     // posés sur le bureau (plateau à 74 cm)
-    {id: 'ecran', type: 'monitor27', name: 'Écran 27"', r: [400, SPLIT_Y - 22, 462, SPLIT_Y - 2], rot: 180, elev: 74},
-    {id: 'macbook', type: 'macbookPro', name: 'MacBook Pro 14"', c: [481, 268], size: [31.3, 22.1], rot: -165, elev: 74},
-    {id: 'tabourets', type: 'kyrreStack', name: 'Tabourets IKEA KYRRE ×4 (604.169.25)', c: [540, 280], size: [42, 48], rot: 0, url: 'https://www.ikea.com/fr/fr/p/kyrre-tabouret-bouleau-60416925/'},
+    {id: 'ecran', type: 'monitor27', name: 'Écran 27"', r: [419, SPLIT_Y - 22, 481, SPLIT_Y - 2], rot: 180, elev: 74},
+    {id: 'macbook', type: 'macbookPro', name: 'MacBook Pro 14"', c: [501, 272], size: [31.3, 22.1], rot: -165, elev: 74},
+    {id: 'tabourets', type: 'kyrreStack', name: 'Tabourets IKEA KYRRE ×4 (604.169.25)', c: [330, 279], size: [42, 48], rot: 0, url: 'https://www.ikea.com/fr/fr/p/kyrre-tabouret-bouleau-60416925/'},
     {id: 'chevet', type: 'nightstand', name: 'Chevet', r: [290, 2, 326, 40], rot: 90},
     // Balcon
     {id: 'guirlande', type: 'stringLights', name: 'Guirlande guinguette', r: [771, 132, 777, 612], rot: 90},
