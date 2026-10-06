@@ -2190,7 +2190,274 @@ function kyrreStack(w, d, n = 4) {
     return g;
 }
 
+// ---------- Écran 27" sur bras articulé ----------
+
+// Écran 27" (dalle 61,4 x 36,3 cm) tenu par un bras à ressort fixé par une pince au bord arrière
+// du bureau (côté -z). Origine : dessus du plateau ; la dalle flotte à ~12 cm au-dessus.
+function monitorArm(w, d) {
+    const g = new THREE.Group(),
+        hw = w / 2,
+        hd = d / 2;
+    const arm = std(0x2a2b2e, {roughness: 0.4, metalness: 0.6});
+    const joint = std(0xb9bcc0, {roughness: 0.3, metalness: 0.8, envMap: MAT.chrome.envMap});
+    // pince en C sur le chant arrière du plateau (plateau de 2,5 cm)
+    const px = -hw + 14,
+        pz = -hd - 0.5; // mât derrière l'écran ; la mâchoire arrive pile au bord arrière du plateau
+    B(g, px - 4, px + 4, 0, 1.2, pz - 3, pz + 5, arm);
+    B(g, px - 4, px + 4, -9, 0, pz - 4.5, pz - 3, arm);
+    B(g, px - 4, px + 4, -9, -7.5, pz - 3, pz + 4, arm);
+    Cyl(g, 1, 1, 4, px, -5.5, pz + 1, joint); // vis de serrage
+    // mât vertical
+    Cyl(g, 1.6, 1.6, 42, px, 21, pz + 1, arm);
+    Cyl(g, 2, 2, 3, px, 41, pz + 1, joint); // collier
+    // bras : deux segments articulés qui restent derrière la dalle jusqu'à la tête VESA
+    const yA = 40,
+        yHead = 30,
+        zHead = 2, // pivot de la tête, avancé pour que l'écran tourné ne touche pas le mur
+        swivel = 0.6; // écran orienté en diagonale (~35°)
+    const elbow = [px + 24, yA, pz + 2.5];
+    rod(g, [px, yA, pz + 1], elbow, 1.5, arm);
+    rod(g, [px, yA - 3, pz + 1], [elbow[0], yA - 3, elbow[2]], 0.6, joint); // vérin à gaz
+    Cyl(g, 2.2, 2.2, 5, ...elbow, joint);
+    rod(g, elbow, [0, yHead, zHead], 1.4, arm);
+    Cyl(g, 1.8, 1.8, 4, 0, yHead, zHead, joint);
+    // tête pivotante : plaque VESA + écran, tournés autour de l'axe vertical du pivot
+    const head = new THREE.Group();
+    head.position.set(0, yHead / 100, zHead / 100);
+    head.rotation.y = swivel;
+    g.add(head);
+    B(head, -5, 5, -5, 5, 1.5, 3, arm); // plaque VESA
+    const y0 = -36.3 / 2;
+    B(head, -30.7, 30.7, y0, y0 + 36.3, 3, 4.6, MAT.dark);
+    B(head, -12, 12, y0 + 8, y0 + 28, 2, 3, MAT.dark); // bosse arrière
+    const screen = std(0x16223a, {roughness: 0.15, emissive: 0x2c4778, emissiveIntensity: 0.55});
+    B(head, -30, 30, y0 + 1.6, y0 + 36.3 - 0.6, 4.6, 4.7, screen);
+    return g;
+}
+
+// ---------- Panneaux perforés IKEA SKÅDIS (505.343.78) ----------
+
+// Texture SKÅDIS : panneau noir mat percé de fentes verticales (5 x 15 mm), en quinconce.
+let skadisMaps = null;
+function skadisTex() {
+    if (skadisMaps) return skadisMaps;
+    const W = 760,
+        H = 560; // 1 px = 1 mm
+    const c = document.createElement('canvas'),
+        b = document.createElement('canvas');
+    c.width = b.width = W;
+    c.height = b.height = H;
+    const g = c.getContext('2d'),
+        bg = b.getContext('2d');
+    g.fillStyle = '#38383b';
+    g.fillRect(0, 0, W, H);
+    bg.fillStyle = '#fff';
+    bg.fillRect(0, 0, W, H);
+    const slot = (ctx, x, y, col) => {
+        ctx.fillStyle = col;
+        ctx.beginPath();
+        ctx.roundRect(x - 2.5, y - 7.5, 5, 15, 2.5);
+        ctx.fill();
+    };
+    for (let col = 0; col * 20 + 30 < W - 20; col++)
+        for (let row = 0; row * 40 + 30 < H - 20; row++) {
+            const x = 30 + col * 20,
+                y = 30 + row * 40 + (col % 2 ? 20 : 0);
+            slot(g, x, y, '#0c0c0d');
+            slot(bg, x, y, '#000');
+        }
+    const mk = (cv, srgb) => {
+        const t = new THREE.CanvasTexture(cv);
+        if (srgb) t.colorSpace = THREE.SRGBColorSpace;
+        t.anisotropy = 8;
+        return t;
+    };
+    skadisMaps = {map: mk(c, true), bumpMap: mk(b, false)};
+    return skadisMaps;
+}
+
+// Panneau 76 x 56 cm fixé au mur (dos en -z) avec 2 cm d'entretoises ; renvoie z de la face avant.
+function skadisBoard(g, w, d) {
+    const hd = d / 2,
+        hw = 38,
+        h = 56,
+        t = 1.2;
+    const {map, bumpMap} = skadisTex();
+    const face = new THREE.MeshStandardMaterial({map, bumpMap, bumpScale: 2, roughness: 0.6});
+    const edge = std(0x38383b, {roughness: 0.75});
+    const zf = -hd + 2 + t;
+    // matériaux par face (+x, -x, +y, -y, +z, -z) : la texture uniquement en façade
+    const m = new THREE.Mesh(new THREE.BoxGeometry(0.76, h / 100, t / 100), [edge, edge, edge, edge, face, edge]);
+    m.position.set(0, h / 200, (zf - t / 2) / 100);
+    m.castShadow = m.receiveShadow = true;
+    g.add(m);
+    for (const x of [-hw + 6, hw - 6]) for (const y of [6, h - 6]) Cyl(g, 1.2, 1.2, 2, x, y, -hd + 1, edge, true); // entretoises
+    return zf;
+}
+
+// Tablette SKÅDIS noire accrochée dans les fentes.
+function skadisShelf(g, x1, x2, y, depth, zf) {
+    const blk = std(0x2f2f32, {roughness: 0.5, metalness: 0.2});
+    B(g, x1, x2, y - 0.8, y, zf, zf + depth, blk);
+    B(g, x1, x2, y, y + 2, zf + depth - 0.8, zf + depth, blk); // rebord
+    for (const x of [x1 + 3, x2 - 3]) B(g, x - 0.6, x + 0.6, y - 6, y, zf, zf + 1.5, blk); // crochets
+}
+
+// Pot à stylos SKÅDIS avec stylos et crayons.
+function penCup(g, x, y, zf) {
+    const blk = std(0x2f2f32, {roughness: 0.5});
+    B(g, x - 5, x + 5, y, y + 9, zf, zf + 7, blk);
+    B(g, x - 4.4, x + 4.4, y + 1, y + 9.1, zf + 0.6, zf + 6.4, std(0x0b0b0c, {roughness: 0.8}));
+    const pens = [0x1d4ed8, 0x111111, 0xdc2626, 0xf2c94c, 0xe8e0cf, 0x2f855a];
+    pens.forEach((c, i) => {
+        const p = Cyl(g, 0.45, 0.45, 15, x - 3.2 + (i % 3) * 3.2, y + 8, zf + 2 + Math.floor(i / 3) * 3, std(c, {roughness: 0.4}));
+        p.rotation.z = (i - 2.5) * 0.07;
+        p.rotation.x = (i % 2 ? 1 : -1) * 0.08;
+    });
+}
+
+// Sony α6500 : boîtier 12 x 6,7 x 5,3 cm avec poignée à droite et zoom 18-135 (objectif vers +z).
+function sonyA6500(g, x, y, z) {
+    const body = std(0x1a1a1b, {roughness: 0.55}),
+        glass = std(0x0a0d14, {roughness: 0.05, metalness: 0.4});
+    RB(g, x - 6, x + 6, y, y + 6.7, z - 2.65, z + 2.65, 0.6, body);
+    RB(g, x + 2.8, x + 6, y, y + 6.5, z + 2.2, z + 4.2, 0.9, body); // poignée
+    B(g, x - 6, x - 2, y + 6.7, y + 7.4, z - 2.4, z + 1.8, body); // viseur
+    Cyl(g, 1.1, 1.1, 0.9, x + 3.5, y + 7.15, z - 0.5, std(0x2a2a2c, {roughness: 0.4})); // molette
+    Cyl(g, 0.5, 0.5, 0.3, x + 4.8, y + 6.85, z + 1.8, std(0x9a9ea3, {metalness: 0.8, roughness: 0.3})); // déclencheur
+    const lens = Cyl(g, 3.3, 3.3, 8.8, x - 1.2, y + 3.3, z + 2.65 + 4.4, body, true);
+    lens.castShadow = true;
+    Cyl(g, 3.35, 3.35, 0.4, x - 1.2, y + 3.3, z + 2.65 + 3, std(0xb8bcc0, {metalness: 0.8, roughness: 0.3}), true); // bague
+    Cyl(g, 2.6, 2.6, 0.2, x - 1.2, y + 3.3, z + 2.65 + 8.85, glass, true); // lentille frontale
+}
+
+// DJI Mavic Air déplié (16,8 x 18,4 x 6,4 cm), caméra vers +z.
+function mavicAir(g, x, y, z) {
+    const grey = std(0x6c7076, {roughness: 0.45}),
+        dark = std(0x2a2c30, {roughness: 0.5}),
+        prop = std(0x9fa3a8, {roughness: 0.5});
+    RB(g, x - 3.6, x + 3.6, y + 1.5, y + 5.2, z - 8.4, z + 8.4, 1.2, grey); // fuselage
+    B(g, x - 2.6, x + 2.6, y + 5.2, y + 5.6, z - 5, z + 3, dark); // capot batterie
+    for (const sx of [-1, 1])
+        for (const sz of [-1, 1]) {
+            const ax = x + sx * 8.6,
+                az = z + sz * 6.8,
+                ay = y + (sz > 0 ? 4.2 : 3.2);
+            rod(g, [x + sx * 3.2, y + 3.8, z + sz * 4], [ax, ay, az], 0.6, grey); // bras
+            Cyl(g, 1.3, 1.3, 2.2, ax, ay + 1, az, dark); // moteur
+            const p = B(g, -6.5, 6.5, 0, 0.25, -0.8, 0.8, prop); // hélice bipale
+            p.position.set(ax / 100, (ay + 2.2) / 100, az / 100);
+            p.rotation.y = sx * sz * 0.6;
+            Cyl(g, 0.4, 0.4, 3, ax, ay - 1, az, dark); // patin
+        }
+    Cyl(g, 1.2, 1.2, 1.6, x, y + 2.4, z + 8.9, dark, true); // nacelle
+    Cyl(g, 0.7, 0.7, 0.2, x, y + 2.4, z + 9.8, std(0x0a0d14, {roughness: 0.05, metalness: 0.4}), true);
+}
+
+// Crochet SKÅDIS simple (tige qui sort du panneau puis remonte).
+function skadisHook(g, x, y, zf, len = 5) {
+    const blk = std(0x2f2f32, {roughness: 0.5, metalness: 0.2});
+    rod(g, [x, y, zf], [x, y, zf + len], 0.35, blk);
+    rod(g, [x, y, zf + len], [x, y + 2, zf + len + 0.8], 0.35, blk);
+}
+
+// Spot LED à pince sur le haut du panneau, orienté vers le bas ; s'allume en mode nuit.
+function boardLamp(g, x, top, zf) {
+    const blk = std(0x1c1c1e, {roughness: 0.4, metalness: 0.4});
+    B(g, x - 2, x + 2, top - 3, top + 1, zf - 2, zf + 1.5, blk); // pince
+    rod(g, [x, top + 1, zf], [x, top + 9, zf + 6], 0.5, blk); // bras
+    const headPos = [x, top + 9, zf + 9];
+    rod(g, [x, top + 9, zf + 6], headPos, 0.5, blk);
+    const shade = Cyl(g, 3.2, 2.2, 7, ...headPos, blk);
+    shade.rotation.x = -0.9; // tête inclinée vers le panneau
+    const glow = std(0xffffff, {emissive: 0xffe6c4, emissiveIntensity: 0.05});
+    glow.userData.night = 3;
+    const lens = Cyl(g, 2.9, 2.9, 0.3, 0, -3.5, 0, glow);
+    g.remove(lens);
+    shade.add(lens);
+    lens.position.set(0, -0.036, 0);
+    const spot = new THREE.SpotLight(0xffe6c4, 4, 2.5, Math.PI / 3, 0.8, 1.6);
+    spot.position.set(headPos[0] / 100, (headPos[1] - 2) / 100, (headPos[2] - 1) / 100);
+    spot.target.position.set(x / 100 - 0.25, 0, zf / 100 + 0.12);
+    spot.userData.nightOnly = true;
+    spot.visible = false;
+    g.add(spot, spot.target);
+}
+
+// Sac à dos suspendu par sa poignée (dos contre le panneau, face avant vers +z).
+function backpack(g, x, y, zf, color = 0x3f4a3d) {
+    const fabric = std(color, {roughness: 0.95}),
+        trim = std(0x1d1f1c, {roughness: 0.8}),
+        zip = std(0xb8bcc0, {metalness: 0.8, roughness: 0.3});
+    skadisHook(g, x, y, zf, 4);
+    const top = y - 3,
+        h = 44,
+        z0 = zf + 1;
+    rod(g, [x - 3, top + 3.5, zf + 4.5], [x + 3, top + 3.5, zf + 4.5], 0.5, trim); // poignée
+    RB(g, x - 15, x + 15, top - h, top, z0, z0 + 13, 5, fabric); // corps
+    RB(g, x - 11, x + 11, top - h + 3, top - 20, z0 + 12, z0 + 17, 3, fabric); // poche avant
+    B(g, x - 10, x + 10, top - 20.4, top - 19.8, z0 + 15.6, z0 + 16.4, zip); // fermeture éclair
+    B(g, x - 13, x + 13, top - 1.5, top - 0.8, z0 + 6, z0 + 13.2, zip);
+    for (const sx of [-1, 1]) {
+        B(g, x + sx * 15 - 0.6, x + sx * 15 + 0.6, top - h + 6, top - 10, z0 + 3, z0 + 10, trim); // sangles latérales
+    }
+}
+
+// Casquette accrochée par l'arrière, visière vers le bas (calotte face à la pièce).
+function cap(g, x, y, zf, color = 0xc8b48a) {
+    const cloth = std(color, {roughness: 0.9});
+    skadisHook(g, x, y, zf, 3);
+    const crown = new THREE.Mesh(new THREE.SphereGeometry(0.095, 28, 14, 0, Math.PI * 2, 0, Math.PI / 2), cloth);
+    crown.material.side = THREE.DoubleSide;
+    crown.rotation.x = Math.PI / 2; // dôme vers +z
+    crown.scale.set(1, 0.62, 1.05);
+    crown.position.set(x / 100, (y - 10) / 100, (zf + 1.5) / 100);
+    crown.castShadow = true;
+    g.add(crown);
+    // visière : demi-disque aplati qui pend sous la calotte
+    const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.006, 28, 1, false, Math.PI / 2, Math.PI), cloth);
+    brim.scale.set(1, 1, 0.8);
+    brim.rotation.x = Math.PI / 2 - 0.25;
+    brim.position.set(x / 100, (y - 19.5) / 100, (zf + 3) / 100);
+    brim.castShadow = true;
+    g.add(brim);
+    Cyl(g, 1.1, 1.1, 0.8, x, y - 0.5, zf + 6.5, cloth, true); // bouton sommital
+}
+
+// Panneau gauche : tablette avec le Sony α6500 et un objectif, pot à stylos dessous.
+function skadisCamera(w, d) {
+    const g = new THREE.Group();
+    const zf = skadisBoard(g, w, d);
+    skadisShelf(g, -30, 6, 26, 12, zf);
+    sonyA6500(g, -13, 26, zf + 4);
+    const lens2 = Cyl(g, 3.2, 3.2, 7, 1, 26 + 3.5, zf + 6, std(0x1a1a1b, {roughness: 0.55})); // objectif debout
+    lens2.castShadow = true;
+    penCup(g, 22, 8, zf);
+    cap(g, -22, 18, zf);
+    boardLamp(g, -32, 56, zf); // spot à pince en haut, côté jonction des deux panneaux
+    return g;
+}
+
+// Panneau droit : tablette profonde avec le drone DJI Mavic Air.
+function skadisDrone(w, d) {
+    const g = new THREE.Group();
+    const zf = skadisBoard(g, w, d);
+    // drone fixé à la verticale sur deux crochets, dessus face à la pièce, caméra vers le bas
+    const drone = new THREE.Group();
+    mavicAir(drone, 0, 0, 0);
+    drone.rotation.x = Math.PI / 2;
+    drone.position.set(0.08, 0.34, (zf + 1.5) / 100);
+    g.add(drone);
+    for (const x of [5, 11]) skadisHook(g, x, 24.5, zf, 4);
+    // sac à dos suspendu sur le bord extérieur
+    backpack(g, -22, 50, zf);
+    return g;
+}
+
 export const BUILDERS = {
+    skadisCamera,
+    skadisDrone,
+    monitorArm,
     kyrreStack,
     matikaTable,
     storageColumn,

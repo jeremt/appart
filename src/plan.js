@@ -131,9 +131,12 @@ export const furnitureDefs = [
     // Chambre
     {id: 'lit', type: 'bed', name: 'Lit 160 x 200', r: [407, 2, 612, 164], rot: -90},
     {id: 'armoire', type: 'wardrobeGrid', name: 'Armoire', r: [BATH_X + INT, 30, 285, 140], rot: 90},
-    {id: 'bureau', type: 'standingDesk', name: 'Bureau assis-debout 160 x 70', r: [370, SPLIT_Y - 70, 530, SPLIT_Y], rot: 180},
+    {id: 'bureau', type: 'standingDesk', name: 'Bureau assis-debout 160 x 60', r: [370, SPLIT_Y - 60, 530, SPLIT_Y], rot: 180},
+    // panneaux perforés au-dessus du bureau (bas à 128 cm)
+    {id: 'skadis-1', type: 'skadisCamera', name: 'Panneau perforé IKEA SKÅDIS 76x56 (505.343.78) + Sony α6500', r: [374, SPLIT_Y - 20, 450, SPLIT_Y], rot: 180, elev: 128, url: 'https://www.ikea.com/fr/fr/p/skadis-panneau-perfore-noir-50534378/'},
+    {id: 'skadis-2', type: 'skadisDrone', name: 'Panneau perforé IKEA SKÅDIS 76x56 (505.343.78) + DJI Mavic Air', r: [454, SPLIT_Y - 20, 530, SPLIT_Y], rot: 180, elev: 128, url: 'https://www.ikea.com/fr/fr/p/skadis-panneau-perfore-noir-50534378/'},
     // posés sur le bureau (plateau à 74 cm)
-    {id: 'ecran', type: 'monitor27', name: 'Écran 27"', r: [419, SPLIT_Y - 22, 481, SPLIT_Y - 2], rot: 180, elev: 74},
+    {id: 'ecran', type: 'monitorArm', name: 'Écran 27" sur bras', r: [419, SPLIT_Y - 25, 481, SPLIT_Y - 5], rot: 180, elev: 74},
     {id: 'macbook', type: 'macbookPro', name: 'MacBook Pro 14"', c: [501, 272], size: [31.3, 22.1], rot: -165, elev: 74},
     {id: 'tabourets', type: 'kyrreStack', name: 'Tabourets IKEA KYRRE ×4 (604.169.25)', c: [330, 279], size: [42, 48], rot: 0, url: 'https://www.ikea.com/fr/fr/p/kyrre-tabouret-bouleau-60416925/'},
     {id: 'chevet', type: 'nightstand', name: 'Chevet', r: [290, 2, 326, 40], rot: 90},
