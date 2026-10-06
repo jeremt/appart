@@ -111,10 +111,12 @@ export const furnitureDefs = [
     {id: 'colonne-sdb', type: 'bathColumn', name: 'Colonne de rangement', r: [180, 256, 215, 296], rot: -90},
     // Cuisine
     {id: 'evier', type: 'sink', name: 'Évier', r: [0, SPLIT_Y + INT, 63, 402], rot: 90},
-    {id: 'plan-travail', type: 'counter', name: 'Plan de travail', r: [0, 402, 63, 464], rot: 90},
-    {id: 'plaques', type: 'cooker', name: 'Plaques de cuisson', r: [0, 464, 63, 503], rot: 90},
-    {id: 'grille-cuisine', type: 'kitchenGrid', name: 'Grille murale ustensiles', r: [91, SPLIT_Y + INT, 161, SPLIT_Y + INT + 20], rot: 0},
-    {id: 'bar', type: 'plywoodBar', name: 'Bar en contreplaqué', r: [165, SPLIT_Y + INT, 215, SPLIT_Y + INT + 125], rot: 90},
+    {id: 'plan-travail', type: 'counter', name: 'Plan de travail + micro-ondes encastré', r: [0, 402, 63, 464], rot: 90},
+    {id: 'plaques', type: 'cooker', name: 'Plaques 2 feux + frigo top 85 x 55 x 58', r: [0, 464, 63, 523], rot: 90},
+    {id: 'grille-cuisine', type: 'kitchenGrid', name: 'Grille murale ustensiles, poêle + wok de Buyer Carbone Plus 35 cm (5114.35)', r: [80, SPLIT_Y + INT, 150, SPLIT_Y + INT + 20], rot: 0},
+    {id: 'bar', type: 'plywoodBar', name: 'Bar en contreplaqué + congélateur top Thomson THTTFZ5WH + casseroles', r: [151, SPLIT_Y + INT, 215, SPLIT_Y + INT + 145], rot: 90, url: 'https://www.darty.com/nav/achat/gros_electromenager/congelateur-armoire/congelateur_sous_plan/thomson_thttfz5wh.html'},
+    // au mur au-dessus du plan de travail
+    {id: 'barre-couteaux', type: 'knifeBar', name: 'Barre aimantée à couteaux', r: [0, 413, 4, 453], rot: 90, elev: 100},
     // Séjour
     {id: 'canape', type: 'teddy', name: 'Canapé OMHU Teddy', r: [325, SPLIT_Y + INT, 525, SPLIT_Y + INT + 100], rot: 0, url: 'https://omhucph.com/en-fr/products/teddy?variant=41248910508141'},
     // lampadaire arc à droite du canapé, arc orienté vers la table basse
@@ -126,8 +128,15 @@ export const furnitureDefs = [
     {id: 'colonne-salon', type: 'storageColumn', name: 'Colonne de rangement', r: [295, 593, 330, 628], rot: 180},
     {id: 'monstera', type: 'monstera', name: 'Monstera', r: [550, 559, 600, 609], rot: 0},
     {id: 'onewheel', type: 'onewheelStand', name: 'Onewheel sur support', r: [182, 598, 222, 628], rot: 180},
+    // étagères au-dessus du Onewheel (dessus à 100 et 150 cm), entre l'étagère en grès et la gaine
+    {id: 'etageres-electromenager', type: 'applianceShelves', name: 'Étagères électroménager', r: [181, 578, 227, 628], rot: 180},
+    {id: 'airfryer', type: 'ninjaDoubleStack', name: 'Friteuse sans huile Ninja Double Stack XL (SL400EU)', c: [204, 604.5], size: [28, 47], rot: 180, elev: 100, url: 'https://www.darty.com/nav/achat/petit_electromenager/cuisson_quotidienne/friteuse/ninja_sl400eu.html'},
+    {id: 'rice-cooker', type: 'riceCooker', name: 'Rice cooker', c: [204, 610], size: [26, 34], rot: 180, elev: 150},
     {id: 'etagere-gres', type: 'stonewareShelf', name: 'Étagère vaisselle en grès', r: [90, 606, 180, 628], rot: 180},
     {id: 'meuble-chaussures', type: 'shoeRack', name: 'Meuble à chaussures', r: [95, 598, 175, 628], rot: 180},
+    // derrière la porte d'entrée, à droite du meuble à chaussures
+    {id: 'porte-manteau', type: 'coatRack', name: 'Porte-manteau mural', r: [15, 613, 85, 628], rot: 180},
+    {id: 'sac-chaussons', type: 'slipperBag', name: 'Sac à chaussons', r: [62, 610, 92, 628], rot: 180},
     // Chambre
     {id: 'lit', type: 'bed', name: 'Lit 160 x 200', r: [407, 2, 612, 164], rot: -90},
     {id: 'armoire', type: 'wardrobeGrid', name: 'Armoire', r: [BATH_X + INT, 30, 285, 140], rot: 90},

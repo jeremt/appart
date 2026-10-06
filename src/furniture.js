@@ -22,7 +22,7 @@ export const MAT = {
     fabric: std(0x5b6874, {roughness: 0.95}),
     cushion: std(0x7b8997, {roughness: 0.95}),
     ceramic: std(0xffffff, {roughness: 0.12}),
-    counter: std(0xdcd6cb, {roughness: 0.35}),
+    counter: std(0x8a8c8f, {roughness: 0.4}),
     leaf: std(0x3f7a3c, {roughness: 0.8, flatShading: true}),
     leaf2: std(0x5a9a4a, {roughness: 0.8, flatShading: true}),
     pot: std(0xb8643c),
@@ -219,17 +219,30 @@ function stripLight(g, w, h, pos, target, intensity) {
     return l;
 }
 
-function wallCabinets(g, w, d) {
+function wallCabinets(g, w, d, microwave = false) {
     const hw = w / 2,
-        hd = d / 2;
-    B(g, -hw, hw, 150, 215, -hd, -hd + 33, MAT.white);
-    const n = Math.max(1, Math.round(w / 50)),
-        dw = w / n;
-    for (let i = 0; i < n; i++) {
-        const a = -hw + i * dw + 0.3,
-            b = a + dw - 0.6;
-        B(g, a, b, 151, 214, -hd + 33, -hd + 35, MAT.front);
-        B(g, a + 6, b - 6, 153, 154.5, -hd + 35, -hd + 37, MAT.metal);
+        hd = d / 2,
+        zf = -hd + 33;
+    B(g, -hw, hw, 150, 215, -hd, zf, MAT.white);
+    if (microwave) {
+        // micro-ondes encastré en partie basse (niche 60 x 38), abattant au-dessus
+        const mw = Math.min(56, w - 4);
+        B(g, -mw / 2, mw / 2, 151, 189, zf, zf + 1, MAT.steel);
+        B(g, -mw / 2 + 1.5, mw / 2 - 13, 153, 187, zf + 1, zf + 1.6, MAT.screen); // porte vitrée
+        B(g, mw / 2 - 12, mw / 2 - 1.5, 153, 187, zf + 1, zf + 1.6, MAT.black); // bandeau de commande
+        B(g, mw / 2 - 9, mw / 2 - 4.5, 181, 183, zf + 1.6, zf + 1.8, MAT.steel); // afficheur
+        Cyl(g, 1.6, 1.6, 1, mw / 2 - 6.75, 172, zf + 2, MAT.steel, true);
+        B(g, -hw + 0.3, hw - 0.3, 190, 214, zf, zf + 2, MAT.front);
+        B(g, -hw + 6, hw - 6, 191.5, 193, zf + 2, zf + 4, MAT.metal);
+    } else {
+        const n = Math.max(1, Math.round(w / 50)),
+            dw = w / n;
+        for (let i = 0; i < n; i++) {
+            const a = -hw + i * dw + 0.3,
+                b = a + dw - 0.6;
+            B(g, a, b, 151, 214, zf, zf + 2, MAT.front);
+            B(g, a + 6, b - 6, 153, 154.5, zf + 2, zf + 4, MAT.metal);
+        }
     }
     // ruban LED sous les meubles hauts, côté façade, qui éclaire le plan de travail
     ledStrip(g, -hw + 1, hw - 1, 149.4, 150, -hd + 27, -hd + 30);
@@ -239,7 +252,7 @@ function wallCabinets(g, w, d) {
 function counter(w, d) {
     const g = new THREE.Group();
     kitchenBase(g, w, d);
-    wallCabinets(g, w, d);
+    wallCabinets(g, w, d, true);
     return g;
 }
 
@@ -256,23 +269,39 @@ function sink(w, d) {
     return g;
 }
 
+// Congélateur top Thomson THTTFZ5WH (L 55 x P 58 x H 85 cm, porte ouvrant à droite) :
+// origine au centre de l'emprise, au sol, face avant vers +z.
+function topFreezer() {
+    const g = new THREE.Group(),
+        fw = 55,
+        hz = 29;
+    B(g, -fw / 2, fw / 2, 1.5, 85, -hz, hz - 2, MAT.gloss);
+    B(g, -fw / 2, fw / 2, 0, 1.5, -hz + 2, hz - 6, MAT.dark); // pieds
+    B(g, -fw / 2 + 0.3, fw / 2 - 0.3, 9, 84.5, hz - 2, hz, MAT.gloss);
+    B(g, -fw / 2 + 3, -fw / 2 + 5, 55, 78, hz, hz + 2.5, MAT.plastic); // poignée verticale
+    B(g, -fw / 2 + 2, fw / 2 - 2, 2, 8, hz - 2, hz - 1.6, MAT.groove); // grille de ventilation
+    return g;
+}
+
+// Domino 2 feux à induction encastré dans le plan gris, au-dessus d'un frigo top blanc
+// (même gabarit 85 x 55 x 58 que le congélateur du bar) glissé sous le plan.
 function cooker(w, d) {
     const g = new THREE.Group(),
         hw = w / 2,
         hd = d / 2;
-    B(g, -hw, hw, 0, 88, -hd, hd - 1, MAT.steel);
-    B(g, -hw, hw, 88, 90, -hd, hd, MAT.black);
-    for (const sx of [-1, 1])
-        for (const sz of [-1, 1]) {
-            Cyl(g, 8, 8, 0.4, (sx * w) / 4, 90.2, (sz * d) / 4.5, MAT.steel);
-            Cyl(g, 6, 6, 0.6, (sx * w) / 4, 90.3, (sz * d) / 4.5, MAT.dark);
-        }
-    B(g, -hw + 3, hw - 3, 12, 68, hd - 1, hd + 0.3, MAT.black);
-    B(g, -hw + 7, hw - 7, 71, 73, hd + 0.3, hd + 3.5, MAT.metal);
-    for (let i = 0; i < 4; i++) Cyl(g, 1.8, 1.8, 2, -hw + 10 + i * ((w - 20) / 3), 80, hd + 0.5, MAT.dark, true);
-    // hotte
-    B(g, -hw, hw, 165, 178, -hd, -hd + 50, MAT.steel);
-    B(g, -12, 12, 178, 250, -hd, -hd + 25, MAT.steel);
+    // joues latérales qui portent le plan de travail
+    for (const s of [-1, 1]) B(g, s * hw - (s > 0 ? 2 : 0), s * hw + (s < 0 ? 2 : 0), 0, 87, -hd, hd - 2, MAT.white);
+    B(g, -hw, hw, 85, 87, -hd, -hd + 3, MAT.white); // traverse arrière
+    const fr = topFreezer();
+    fr.position.z = (-hd + 3 + 29) / 100;
+    g.add(fr);
+    // plaque vitrocéramique noire affleurante, 2 foyers l'un derrière l'autre
+    const pw = 29;
+    B(g, -hw, hw, 87, 90, -hd, hd + 1, MAT.counter);
+    B(g, -pw / 2, pw / 2, 90, 90.4, -hd + 6, hd - 4, MAT.black);
+    for (const [z, r] of [[-hd + 6 + 13, 9], [hd - 4 - 15, 7.5]]) Cyl(g, r, r, 0.1, 0, 90.45, z, MAT.groove);
+    B(g, -pw / 2 + 4, pw / 2 - 4, 90.4, 90.5, hd - 6, hd - 5.4, MAT.groove); // commandes tactiles
+    wallCabinets(g, w, d);
     return g;
 }
 
@@ -910,7 +939,7 @@ function prism(g, shape, y0, y1, mat) {
 }
 
 // Meuble bar : adossé au mur par son extrémité +x, arrondi à l'autre bout, habillé de contreplaqué bouleau,
-// étagères ouvertes côté cuisine (-z) et plan de travail inox débordant.
+// étagères ouvertes côté cuisine (-z), congélateur top encastré côté mur et plan de travail inox débordant.
 function plywoodBar(w, d) {
     const g = new THREE.Group(),
         h = 105,
@@ -935,9 +964,19 @@ function plywoodBar(w, d) {
         zBack = -bd / 2,
         zIn = -bd / 2 + cav.depth;
     B(g, xa, xb, 6, h - top, zIn - 1, zIn, veneer);
+    // congélateur top encastré côté mur, façade affleurant le caisson ; joue + tablette au-dessus
+    const xf = xb - 55;
+    const fr = topFreezer();
+    fr.rotation.y = Math.PI;
+    fr.position.set(m(xb - 27.5), 0, m(zBack + 29));
+    g.add(fr);
+    B(g, xf - 1.8, xf, 6, h - top, zBack, zIn, veneer);
+    B(g, xf - 1.8, xf, 6, h - top, zBack, zBack + 0.2, edge);
+    B(g, xf, xb, 86, 87.8, zBack + 0.2, zIn - 1, veneer);
+    B(g, xf, xb, 86, 87.8, zBack, zBack + 0.2, edge);
     for (const y of [6, 37, 68]) {
-        B(g, xa, xb, y, y + 1.8, zBack + 0.2, zIn - 1, veneer);
-        B(g, xa, xb, y, y + 1.8, zBack, zBack + 0.2, edge);
+        B(g, xa, xf - 1.8, y, y + 1.8, zBack + 0.2, zIn - 1, veneer);
+        B(g, xa, xf - 1.8, y, y + 1.8, zBack, zBack + 0.2, edge);
     }
     // chant à plis sous le plan inox, tout autour du caisson
     // (UV de l'extrusion en mètres : on étire le motif pour que les 9 plis tiennent sur 1,8 cm)
@@ -947,6 +986,21 @@ function plywoodBar(w, d) {
     band.map.repeat.set(20, 1 / 0.018);
     band.map.needsUpdate = true;
     prism(g, barShape(m(bw + 0.2), m(bd + 0.2), m(R + 0.1)), h - top - 1.8, h - top, band).position.x = m(bx);
+    // bout du bar (-x) : barre laiton sur équerres, casserole et faitout suspendus par le manche,
+    // ouverture tournée vers le bar
+    const {brass} = cookwareMat(),
+        xe = bx - bw / 2,
+        xr = xe - 4.2,
+        yr = 96;
+    B(g, xr - 0.3, xr + 0.3, yr, yr + 0.8, -15, 15, brass);
+    for (const z of [-15, 15]) B(g, xr - 0.3, xe, yr, yr + 0.8, z - 0.4, z + 0.4, brass);
+    for (const [z, r, depth] of [[-8, 9, 12], [8.5, 8, 10]]) {
+        B(g, xr - 0.2, xr + 0.2, yr - 3, yr + 1.5, z - 0.2, z + 0.2, brass); // crochet en S
+        const pot = hangingPot(r, depth);
+        pot.rotation.y = Math.PI / 2; // ouverture vers +x (le bar), fond vers la pièce
+        pot.position.set(m(xr), m(yr - 3), m(z));
+        g.add(pot);
+    }
     return g;
 }
 
@@ -1324,6 +1378,268 @@ function rug(w, d) {
     return g;
 }
 
+// ---------- Barre aimantée à couteaux ----------
+
+// Barre en bois de 40 cm fixée au mur (dos -z), couteaux japonais lame vers le haut et manche
+// vers le bas, relevés sur photo (IMG_6514) : couperet chinois, gyuto, petty, yanagiba, bunka damassé.
+// Origine au sol de l'objet, barre centrée à 25 cm : poser avec `elev`.
+function knifeBar(w, d) {
+    const g = new THREE.Group(),
+        hd = d / 2,
+        yc = 25,
+        zb = -hd + 2; // façade de la barre, où se plaquent les lames
+    const steel = std(0xc9ccd0, {metalness: 0.9, roughness: 0.22, envMap: MAT.chrome.envMap});
+    const damascus = std(0x9da2a8, {metalness: 0.85, roughness: 0.4, envMap: MAT.chrome.envMap});
+    const horn = std(0x121212, {roughness: 0.3});
+    B(g, -w / 2, w / 2, yc - 2.6, yc + 2.6, -hd, zb, std(0x9c5a35, {roughness: 0.6}));
+
+    // lame : contour (cm, relatif au centre de la barre) extrudé sur 0,2 cm contre la barre
+    const blade = (pts, mat) => {
+        const sh = new THREE.Shape();
+        sh.moveTo(...pts[0]);
+        for (const p of pts.slice(1)) p.length === 4 ? sh.quadraticCurveTo(...p) : sh.lineTo(...p);
+        const geo = new THREE.ExtrudeGeometry(sh, {depth: 0.2, bevelEnabled: false, curveSegments: 8});
+        geo.scale(0.01, 0.01, 0.01);
+        const m = new THREE.Mesh(geo, mat);
+        m.position.set(0, yc / 100, zb / 100);
+        m.castShadow = true;
+        g.add(m);
+    };
+    // manche cylindrique ou octogonal (wa-handle), de y0 à y1 sous la barre
+    const handle = (x, y0, y1, r, mat, seg = 24) => {
+        const m = new THREE.Mesh(new THREE.CylinderGeometry(r / 100, r / 100, (y1 - y0) / 100, seg), mat);
+        m.position.set(x / 100, (yc + (y0 + y1) / 2) / 100, (zb + r) / 100);
+        m.rotation.y = Math.PI / seg;
+        m.castShadow = true;
+        g.add(m);
+    };
+
+    // couperet chinois
+    blade([[-15.6, -7.6], [-6.3, -7.6], [-6.3, 13], [-15.6, 13]], steel);
+    handle(-7.9, -9.3, -7.6, 1.2, MAT.chrome);
+    handle(-7.9, -17.9, -9.3, 1.3, std(0x6b5030, {roughness: 0.6}));
+    // gyuto, manche occidental en palissandre
+    blade([[-4.1, -11.7], [-0.6, -11.7], [-0.9, 6, -2.9, 12.4], [-4, 5, -4.1, -11.7]], steel);
+    RB(g, -3.6, -1.2, yc - 22.3, yc - 11.7, zb, zb + 1.6, 0.6, std(0x5a2e1e, {roughness: 0.5}));
+    // petty, manche noir
+    blade([[1.8, -6.6], [5.5, -6.6], [4.8, 2, 0.9, 6.3], [1.6, 1, 1.8, -6.6]], steel);
+    RB(g, 2.5, 5.4, yc - 16.6, yc - 6.6, zb, zb + 1.8, 0.8, horn);
+    // yanagiba, manche en magnolia à virole noire
+    blade([[6.8, -7.1], [9.6, -7.1], [9.6, 8], [8.8, 13.9], [6.8, 6, 6.8, -7.1]], steel);
+    handle(8.1, -8.7, -7.1, 1, horn, 8);
+    handle(8.1, -17.4, -8.7, 1.05, std(0xd8c08a, {roughness: 0.7}), 8);
+    // bunka damassé, pointe kiritsuke, manche en bois sombre
+    blade([[11.4, -5.8], [16, -5.8], [16, 5], [14.3, 12.4], [11.4, 8], [11.4, -5.8]], damascus);
+    handle(12.7, -7.9, -5.8, 1.15, horn, 8);
+    handle(12.7, -8.1, -7.9, 1.2, MAT.linen, 8);
+    handle(12.7, -16.6, -8.1, 1.25, std(0x3a2418, {roughness: 0.5}), 8);
+    return g;
+}
+
+// ---------- Porte-manteau mural ----------
+
+// Planche en chêne à 5 patères noires (dos -z), deux manteaux, une écharpe et une casquette accrochés.
+function coatRack(w, d) {
+    const g = new THREE.Group(),
+        hw = w / 2,
+        hd = d / 2,
+        yb = 165, // bas de la planche
+        n = 5,
+        hx = (i) => -hw + 7 + (i * (w - 14)) / (n - 1);
+    B(g, -hw, hw, yb, yb + 10, -hd, -hd + 2, MAT.oak);
+    for (let i = 0; i < n; i++) {
+        const x = hx(i);
+        B(g, x - 0.6, x + 0.6, yb + 3, yb + 4.2, -hd + 2, -hd + 7, MAT.matteBlack);
+        B(g, x - 0.6, x + 0.6, yb + 4.2, yb + 6.5, -hd + 5.8, -hd + 7, MAT.matteBlack);
+    }
+    // manteau suspendu par sa bride : trapèze épaules arrondies, extrudé avec un biseau doux
+    const coat = (x, len, color, z0) => {
+        const sh = new THREE.Shape(),
+            top = 17,
+            bot = 24;
+        sh.moveTo(-bot, -len);
+        sh.lineTo(bot, -len);
+        sh.lineTo(top, -8);
+        sh.quadraticCurveTo(top - 2, 0, 4, 0);
+        sh.lineTo(-4, 0);
+        sh.quadraticCurveTo(-top + 2, 0, -top, -8);
+        sh.lineTo(-bot, -len);
+        const geo = new THREE.ExtrudeGeometry(sh, {depth: 6, bevelEnabled: true, bevelThickness: 2, bevelSize: 1.5, bevelSegments: 3, curveSegments: 8});
+        geo.scale(0.01, 0.01, 0.01);
+        const m = new THREE.Mesh(geo, std(color, {roughness: 0.95}));
+        m.position.set(x / 100, (yb + 2.5) / 100, (z0 + 2) / 100);
+        m.castShadow = m.receiveShadow = true;
+        g.add(m);
+        B(g, x - 5, x + 5, yb - 1.5, yb + 3.5, z0 + 1.5, z0 + 11, std(color, {roughness: 0.95})); // col
+    };
+    coat(hx(0) + 10, 92, 0x23283a, -hd + 2);
+    coat(hx(2), 80, 0xa8865e, -hd + 6);
+    // écharpe pliée en deux sur la 4e patère
+    const scarf = std(0x8c3b33, {roughness: 1});
+    for (const dx of [-2.5, 2.5]) RB(g, hx(3) + dx - 2.5, hx(3) + dx + 2.5, yb - 40, yb + 4.5, -hd + 6.5, -hd + 8.5, 0.8, scarf);
+    // casquette sur la dernière patère
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.09, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2), std(0x2e2f31, {roughness: 0.9}));
+    cap.rotation.x = Math.PI / 2;
+    cap.scale.z = 0.7;
+    cap.position.set(hx(4) / 100, (yb + 2) / 100, (-hd + 3) / 100);
+    cap.castShadow = true;
+    g.add(cap);
+    B(g, hx(4) - 6, hx(4) + 6, yb - 8.5, yb - 7.5, -hd + 3, -hd + 10, std(0x2e2f31, {roughness: 0.9})); // visière
+    return g;
+}
+
+// ---------- Sac à chaussons ----------
+
+// Panier souple en feutre gris, ouvert, deux anses, une paire de chaussons qui dépasse.
+function slipperBag(w, d) {
+    const g = new THREE.Group(),
+        hw = w / 2,
+        hd = d / 2,
+        h = 26,
+        t = 0.6;
+    const felt = std(0x8b8781, {roughness: 1});
+    B(g, -hw, hw, 0, 1, -hd, hd, felt);
+    B(g, -hw, hw, 0, h, -hd, -hd + t, felt);
+    B(g, -hw, hw, 0, h, hd - t, hd, felt);
+    B(g, -hw, -hw + t, 0, h, -hd + t, hd - t, felt);
+    B(g, hw - t, hw, 0, h, -hd + t, hd - t, felt);
+    B(g, -hw - 0.2, hw + 0.2, h - 2.5, h, hd - t - 0.1, hd + 0.2, std(0x6f6b66, {roughness: 1})); // ourlet
+    for (const z of [-hd + t / 2, hd - t / 2]) {
+        const a = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.008, 6, 20, Math.PI), felt);
+        a.position.set(0, h / 100, z / 100);
+        a.castShadow = true;
+        g.add(a);
+    }
+    // chaussons rangés debout, talon en l'air
+    const slipper = std(0xd9cdb8, {roughness: 1});
+    for (const x of [-hw / 2.4, hw / 2.4]) {
+        RB(g, x - 4.5, x + 4.5, 8, h + 6, -2.5, 2.5, 2.2, slipper);
+        RB(g, x - 4, x + 4, h + 1, h + 6.5, -3, 3, 2, std(0x6e4b3a, {roughness: 1}));
+    }
+    return g;
+}
+
+// ---------- Étagères électroménager (au-dessus du Onewheel) ----------
+
+// Deux tablettes chêne sur équerres noires, dessus à 100 et 150 cm, fixées au mur (dos -z).
+function applianceShelves(w, d) {
+    const g = new THREE.Group(),
+        hw = w / 2,
+        hd = d / 2;
+    for (const y of [100, 150]) {
+        floatingShelf(g, w, d, y);
+        for (const x of [-hw + 5, hw - 5]) {
+            B(g, x - 1, x + 1, y - 3.4, y - 3, -hd, hd - 6, MAT.matteBlack);
+            B(g, x - 1, x + 1, y - 25, y - 3, -hd, -hd + 0.4, MAT.matteBlack);
+            beam(g, [x, y - 22, -hd + 0.4], [x, y - 3.4, -hd + 22], 0.8, 0.8, MAT.matteBlack);
+        }
+    }
+    return g;
+}
+
+// ---------- Rice cooker ----------
+
+// Cuiseur à riz 1 L : corps blanc arrondi, couvercle bombé à charnière, bouton d'ouverture,
+// bandeau de commande incliné et poignée de transport. Environ L 26 x P 34 x H 23 cm.
+function riceCooker(w, d) {
+    const g = new THREE.Group(),
+        hw = w / 2,
+        hd = d / 2;
+    const body = std(0xf3f1ec, {roughness: 0.35});
+    RB(g, -hw, hw, 0.6, 16, -hd + 1, hd - 3, 4, body);
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) Cyl(g, 1, 1, 0.6, sx * (hw - 4), 0.3, sz * (hd - 6), MAT.dark);
+    // couvercle bombé
+    const lid = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 12, 0, Math.PI * 2, 0, Math.PI / 2), body);
+    lid.scale.set((hw - 0.5) / 100, 6 / 100, (hd - 4) / 100);
+    lid.position.set(0, 16 / 100, -1 / 100);
+    lid.castShadow = lid.receiveShadow = true;
+    g.add(lid);
+    Cyl(g, 3, 3, 0.8, 0, 21.8, -4, MAT.groove); // évent vapeur
+    // bandeau de commande incliné et bouton d'ouverture
+    const panel = B(g, -hw + 4, hw - 4, -3, 3, -0.5, 0.5, MAT.screen);
+    panel.position.set(0, 10 / 100, (hd - 2.6) / 100);
+    panel.rotation.x = -0.35;
+    B(g, -3, 3, 15, 18.5, hd - 4, hd - 1.5, MAT.groove);
+    // poignée de transport repliée à l'arrière
+    B(g, -hw + 5, hw - 5, 16, 18, -hd + 0.5, -hd + 2.5, MAT.groove);
+    return g;
+}
+
+// ---------- Ninja Double Stack XL (SL400EU) ----------
+
+// Friteuse sans huile à deux tiroirs superposés : L 28 x P 47 x H 38,5 cm (fiche produit),
+// coque gris anthracite, tableau de commande sur le dessus à l'avant.
+function ninjaDoubleStack(w, d) {
+    const g = new THREE.Group(),
+        hw = w / 2,
+        hd = d / 2,
+        h = 38.5;
+    const shell = std(0x3d4044, {roughness: 0.45});
+    const drawer = std(0x2a2c2f, {roughness: 0.35});
+    RB(g, -hw, hw, 0.8, h, -hd, hd - 3, 2.5, shell);
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) Cyl(g, 1.2, 1.2, 0.8, sx * (hw - 4), 0.4, sz * (hd - 6), MAT.black);
+    // deux tiroirs, chacun avec sa poignée en saillie
+    for (const [y0, y1] of [[2, 16], [17, 31]]) {
+        RB(g, -hw + 1, hw - 1, y0, y1, hd - 4, hd, 1.2, drawer);
+        B(g, -6, 6, y1 - 7, y1 - 4, hd, hd + 4.5, MAT.matteBlack);
+        B(g, -6, 6, y1 - 7, y1 - 6, hd, hd + 1, MAT.dark);
+    }
+    // tableau de commande : bandeau noir brillant incliné en haut de la façade
+    B(g, -hw + 2, hw - 2, 32, h - 0.2, hd - 3.6, hd - 2.6, MAT.screen);
+    B(g, -4, 4, 34, 36, hd - 2.6, hd - 2.5, std(0xffffff, {emissive: 0xffffff, emissiveIntensity: 0.4}));
+    Cyl(g, 1.8, 1.8, 1, hw - 5.5, 35, hd - 2.4, MAT.steel, true);
+    // grille d'aération arrière
+    for (let i = 0; i < 6; i++) B(g, -hw + 6, hw - 6, 22 + i * 2, 22.8 + i * 2, -hd - 0.3, -hd + 0.5, MAT.black);
+    return g;
+}
+
+// ---------- Batterie de cuisine (inox, manches laiton) ----------
+
+let cookware;
+function cookwareMat() {
+    cookware ??= {
+        inox: std(0xd4d7da, {metalness: 0.95, roughness: 0.22, envMap: MAT.chrome.envMap, side: THREE.DoubleSide}),
+        brass: std(0xc9a25a, {metalness: 0.9, roughness: 0.35, envMap: MAT.chrome.envMap}),
+    };
+    return cookware;
+}
+
+// cuve en révolution : fond plat, bords évasés (poêle) ou droits (casserole), ouverte vers +z
+function vessel(r, depth, flare) {
+    const pts = [];
+    const rb = r - flare;
+    pts.push(new THREE.Vector2(0, 0));
+    for (let i = 0; i <= 8; i++) {
+        const t = i / 8;
+        pts.push(new THREE.Vector2((rb + (r - rb) * Math.pow(t, 0.7)) / 100, (depth * t) / 100));
+    }
+    pts.push(new THREE.Vector2((r + 0.4) / 100, depth / 100)); // lèvre roulée
+    const m = new THREE.Mesh(new THREE.LatheGeometry(pts, 40), cookwareMat().inox);
+    m.rotation.x = Math.PI / 2; // axe de révolution vers +z : intérieur face à la pièce
+    m.castShadow = m.receiveShadow = true;
+    return m;
+}
+
+// Casserole suspendue par son manche : origine à l'œillet du crochet, manche dans le plan z = 0,
+// fond vers -z et ouverture vers +z (à tourner vers le support).
+function hangingPot(r, depth, len = 15) {
+    const {inox, brass} = cookwareMat();
+    const p = new THREE.Group();
+    const zh = depth * 0.7; // hauteur du manche sur la paroi, depuis le fond
+    const body = vessel(r, depth, 0.3);
+    body.position.set(0, -(len + r) / 100, -zh / 100);
+    p.add(body);
+    Cyl(p, 0.75, 1.15, len, 0, -len / 2, 0, brass);
+    const eye = new THREE.Mesh(new THREE.TorusGeometry(0.012, 0.004, 8, 16), brass);
+    p.add(eye);
+    for (const sx of [-1, 1]) {
+        const rv = new THREE.Mesh(new THREE.SphereGeometry(0.005, 8, 6), inox);
+        rv.position.set((sx * 1.4) / 100, -(len + 0.5) / 100, 0);
+        p.add(rv);
+    }
+    return p;
+}
+
 // ---------- Grille murale de cuisine ----------
 
 // Grille en fil inox fixée au mur (dos en -z) : ustensiles suspendus en haut,
@@ -1334,7 +1650,7 @@ function kitchenGrid(w, d) {
         hd = d / 2;
     const steel = std(0x9ea3a8, {metalness: 0.9, roughness: 0.35, envMap: MAT.chrome.envMap});
     const wood = std(0xb88a5a, {roughness: 0.6});
-    const y0 = 50,
+    const y0 = 80,
         y1 = 200,
         zg = -hd + 2; // plan de la grille, 2 cm devant le mur
 
@@ -1356,8 +1672,8 @@ function kitchenGrid(w, d) {
 
     const hook = (x, y) => B(g, x - 0.25, x + 0.25, y - 3, y + 1, zg + 0.5, zg + 2.5, steel);
 
-    // --- haut : ustensiles sur crochets en S ---
-    const yh = y1 - 8;
+    // --- bas : ustensiles sur crochets en S (sous la poêle et le wok, loin des tiroirs) ---
+    const yh = 120;
     const tools = [
         (x) => {
             // pince
@@ -1420,42 +1736,26 @@ function kitchenGrid(w, d) {
         t(x);
     });
 
-    // --- milieu : panier grillagé avec bocaux d'épices ---
-    const yb = 122,
+    // --- milieu gauche : panier grillagé avec bocaux d'épices, sous la poêle, à côté du wok ---
+    const yb = 131,
+        bx1 = -hw + 4,
+        bx2 = -3,
         bz1 = zg + 0.6,
         bz2 = zg + 11;
-    B(g, -hw + 4, hw - 4, yb, yb + 0.6, bz1, bz2, steel);
-    B(g, -hw + 4, hw - 4, yb + 7, yb + 7.6, bz2 - 0.6, bz2, steel);
-    B(g, -hw + 4, hw - 4, yb + 3.5, yb + 4, bz2 - 0.6, bz2, steel);
-    for (const x of [-hw + 4, hw - 4]) B(g, x - 0.3, x + 0.3, yb, yb + 8, bz1, bz2, steel);
-    const spices = [0xc2571d, 0x8e2b1c, 0x7a5a2e, 0x5f7330, 0xd99a2b, 0x9b3a2a, 0x6a4e3a];
+    B(g, bx1, bx2, yb, yb + 0.6, bz1, bz2, steel);
+    B(g, bx1, bx2, yb + 7, yb + 7.6, bz2 - 0.6, bz2, steel);
+    B(g, bx1, bx2, yb + 3.5, yb + 4, bz2 - 0.6, bz2, steel);
+    for (const x of [bx1, bx2]) B(g, x - 0.3, x + 0.3, yb, yb + 8, bz1, bz2, steel);
+    const spices = [0xc2571d, 0x8e2b1c, 0x5f7330, 0xd99a2b, 0x9b3a2a];
     spices.forEach((c, i) => {
-        const x = -hw + 9 + i * ((w - 18) / (spices.length - 1));
+        const x = bx1 + 4 + i * ((bx2 - bx1 - 8) / (spices.length - 1));
         Cyl(g, 2.6, 2.6, 9, x, yb + 5.1, zg + 6, MAT.glass);
         Cyl(g, 2.4, 2.4, 7, x, yb + 4.2, zg + 6, std(c, {roughness: 0.9}));
         Cyl(g, 2.7, 2.7, 1.6, x, yb + 10.3, zg + 6, MAT.matteBlack);
     });
 
-    // --- bas : poêles et casseroles inox à manches laiton, suspendues par le manche ---
-    const inox = std(0xd4d7da, {metalness: 0.95, roughness: 0.22, envMap: MAT.chrome.envMap});
-    const brass = std(0xc9a25a, {metalness: 0.9, roughness: 0.35, envMap: MAT.chrome.envMap});
-    // cuve en révolution : fond plat, bords évasés (poêle) ou droits (casserole), ouverte vers +z
-    const vessel = (r, depth, flare) => {
-        const pts = [];
-        const rb = r - flare;
-        pts.push(new THREE.Vector2(0, 0));
-        for (let i = 0; i <= 8; i++) {
-            const t = i / 8;
-            pts.push(new THREE.Vector2((rb + (r - rb) * Math.pow(t, 0.7)) / 100, (depth * t) / 100));
-        }
-        pts.push(new THREE.Vector2((r + 0.4) / 100, depth / 100)); // lèvre roulée
-        const geo = new THREE.LatheGeometry(pts, 40);
-        const m = new THREE.Mesh(geo, inox);
-        m.material.side = THREE.DoubleSide;
-        m.rotation.x = Math.PI / 2; // axe de révolution vers +z : intérieur face à la pièce
-        m.castShadow = m.receiveShadow = true;
-        return m;
-    };
+    // --- haut : poêle inox à manche laiton et wok, suspendus par le manche ---
+    const {inox, brass} = cookwareMat();
     // manche laiton effilé avec trou de suspension et deux rivets
     const handle = (p, len, z) => {
         const h = Cyl(p, 0.75, 1.15, len, 0, -len / 2, z, brass);
@@ -1464,7 +1764,7 @@ function kitchenGrid(w, d) {
         eye.position.set(0, 0, z / 100);
         p.add(eye);
     };
-    const yp = 114;
+    const yp = y1 - 4;
     const pan = (x, r, depth, tilt = 0) => {
         const p = new THREE.Group();
         const zb = zg + 2.5; // le fond touche presque la grille
@@ -1482,28 +1782,39 @@ function kitchenGrid(w, d) {
         g.add(p);
         hook(x, yp + 2);
     };
-    pan(-hw + 15, 14, 4.5, 0.04); // poêle 28 cm
-    pan(-hw + 37, 12, 4, -0.03); // poêle 24 cm
-    pan(hw - 13, 10, 3.5, 0.05); // poêle 20 cm
+    pan(-hw + 16, 14, 4.5, 0.04); // poêle 28 cm
 
-    // casserole et faitout dans le panier du bas
-    const yc = y0 + 1;
-    B(g, -hw + 4, hw - 4, yc, yc + 0.6, bz1, zg + 18, steel);
-    B(g, -hw + 4, hw - 4, yc + 6, yc + 6.6, zg + 17.4, zg + 18, steel);
-    const pot = (x, r, depth, withLid) => {
-        const v = vessel(r, depth, 0.3);
-        v.rotation.x = 0; // posée à plat, ouverture vers le haut
-        v.position.set(x / 100, (yc + 0.6) / 100, (zg + 9) / 100);
-        g.add(v);
-        const hh = B(g, x + r - 1, x + r + 15, yc + depth - 2.2, yc + depth - 0.8, zg + 8.3, zg + 9.7, brass);
-        hh.castShadow = true;
-        if (withLid) {
-            Cyl(g, r + 0.3, r + 0.3, 0.6, x, yc + depth + 1.2, zg + 9, inox);
-            Cyl(g, 1.6, 2, 1.6, x, yc + depth + 2.3, zg + 9, brass);
+    // wok de Buyer Carbone Plus 5114.35 : Ø 35,5 cm, 8,5 cm de creux, 69,5 cm avec la queue en feuillard.
+    // Suspendu par la queue, ouverture contre la grille, fond bombé côté pièce.
+    {
+        const carbon = std(0x5f6266, {metalness: 0.8, roughness: 0.45, envMap: MAT.chrome.envMap, side: THREE.DoubleSide});
+        const R = 17.75,
+            D = 8.5,
+            L = 69.5 - 2 * R,
+            x = hw - 18.5,
+            zr = zg + 1.5; // plan du bord et de la queue
+        const pts = [];
+        for (let i = 0; i <= 14; i++) {
+            const rr = (R * i) / 14;
+            pts.push(new THREE.Vector2(rr / 100, (D * (rr / R) ** 2) / 100));
         }
-    };
-    pot(-hw + 14, 9, 12, true); // casserole
-    pot(hw - 26, 8, 10, false);
+        const bowl = new THREE.Mesh(new THREE.LatheGeometry(pts, 48), carbon);
+        bowl.rotation.x = -Math.PI / 2; // ouverture vers -z
+        bowl.position.set(x / 100, (yp - L - R) / 100, (zr + D) / 100);
+        bowl.castShadow = bowl.receiveShadow = true;
+        g.add(bowl);
+        const lip = new THREE.Mesh(new THREE.TorusGeometry(R / 100, 0.003, 6, 48), carbon);
+        lip.position.set(x / 100, (yp - L - R) / 100, zr / 100);
+        g.add(lip);
+        B(g, x - 1.3, x + 1.3, yp - L, yp, zr, zr + 0.4, carbon); // queue en feuillard
+        B(g, x - 2.2, x + 2.2, yp - L - 4, yp - L + 1, zr, zr + 0.5, carbon); // platine rivetée
+        for (const sx of [-1, 1]) Cyl(g, 0.5, 0.5, 0.5, x + sx * 1.2, yp - L - 1.5, zr + 0.6, carbon, true);
+        const eye = new THREE.Mesh(new THREE.TorusGeometry(0.008, 0.003, 8, 16), carbon);
+        eye.position.set(x / 100, (yp - 1.5) / 100, (zr + 0.2) / 100);
+        g.add(eye);
+        hook(x, yp + 2);
+    }
+
     return g;
 }
 
@@ -2473,6 +2784,12 @@ export const BUILDERS = {
     herbPots,
     arcLamp,
     kitchenGrid,
+    knifeBar,
+    coatRack,
+    slipperBag,
+    applianceShelves,
+    riceCooker,
+    ninjaDoubleStack,
     rug,
     macbookPro,
     monitor27,
