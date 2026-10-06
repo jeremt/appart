@@ -325,6 +325,10 @@ function updateSelection() {
     panel.hidden = false;
     $('#p-name').textContent = selected.def.name;
     $('#p-dims').textContent = `${Math.round(selected.w)} × ${Math.round(selected.d)} × ${selected.h} cm`;
+    // lien vers la fiche produit quand la référence est connue
+    const link = $('#p-link');
+    link.hidden = !selected.def.url;
+    if (selected.def.url) link.href = selected.def.url;
     for (const [id, v] of [
         ['#p-x', selected.state.x],
         ['#p-y', selected.state.y],

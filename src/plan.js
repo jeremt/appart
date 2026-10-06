@@ -114,14 +114,14 @@ export const furnitureDefs = [
     {id: 'plan-travail', type: 'counter', name: 'Plan de travail', r: [0, 402, 63, 464], rot: 90},
     {id: 'plaques', type: 'cooker', name: 'Plaques de cuisson', r: [0, 464, 63, 503], rot: 90},
     {id: 'grille-cuisine', type: 'kitchenGrid', name: 'Grille murale ustensiles', r: [66, SPLIT_Y + INT, 136, SPLIT_Y + INT + 20], rot: 0},
-    {id: 'bar', type: 'zelligeBar', name: 'Bar en zellige', r: [140, SPLIT_Y + INT, 190, SPLIT_Y + INT + 125], rot: 90},
+    {id: 'bar', type: 'plywoodBar', name: 'Bar en contreplaqué', r: [140, SPLIT_Y + INT, 190, SPLIT_Y + INT + 125], rot: 90},
     // Séjour
-    {id: 'canape', type: 'teddy', name: 'Canapé OMHU Teddy', r: [320, SPLIT_Y + INT, 520, SPLIT_Y + INT + 100], rot: 0},
+    {id: 'canape', type: 'teddy', name: 'Canapé OMHU Teddy', r: [320, SPLIT_Y + INT, 520, SPLIT_Y + INT + 100], rot: 0, url: 'https://omhucph.com/en-fr/products/teddy?variant=41248910508141'},
     // lampadaire arc à droite du canapé, arc orienté vers la table basse
     {id: 'lampadaire', type: 'arcLamp', name: 'Lampadaire arc', c: [548, 345], size: [36, 36], rot: -45},
     {id: 'etageres-canape', type: 'sofaShelves', name: 'Étagères au-dessus du canapé', r: [330, SPLIT_Y + INT, 510, SPLIT_Y + INT + 22], rot: 0},
     {id: 'tapis', type: 'rug', name: 'Tapis laine 200 x 140', r: [320, 395, 520, 535], rot: 0},
-    {id: 'table-basse', type: 'coffeeTable', name: 'Table basse', r: [367, 447, 472, 502], rot: 0},
+    {id: 'table-basse', type: 'matikaTable', name: 'Table basse rehaussable Matika L120', r: [360, 435, 480, 515], rot: 0, url: 'https://www.maisonsdumonde.com/FR/fr/p/table-basse-rehaussable-en-bois-et-acier-noir-l120-matika-M22179481.htm'},
     {id: 'meuble-tv', type: 'tvUnit65', name: 'Meuble TV + TCL 65" (65P89L)', r: [330, 588, 510, 628], rot: 180},
     {id: 'colonne-salon', type: 'storageColumn', name: 'Colonne de rangement', r: [295, 593, 330, 628], rot: 180},
     {id: 'monstera', type: 'monstera', name: 'Monstera', r: [550, 559, 600, 609], rot: 0},
@@ -135,6 +135,7 @@ export const furnitureDefs = [
     // posés sur le bureau (plateau à 74 cm)
     {id: 'ecran', type: 'monitor27', name: 'Écran 27"', r: [400, SPLIT_Y - 22, 462, SPLIT_Y - 2], rot: 180, elev: 74},
     {id: 'macbook', type: 'macbookPro', name: 'MacBook Pro 14"', c: [481, 268], size: [31.3, 22.1], rot: -165, elev: 74},
+    {id: 'tabourets', type: 'kyrreStack', name: 'Tabourets IKEA KYRRE ×4 (604.169.25)', c: [540, 280], size: [42, 48], rot: 0, url: 'https://www.ikea.com/fr/fr/p/kyrre-tabouret-bouleau-60416925/'},
     {id: 'chevet', type: 'nightstand', name: 'Chevet', r: [290, 2, 326, 40], rot: 90},
     // Balcon
     {id: 'guirlande', type: 'stringLights', name: 'Guirlande guinguette', r: [771, 132, 777, 612], rot: 90},

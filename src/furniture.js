@@ -757,63 +757,73 @@ function teddy(w, d) {
     });
 }
 
-// ---------- Bar en zellige ----------
+// ---------- Bar en contreplaqué ----------
 
-// Texture zellige : baguettes vernissées vertes verticales (~4 x 20 cm), rangs décalés,
-// joints vert foncé. La même trame sert de bump map pour le relief des joints.
-let zelligeMaps = null;
-function zellige() {
-    if (zelligeMaps) return zelligeMaps;
+// Placage bouleau (fil horizontal, veinage doux, quelques « yeux ») et chant de contreplaqué
+// (plis alternés clairs / foncés) pour les tranches visibles.
+let plyMats = null;
+function plywood() {
+    if (plyMats) return plyMats;
     const S = 1024,
-        SIZE = 0.6; // la texture couvre 60 x 60 cm
-    const px = S / (SIZE * 100); // pixels par cm
-    const color = document.createElement('canvas'),
-        bump = document.createElement('canvas');
-    color.width = color.height = bump.width = bump.height = S;
-    const g = color.getContext('2d'),
-        b = bump.getContext('2d');
-    g.fillStyle = '#3f4a2c';
-    g.fillRect(0, 0, S, S);
-    b.fillStyle = '#000';
-    b.fillRect(0, 0, S, S);
-    let seed = 17;
+        SIZE = 1.2; // la texture couvre 1,2 x 1,2 m
+    const c = document.createElement('canvas');
+    c.width = c.height = S;
+    const g = c.getContext('2d');
+    let seed = 41;
     const r = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-    const rowH = 20 * px,
-        joint = 0.35 * px;
-    for (let row = 0; row < S / rowH; row++) {
-        let x = -r() * 4 * px;
-        while (x < S) {
-            const tw = (3.6 + r() * 0.8) * px;
-            const y = row * rowH;
-            const h = 88 + r() * 14,
-                sat = 28 + r() * 22,
-                l = 48 + r() * 20;
-            const grad = g.createLinearGradient(x, y, x + tw, y);
-            grad.addColorStop(0, `hsl(${h}, ${sat}%, ${l - 10}%)`);
-            grad.addColorStop(0.35 + r() * 0.3, `hsl(${h}, ${sat - 8}%, ${l + 8}%)`);
-            grad.addColorStop(1, `hsl(${h}, ${sat}%, ${l - 6}%)`);
-            g.fillStyle = grad;
-            g.fillRect(x + joint, y + joint, tw - 2 * joint, rowH - 2 * joint);
-            // nuances verticales de l'émail
-            for (let k = 0; k < 6; k++) {
-                g.fillStyle = `hsla(${h}, ${sat}%, ${l + (r() - 0.5) * 30}%, 0.25)`;
-                g.fillRect(x + joint + r() * tw * 0.6, y + joint + r() * rowH * 0.5, 1 + r() * tw * 0.3, rowH * (0.3 + r() * 0.6));
-            }
-            b.fillStyle = `rgb(${200 + r() * 55 | 0},${200 + r() * 55 | 0},${200 + r() * 55 | 0})`;
-            b.fillRect(x + joint, y + joint, tw - 2 * joint, rowH - 2 * joint);
-            x += tw;
-        }
+    g.fillStyle = 'hsl(36, 40%, 77%)';
+    g.fillRect(0, 0, S, S);
+    // bandes de teinte (lés de placage)
+    for (let y = 0; y < S; y += 60 + r() * 120) {
+        g.fillStyle = `hsla(${32 + r() * 8}, 40%, ${70 + r() * 10}%, 0.35)`;
+        g.fillRect(0, y, S, 40 + r() * 100);
     }
-    const mk = (c, srgb) => {
-        const t = new THREE.CanvasTexture(c);
-        t.wrapS = t.wrapT = THREE.RepeatWrapping;
-        t.repeat.set(1 / SIZE, 1 / SIZE);
-        t.anisotropy = 8;
-        if (srgb) t.colorSpace = THREE.SRGBColorSpace;
-        return t;
+    // veinage : longues lignes ondulées dans le sens du fil
+    for (let i = 0; i < 420; i++) {
+        const y = r() * S,
+            amp = 1 + r() * 4,
+            ph = r() * 6;
+        g.strokeStyle = `hsla(30, 35%, ${48 + r() * 18}%, ${0.08 + r() * 0.14})`;
+        g.lineWidth = 0.6 + r() * 1.4;
+        g.beginPath();
+        for (let x = -10; x <= S + 10; x += 16) g.lineTo(x, y + Math.sin(x / (60 + amp * 20) + ph) * amp);
+        g.stroke();
+    }
+    // petits nœuds typiques du bouleau
+    for (let i = 0; i < 14; i++) {
+        const x = r() * S,
+            y = r() * S;
+        g.fillStyle = 'rgba(110, 75, 45, 0.35)';
+        g.beginPath();
+        g.ellipse(x, y, 3 + r() * 4, 1.5 + r() * 1.5, 0, 0, Math.PI * 2);
+        g.fill();
+    }
+    const veneerMap = new THREE.CanvasTexture(c);
+    veneerMap.colorSpace = THREE.SRGBColorSpace;
+    veneerMap.wrapS = veneerMap.wrapT = THREE.RepeatWrapping;
+    veneerMap.repeat.set(1 / SIZE, 1 / SIZE);
+    veneerMap.anisotropy = 8;
+
+    // chant : 9 plis sur 18 mm, motif répété verticalement
+    const e = document.createElement('canvas');
+    e.width = 64;
+    e.height = 256;
+    const eg = e.getContext('2d');
+    const plies = 9;
+    for (let i = 0; i < plies; i++) {
+        eg.fillStyle = i % 2 ? 'hsl(34, 38%, 62%)' : 'hsl(38, 42%, 82%)';
+        eg.fillRect(0, (i * 256) / plies, 64, 256 / plies);
+        eg.fillStyle = 'rgba(80, 55, 30, 0.35)';
+        eg.fillRect(0, ((i + 1) * 256) / plies - 1.5, 64, 1.5);
+    }
+    const edgeMap = new THREE.CanvasTexture(e);
+    edgeMap.colorSpace = THREE.SRGBColorSpace;
+
+    plyMats = {
+        veneer: new THREE.MeshStandardMaterial({map: veneerMap, roughness: 0.55}),
+        edge: new THREE.MeshStandardMaterial({map: edgeMap, roughness: 0.7}),
     };
-    zelligeMaps = {map: mk(color, true), bumpMap: mk(bump, false)};
-    return zelligeMaps;
+    return plyMats;
 }
 
 // Contour (en m) arrondi seulement côté -x (le côté +x vient contre le mur).
@@ -852,34 +862,44 @@ function prism(g, shape, y0, y1, mat) {
     return m;
 }
 
-// Meuble bar : adossé au mur par son extrémité +x, arrondi à l'autre bout, habillé de zellige vert,
+// Meuble bar : adossé au mur par son extrémité +x, arrondi à l'autre bout, habillé de contreplaqué bouleau,
 // étagères ouvertes côté cuisine (-z) et plan de travail inox débordant.
-function zelligeBar(w, d) {
+function plywoodBar(w, d) {
     const g = new THREE.Group(),
         h = 105,
         top = 3,
         over = 2.5,
         R = 13,
         m = (v) => v / 100;
-    const {map, bumpMap} = zellige();
-    const tile = new THREE.MeshStandardMaterial({map, bumpMap, bumpScale: 1.5, roughness: 0.22});
+    const {veneer, edge} = plywood();
     const inox = new THREE.MeshStandardMaterial({color: 0xd2d5d8, metalness: 1, roughness: 0.3, envMap: MAT.chrome.envMap});
     const bw = w - over, // le caisson est en retrait du plan sauf côté mur
         bd = d - 2 * over,
         bx = -over / 2;
     const cav = {depth: 30, endLeft: R + 4, endRight: 3};
-    const plinth = prism(g, barShape(m(bw - 2), m(bd - 2), m(R - 1)), 0, 6, std(0xb9cdb8, {roughness: 0.6}));
+    const plinth = prism(g, barShape(m(bw - 2), m(bd - 2), m(R - 1)), 0, 6, std(0x5b5650, {roughness: 0.8}));
     plinth.position.x = m(bx);
-    const body = prism(g, barShape(m(bw), m(bd), m(R), {depth: m(cav.depth), endLeft: m(cav.endLeft), endRight: m(cav.endRight)}), 6, h - top, tile);
+    const body = prism(g, barShape(m(bw), m(bd), m(R), {depth: m(cav.depth), endLeft: m(cav.endLeft), endRight: m(cav.endRight)}), 6, h - top, veneer);
     body.position.x = m(bx);
     prism(g, barShape(m(w), m(d), m(R + 1)), h - top, h, inox);
-    // niche : fond et étagères en chêne
+    // niche : fond et étagères en contreplaqué, chants à plis visibles côté cuisine (-z)
     const xa = bx - bw / 2 + cav.endLeft,
         xb = bx + bw / 2 - cav.endRight,
         zBack = -bd / 2,
         zIn = -bd / 2 + cav.depth;
-    B(g, xa, xb, 6, h - top, zIn - 1, zIn, MAT.oak);
-    for (const y of [6, 37, 68]) B(g, xa, xb, y, y + 2, zBack + 1, zIn - 1, MAT.oak);
+    B(g, xa, xb, 6, h - top, zIn - 1, zIn, veneer);
+    for (const y of [6, 37, 68]) {
+        B(g, xa, xb, y, y + 1.8, zBack + 0.2, zIn - 1, veneer);
+        B(g, xa, xb, y, y + 1.8, zBack, zBack + 0.2, edge);
+    }
+    // chant à plis sous le plan inox, tout autour du caisson
+    // (UV de l'extrusion en mètres : on étire le motif pour que les 9 plis tiennent sur 1,8 cm)
+    const band = edge.clone();
+    band.map = edge.map.clone();
+    band.map.wrapS = band.map.wrapT = THREE.RepeatWrapping;
+    band.map.repeat.set(20, 1 / 0.018);
+    band.map.needsUpdate = true;
+    prism(g, barShape(m(bw + 0.2), m(bd + 0.2), m(R + 0.1)), h - top - 1.8, h - top, band).position.x = m(bx);
     return g;
 }
 
@@ -2012,7 +2032,120 @@ function bathColumn(w, d) {
     return g;
 }
 
+// ---------- Table basse rehaussable Matika (Maisons du Monde) ----------
+
+// Tube rectangulaire (section a x b cm) entre deux points (cm), orienté pour que b soit horizontal.
+function beam(g, p, q, a, b, mat) {
+    const A = new THREE.Vector3(...p).divideScalar(100),
+        Q = new THREE.Vector3(...q).divideScalar(100);
+    const dir = Q.clone().sub(A);
+    const m = new THREE.Mesh(new THREE.BoxGeometry(b / 100, dir.length(), a / 100), mat);
+    m.position.copy(A).add(Q).multiplyScalar(0.5);
+    m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+    m.castShadow = m.receiveShadow = true;
+    g.add(m);
+    return m;
+}
+
+// Matika L120 : plateau bois massif clair 120 x 80, piètement ciseaux en acier noir.
+// Dimensions fiche produit en position basse : 120 x 80 x 49 cm.
+function matikaTable(w, d) {
+    const g = new THREE.Group(),
+        hw = w / 2,
+        hd = d / 2,
+        h = 49,
+        t = 4; // épaisseur du plateau
+    const wood = plywood().veneer.clone();
+    wood.color.set(0xf2d9b4);
+    wood.roughness = 0.6;
+    B(g, -hw, hw, h - t, h, -hd, hd, wood);
+    const steel = std(0x1c1d1f, {roughness: 0.5, metalness: 0.4});
+    // deux ciseaux parallèles (avant / arrière) dans le sens de la longueur
+    const fx = hw - 22, // demi-écartement des pieds au sol
+        tx = hw - 34, // demi-écartement sous le plateau
+        yTop = h - t - 2.5;
+    for (const z of [-hd + 16, hd - 16]) {
+        beam(g, [-fx, 2.5, z], [tx, yTop, z], 4, 2.2, steel); // branche montante →
+        beam(g, [fx, 2.5, z + (z > 0 ? -3 : 3)], [-tx, yTop, z + (z > 0 ? -3 : 3)], 4, 2.2, steel); // ← décalée
+        B(g, -fx - 3, fx + 3, 0, 3, z - 2, z + 2, steel); // patin au sol
+        B(g, -tx - 3, tx + 3, yTop, yTop + 2.5, z - 2, z + 2, steel); // rail sous plateau
+        Cyl(g, 2.2, 2.2, 1.6, fx + 3, 2.2, z, MAT.dark, true); // roulette
+    }
+    // traverses entre les deux ciseaux
+    beam(g, [-fx, 1.5, -hd + 16], [-fx, 1.5, hd - 16], 3, 3, steel);
+    beam(g, [0, yTop / 2 + 1.5, -hd + 16], [0, yTop / 2 + 1.5, hd - 16], 2.5, 2.5, steel);
+    // déco : photophore en verre ambré
+    Cyl(g, 5, 5, 11, 12, h + 5.5, -6, std(0xd9b54a, {roughness: 0.1, transparent: true, opacity: 0.75}));
+    return g;
+}
+
+// ---------- Tabourets empilables IKEA KYRRE (604.169.25) ----------
+
+// KYRRE : assise triangulaire arrondie en contreplaqué bouleau (34 x 35 cm), 3 pieds en bois
+// cintré qui partent des angles ; 42 x 48 x 45 cm au sol (fiche IKEA). Empilés en tournant
+// chaque tabouret de 60° : les pieds du tabouret du dessus passent au droit des côtés de celui du dessous.
+const KYRRE_R0 = 17.5; // rayon moyen de l'assise (cm)
+const kyrreRadius = (theta) => KYRRE_R0 * (1 + 0.18 * Math.cos(3 * theta));
+
+function kyrreStool(rotation) {
+    const g = new THREE.Group();
+    const {veneer, edge} = plywood();
+    // assise : contour triangulaire arrondi, chant à plis visible
+    const s = new THREE.Shape();
+    const N = 72;
+    for (let i = 0; i <= N; i++) {
+        const t = (i / N) * Math.PI * 2;
+        const r = kyrreRadius(t) / 100;
+        // repère de la forme : x = x monde, y = -z monde
+        const x = Math.sin(t) * r,
+            y = -Math.cos(t) * r;
+        i ? s.lineTo(x, y) : s.moveTo(x, y);
+    }
+    const band = edge.clone();
+    band.map = edge.map.clone();
+    band.map.wrapS = band.map.wrapT = THREE.RepeatWrapping;
+    band.map.repeat.set(6, 1 / 0.02);
+    band.map.needsUpdate = true;
+    const seatGeo = new THREE.ExtrudeGeometry(s, {depth: 0.02, bevelEnabled: false, curveSegments: 1});
+    seatGeo.rotateX(-Math.PI / 2);
+    const seat = new THREE.Mesh(seatGeo, [veneer, band]);
+    seat.position.y = 0.43;
+    seat.castShadow = seat.receiveShadow = true;
+    g.add(seat);
+
+    // pieds : lame de contreplaqué 4,5 x 1,8 cm, horizontale sous l'assise puis cintrée vers le sol
+    const strip = new THREE.Shape();
+    strip.moveTo(-0.009, -0.0225);
+    strip.lineTo(0.009, -0.0225);
+    strip.lineTo(0.009, 0.0225);
+    strip.lineTo(-0.009, 0.0225);
+    strip.closePath();
+    for (let k = 0; k < 3; k++) {
+        const t = (k * Math.PI * 2) / 3; // angles de l'assise
+        const dir = (r, y) => new THREE.Vector3((Math.sin(t) * r) / 100, y / 100, (Math.cos(t) * r) / 100);
+        const path = new THREE.CatmullRomCurve3([dir(9, 42.1), dir(15, 42.1), dir(19.2, 40.8), dir(20.6, 37), dir(22.6, 18), dir(24.2, 0.5)]);
+        const leg = new THREE.Mesh(new THREE.ExtrudeGeometry(strip, {steps: 40, bevelEnabled: false, extrudePath: path}), veneer);
+        leg.castShadow = leg.receiveShadow = true;
+        g.add(leg);
+    }
+    g.rotation.y = rotation;
+    return g;
+}
+
+// Pile de n tabourets KYRRE (5 cm de décalage vertical par tabouret, rotation alternée de 60°).
+function kyrreStack(w, d, n = 4) {
+    const g = new THREE.Group();
+    for (let i = 0; i < n; i++) {
+        const st = kyrreStool(i % 2 ? Math.PI / 3 : 0);
+        st.position.y = (i * 5) / 100;
+        g.add(st);
+    }
+    return g;
+}
+
 export const BUILDERS = {
+    kyrreStack,
+    matikaTable,
     storageColumn,
     bathColumn,
     sofaShelves,
@@ -2033,7 +2166,7 @@ export const BUILDERS = {
     onewheelStand,
     monstera,
     tvUnit65,
-    zelligeBar,
+    plywoodBar,
     teddy,
     sofa,
     coffeeTable,

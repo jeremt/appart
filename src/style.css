@@ -291,3 +291,14 @@ button.primary {
     font-size: 13px;
     pointer-events: none;
 }
+
+#p-link {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 12px;
+    color: #f59e0b;
+    text-decoration: none;
+}
+#p-link:hover {
+    text-decoration: underline;
+}
