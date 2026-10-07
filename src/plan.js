@@ -99,10 +99,42 @@ export const wallTiles = [
     [35, BATH_TOP + 1, 36, 94, 0, 210],
 ];
 
+// Coloris unis du canapé OMHU Teddy (velours côtelé) : teinte relevée sur les photos produit,
+// `id` = variante Shopify (arceaux chromés) pour le lien « Voir le produit ».
+const TEDDY_URL = 'https://omhucph.com/en-fr/products/teddy?variant=';
+const teddyColors = [
+    {code: '5769', name: 'Cream white', color: 0xf2e5de, id: 41248910082157},
+    {code: '5768', name: 'Sand', color: 0xc6b3a3, id: 41248910114925},
+    {code: '5779', name: 'Yellow', color: 0xf7c755, id: 41248910377069},
+    {code: '5774', name: 'Mustard', color: 0xd08a16, id: 41248910409837},
+    {code: '5780', name: 'Tangerine', color: 0xfca429, id: 41248910442605},
+    {code: '5781', name: 'Orange', color: 0xcd6e2e, id: 41248910475373},
+    {code: '5782', name: 'Rust', color: 0xa0503a, id: 41248910508141},
+    {code: '5764', name: 'Rose', color: 0xcb9294, id: 41248910540909},
+    {code: '5784', name: 'Blush', color: 0xe6bba9, id: 41248910639213},
+    {code: '5763', name: 'Lavender', color: 0xcba7a3, id: 41248952942701},
+    {code: '5793', name: 'Purple', color: 0xc6a1a7, id: 41248910606445},
+    {code: '5772', name: 'Blue', color: 0x3c6691, id: 41248910180461},
+    {code: '5770', name: 'Slate', color: 0xc1c0bb, id: 41248910671981},
+    {code: '5771', name: 'Turquoise', color: 0x94cbcd, id: 41248910213229},
+    {code: '5773', name: 'Emerald', color: 0x465040, id: 41248910245997},
+    {code: '5776', name: 'Sage', color: 0x98a68f, id: 41248910278765},
+    {code: '5778', name: 'Olive', color: 0xada976, id: 41248910344301},
+    {code: '5777', name: 'Moss', color: 0x797859, id: 41248910311533},
+    {code: '5765', name: 'Brown', color: 0x58463e, id: 41248910147693},
+    {code: '5761', name: 'Charcoal', color: 0x959a9d, id: 41248910704749},
+    {code: '5786', name: 'Black', color: 0x3b3b3b, id: 41248910737517},
+    {code: 'C004', name: 'Candyfloss', color: 0xffdeff, id: 58193113809280},
+    {code: 'C003', name: 'Pickle', color: 0x489e6b, id: 58193167679872},
+    {code: 'C005', name: 'Hot pink', color: 0xe55697, id: 58193145332096},
+    {code: 'C002', name: 'Slushie Blue', color: 0x048edc, id: 58193042145664},
+].map((v) => ({...v, url: TEDDY_URL + v.id}));
+
 // Équipements et meubles, relevés sur le plan et les photos.
 // `r` = emprise [x1, y1, x2, y2], `rot` = orientation de la face avant
 // (0 : vers le bas du plan, 90 : vers la droite, -90 : vers la gauche, 180 : vers le haut).
 // `c` + `size` = centre + [largeur, profondeur] locales.
+// `variants` = coloris au choix ({code, name, color, url}), `variant` = code par défaut.
 export const furnitureDefs = [
     // Bain + WC
     {id: 'baignoire', type: 'bathtub', name: 'Baignoire', r: [42, BATH_TOP, 212, 101], rot: 0},
@@ -118,7 +150,7 @@ export const furnitureDefs = [
     // au mur au-dessus du plan de travail
     {id: 'barre-couteaux', type: 'knifeBar', name: 'Barre aimantée à couteaux', r: [0, 413, 4, 453], rot: 90, elev: 100},
     // Séjour
-    {id: 'canape', type: 'teddy', name: 'Canapé OMHU Teddy', r: [325, SPLIT_Y + INT, 525, SPLIT_Y + INT + 100], rot: 0, url: 'https://omhucph.com/en-fr/products/teddy?variant=41248910508141'},
+    {id: 'canape', type: 'teddy', name: 'Canapé OMHU Teddy', r: [325, SPLIT_Y + INT, 525, SPLIT_Y + INT + 100], rot: 0, variants: teddyColors, variant: '5782'},
     // lampadaire arc à droite du canapé, arc orienté vers la table basse
     {id: 'lampadaire', type: 'arcLamp', name: 'Lampadaire arc', c: [555, 345], size: [36, 36], rot: -45},
     {id: 'etageres-canape', type: 'sofaShelves', name: 'Étagères au-dessus du canapé', r: [330, SPLIT_Y + INT, 510, SPLIT_Y + INT + 22], rot: 0},

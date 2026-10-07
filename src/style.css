@@ -302,3 +302,24 @@ button.primary {
 #p-link:hover {
     text-decoration: underline;
 }
+
+#p-colors {
+    margin-top: 10px;
+}
+#p-swatches {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    margin-top: 6px;
+}
+.swatch {
+    aspect-ratio: 1;
+    padding: 0;
+    border: 2px solid transparent;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+    cursor: pointer;
+}
+.swatch.active {
+    border-color: #f59e0b;
+}

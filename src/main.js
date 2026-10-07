@@ -114,11 +114,20 @@ const items = furnitureDefs.map((def) => {
     return item;
 });
 
+// coloris courant (meubles déclinés en plusieurs teintes), sinon undefined
+function variantOf(item) {
+    const {variants, variant} = item.def;
+    if (!variants) return;
+    return variants.find((v) => v.code === item.state.variant) ?? variants.find((v) => v.code === variant);
+}
+
 function applyState(item) {
     markDirty();
     const p = toWorld(item.state.x, item.state.y);
     item.group.position.set(p.x, (item.def.elev ?? 0) / 100, p.z); // `elev` : posé sur un meuble
     item.group.rotation.y = THREE.MathUtils.degToRad(item.state.rot);
+    const v = variantOf(item);
+    if (v) item.group.userData.setColor?.(v.color);
     if (item.state.deleted) furnRoot.remove(item.group);
     else furnRoot.add(item.group);
 }
@@ -358,9 +367,12 @@ function updateSelection() {
     $('#p-name').textContent = selected.def.name;
     $('#p-dims').textContent = `${Math.round(selected.w)} × ${Math.round(selected.d)} × ${selected.h} cm`;
     // lien vers la fiche produit quand la référence est connue
+    const variant = variantOf(selected);
+    const url = variant?.url ?? selected.def.url;
     const link = $('#p-link');
-    link.hidden = !selected.def.url;
-    if (selected.def.url) link.href = selected.def.url;
+    link.hidden = !url;
+    if (url) link.href = url;
+    renderSwatches(variant);
     for (const [id, v] of [
         ['#p-x', selected.state.x],
         ['#p-y', selected.state.y],
@@ -369,6 +381,26 @@ function updateSelection() {
         const input = $(id);
         if (document.activeElement !== input) input.value = Math.round(v * 10) / 10;
     }
+}
+
+// Nuancier des coloris du meuble sélectionné
+function renderSwatches(current) {
+    const box = $('#p-colors');
+    box.hidden = !current;
+    if (!current) return;
+    $('#p-color-name').textContent = current.name;
+    const list = $('#p-swatches');
+    const item = selected;
+    list.replaceChildren(
+        ...item.def.variants.map((v) => {
+            const b = document.createElement('button');
+            b.className = 'swatch' + (v === current ? ' active' : '');
+            b.title = v.name;
+            b.style.background = '#' + v.color.toString(16).padStart(6, '0');
+            b.onclick = () => v !== current && change(() => (item.state.variant = v.code));
+            return b;
+        }),
+    );
 }
 
 // ---------- Collisions meubles / murs ----------

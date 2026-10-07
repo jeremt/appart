@@ -807,10 +807,12 @@ function gltfModel(url, w, d, {backNode, dress}) {
     return g;
 }
 
-// Canapé OMHU Teddy (modèle officiel), velours côtelé rouille et arceaux chromés.
+// Canapé OMHU Teddy (modèle officiel), velours côtelé et arceaux chromés.
+// Coloris changé via `userData.setColor` (appliqué dès que le modèle est chargé).
 let teddyFabric = null;
 function teddy(w, d) {
-    return gltfModel('/models/teddy.glb', w, d, {
+    let color = 0xa0503a;
+    const g = gltfModel('/models/teddy.glb', w, d, {
         backNode: 'Handle_Back_Mesh',
         dress(m) {
             if (m.material.name === 'Metal_Material' || m.material.name === 'Paint_Material') {
@@ -819,18 +821,23 @@ function teddy(w, d) {
             }
             if (m.material.name === 'Fabric_Material' && !teddyFabric) {
                 teddyFabric = m.material.clone();
-                teddyFabric.color.set(0xa0503a);
+                teddyFabric.color.set(color);
                 teddyFabric.emissive.set(0x000000);
                 teddyFabric.emissiveMap = null;
                 teddyFabric.roughness = 1;
                 teddyFabric.metalness = 0;
                 teddyFabric.metalnessMap = teddyFabric.roughnessMap = null;
             }
-            // tissu, coussin « zèbre » du configurateur et dessous : même velours rouille
-            if (!teddyFabric) teddyFabric = new THREE.MeshStandardMaterial({color: 0xa0503a, roughness: 1});
+            // tissu, coussin « zèbre » du configurateur et dessous : même velours
+            if (!teddyFabric) teddyFabric = new THREE.MeshStandardMaterial({color, roughness: 1});
             m.material = teddyFabric;
         },
     });
+    g.userData.setColor = (c) => {
+        color = c;
+        teddyFabric?.color.set(c);
+    };
+    return g;
 }
 
 // ---------- Bar en contreplaqué ----------
