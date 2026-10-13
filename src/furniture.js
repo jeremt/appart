@@ -1011,50 +1011,141 @@ function plywoodBar(w, d) {
     return g;
 }
 
-// ---------- Meuble TV + TCL 65P89L ----------
+// ---------- Meuble TV mobile + TCL 65P89L ----------
 
-// Meuble TV bas (noyer, pieds métal noir) avec le téléviseur TCL QD-Mini LED 65" posé dessus.
-// Dimensions TV avec pied : 144,4 x 89,3 x 29,5 cm (fiche produit), pieds en V près des bords.
-function tvUnit65(w, d) {
+// Meuble TV roulant en noyer : flancs fins en trapèze, partie haute inclinée vers l'arrière qui
+// encadre la TCL QD-Mini LED 65" (dalle 144,4 x 83,5 cm), plan incliné à rebord sous l'écran
+// (consoles, livres, chargeur), bas vertical à portes vitrées cannelées ambrées rétroéclairées.
+const flutedAmber = new THREE.MeshPhysicalMaterial({
+    color: 0xd9a25c,
+    transparent: true,
+    opacity: 0.45,
+    roughness: 0.25,
+    depthWrite: false,
+});
+const flutedRib = new THREE.MeshPhysicalMaterial({
+    color: 0xe8b46c,
+    transparent: true,
+    opacity: 0.3,
+    roughness: 0.15,
+    depthWrite: false,
+});
+const tvGlowMat = std(0xffcf8a, {roughness: 0.5, emissive: 0xffb45a, emissiveIntensity: 0.05});
+tvGlowMat.userData.night = 2.5;
+
+// Flanc : profil (z, y) en cm extrudé sur l'épaisseur x1 -> x2.
+function sidePanel(g, x1, x2, pts, mat) {
+    const s = new THREE.Shape(pts.map(([z, y]) => new THREE.Vector2(-z / 100, y / 100)));
+    const geo = new THREE.ExtrudeGeometry(s, {depth: (x2 - x1) / 100, bevelEnabled: false});
+    geo.rotateY(Math.PI / 2);
+    const m = new THREE.Mesh(geo, mat);
+    m.position.x = x1 / 100;
+    m.castShadow = m.receiveShadow = true;
+    g.add(m);
+    return m;
+}
+
+function tvCabinetMobile(w, d) {
     const g = new THREE.Group(),
         hw = w / 2,
         hd = d / 2,
-        h = 45;
-    // meuble
-    for (const sx of [-1, 1])
-        for (const sz of [-1, 1]) {
-            const x = sx * (hw - 8),
-                z = sz * (hd - 6);
-            B(g, x - 1.5, x + 1.5, 0, 12, z - 1.5, z + 1.5, MAT.blackMetal);
-        }
-    B(g, -hw, hw, 12, h, -hd, hd - 1, MAT.walnut);
-    const n = 3,
-        dw = (w - 2) / n;
-    for (let i = 0; i < n; i++) {
-        const a = -hw + 1 + i * dw,
-            b = a + dw - 0.6;
-        B(g, a, b, 14, h - 2, hd - 1, hd, i === 1 ? MAT.dark : MAT.walnut);
-    }
-    // TV : dalle 144,4 x 83,5, pieds en V de 5,8 cm de haut et 29,5 cm de profondeur
-    const TW = 144.4,
+        t = 4, // épaisseur des flancs
+        foot = 10, // dessous du caisson (roulettes comprises)
+        cab = 36, // dessus du caisson bas = pied du plan incliné
+        L = 120, // longueur du cadre incliné
+        sinA = (d - 8) / L,
+        a = Math.asin(sinA),
+        TW = 144.4,
         TH = 83.5,
-        foot = 89.3 - TH,
-        zc = -hd + 16,
-        y0 = h + foot;
+        ix = hw - t; // demi-largeur intérieure
+    // flancs : bas vertical, haut incliné vers l'arrière (dessus plat de 8 cm au fond)
+    const yTop = cab + L * Math.cos(a),
+        prof = [
+            [hd, foot],
+            [hd, cab],
+            [-hd + 8, yTop],
+            [-hd, yTop],
+            [-hd, foot],
+        ];
+    sidePanel(g, -hw, -hw + t, prof, MAT.walnut);
+    sidePanel(g, hw - t, hw, prof, MAT.walnut);
+    // pieds : longerons bois sous les flancs + roulettes
     for (const sx of [-1, 1]) {
-        const x = sx * (TW / 2 - 14);
-        for (const a of [0.55, -0.55]) {
-            const leg = B(g, -1.2, 1.2, h, h + 1.5, -15, 15, MAT.dark);
-            leg.position.x = x / 100;
-            leg.position.z = zc / 100;
-            leg.rotation.y = sx * a;
+        const xc = sx * (hw - t / 2);
+        B(g, xc - 2, xc + 2, 7, foot, -hd + 1, hd - 1, MAT.walnut);
+        for (const sz of [-1, 1]) {
+            const z = sz * (hd - 5);
+            B(g, xc - 1.8, xc + 1.8, 5.6, 7, z - 2.2, z + 2.2, MAT.blackMetal);
+            B(g, xc - 0.4, xc + 0.4, 2.2, 5.6, z - 0.4, z + 0.4, MAT.blackMetal);
+            Cyl(g, 2.5, 2.5, 1.6, xc, 2.5, z + 1.2, MAT.matteBlack, true);
+            Cyl(g, 2.5, 2.5, 1.6, xc, 2.5, z - 1.2, MAT.matteBlack, true);
         }
-        B(g, x - 2, x + 2, h, y0 + 6, zc - 1.5, zc + 1.5, MAT.dark);
     }
-    B(g, -TW / 2, TW / 2, y0, y0 + TH, zc - 1.2, zc + 1.2, MAT.dark); // dalle
-    B(g, -TW / 2 + 20, TW / 2 - 20, y0 + 10, y0 + TH - 10, zc - 4, zc - 1.2, MAT.dark); // dos (électronique)
-    B(g, -TW / 2 + 0.6, TW / 2 - 0.6, y0 + 2, y0 + TH - 0.6, zc + 1.2, zc + 1.4, MAT.screen); // écran
-    B(g, -9, 9, y0 - 0.8, y0 + 1.6, zc + 0.6, zc + 1.6, MAT.steel); // module sous l'écran
+    // caisson bas : plateaux, fond, séparations
+    B(g, -ix, ix, foot, foot + 2, -hd, hd, MAT.walnut);
+    B(g, -ix, ix, cab - 2, cab, -hd, hd, MAT.walnut);
+    B(g, -ix, ix, foot, cab, -hd, -hd + 1.5, MAT.walnut);
+    const ww = 2 * ix;
+    for (const x of [-ww / 6, ww / 6]) B(g, x - 0.8, x + 0.8, foot + 2, cab - 2, -hd, hd - 2, MAT.walnut);
+    // contenu des niches
+    const cardMat = std(0xcbbba0, {roughness: 0.9});
+    B(g, -ix + 4, -ww / 6 - 5, foot + 2, foot + 17, -hd + 6, hd - 10, cardMat);
+    B(g, -ww / 6 + 4, ww / 6 - 4, foot + 2, foot + 6, -hd + 8, hd - 8, MAT.dark);
+    B(g, -ww / 6 + 8, ww / 6 - 12, foot + 6, foot + 11, -hd + 10, hd - 12, std(0xd9d4c8, {roughness: 0.8}));
+    B(g, ww / 6 + 5, ix - 5, foot + 2, foot + 7, -hd + 8, hd - 8, MAT.dark);
+    // rétroéclairage LED chaud
+    const glow = B(g, -ix + 3, ix - 3, cab - 4, cab - 2, -hd + 3, hd - 6, tvGlowMat);
+    glow.castShadow = false;
+    const lamp = new THREE.PointLight(0xffb45a, 0.5, 1.6, 2);
+    lamp.position.set(0, (cab - 6) / 100, 0);
+    lamp.userData.nightOnly = true;
+    lamp.visible = false;
+    g.add(lamp);
+    // portes vitrées cannelées ambrées
+    const nd = 3,
+        dw = ww / nd;
+    for (let i = 0; i < nd; i++) {
+        const x0 = -ix + i * dw + 0.3,
+            x1 = x0 + dw - 0.6,
+            y0 = foot + 2.5,
+            y1 = cab - 2.5;
+        B(g, x0, x1, y0, y0 + 1.2, hd - 1.8, hd - 0.4, MAT.walnut);
+        B(g, x0, x1, y1 - 1.2, y1, hd - 1.8, hd - 0.4, MAT.walnut);
+        B(g, x0, x0 + 1.2, y0, y1, hd - 1.8, hd - 0.4, MAT.walnut);
+        B(g, x1 - 1.2, x1, y0, y1, hd - 1.8, hd - 0.4, MAT.walnut);
+        B(g, x0 + 1.2, x1 - 1.2, y0 + 1.2, y1 - 1.2, hd - 1.2, hd - 0.9, flutedAmber);
+        for (let x = x0 + 1.8; x < x1 - 1.8; x += 1.5)
+            B(g, x, x + 0.9, y0 + 1.2, y1 - 1.2, hd - 0.9, hd - 0.3, flutedRib);
+        B(g, x1 - 4, x1 - 3.2, y0 + 4, y0 + 12, hd - 0.4, hd + 0.4, MAT.blackMetal); // poignée
+    }
+    // partie haute : repère incliné (y le long de la pente, z normal vers l'avant)
+    const sg = new THREE.Group();
+    sg.position.set(0, cab / 100, hd / 100);
+    sg.rotation.x = -a;
+    g.add(sg);
+    const tvY = 62, // dessous de la TV (verticale)
+        lyTv = (tvY - cab) / Math.cos(a), // hauteur du plan incliné le long de la pente
+        zFront = hd - (tvY - cab) * Math.tan(a); // avant du cadre à cette hauteur
+    B(sg, -ix, ix, 0, lyTv - 1, -2, 0, MAT.walnut); // plan incliné
+    B(sg, -ix, ix, 0, 1.5, 0, 1.4, MAT.walnut); // rebord bas du plan
+    B(sg, -ix, ix, 31.5 + TH, L, -6, 0.5, MAT.walnut); // traverse haute (inclinée, au-dessus de la TV)
+    B(g, -ix, ix, tvY - 2, tvY, -hd + 1.5, zFront, MAT.walnut); // tablette plate sous la TV
+    B(g, -ix, ix, tvY - 2, yTop, -hd, -hd + 1.5, MAT.walnut); // fond vertical du cadre
+    // objets sur le plan incliné : multiprise encastrée, chargeur, console, livre
+    B(sg, -ix + 6, -ix + 24, 14, 18, -0.6, 0.3, MAT.dark);
+    B(sg, -ix + 11, -ix + 15, 14.6, 17.4, 0.3, 0.9, MAT.white);
+    B(sg, -ix + 30, -ix + 46, 5, 11, 0, 1.2, std(0x1b1b1d, {roughness: 0.4}));
+    B(sg, ix - 46, ix - 20, 3, 21, 0, 1.2, std(0x1d1d20, {roughness: 0.6}));
+    B(sg, ix - 42, ix - 30, 8, 9, 1.2, 1.4, std(0xc9b79c, {roughness: 0.8}));
+    B(sg, -8, 6, 4, 10, 0, 1.0, std(0x2a2a2e, {roughness: 0.4})); // console
+    B(sg, -8, -6, 4, 10, 1.0, 1.9, std(0xe4002b, {roughness: 0.4}));
+    B(sg, -6, -4, 4, 10, 1.0, 1.9, std(0x00a0e6, {roughness: 0.4}));
+    // TV droite à l'intérieur du cadre (le haut du cadre s'incline au-dessus d'elle)
+    const zc = -14;
+    B(g, -TW / 2, TW / 2, tvY, tvY + TH, zc - 1.2, zc + 1.2, MAT.dark); // dalle
+    B(g, -TW / 2 + 20, TW / 2 - 20, tvY + 10, tvY + TH - 10, zc - 3.5, zc - 1.2, MAT.dark); // dos
+    B(g, -TW / 2 + 0.6, TW / 2 - 0.6, tvY + 2, tvY + TH - 0.6, zc + 1.2, zc + 1.4, MAT.screen); // écran
+    B(g, -9, 9, tvY - 0.8, tvY + 1.6, zc + 0.6, zc + 1.6, MAT.steel);
     return g;
 }
 
@@ -1190,6 +1281,106 @@ function monstera(w, d) {
     }
     // taille proportionnelle à l'emprise (70 cm = grande plante)
     g.scale.setScalar(Math.min(w, d) / 70);
+    return g;
+}
+
+// ---------- Yucca ----------
+
+// Feuille de yucca : lame étroite et pointue, pliée en V le long de la nervure, qui s'arque.
+// Repère local : base en (0, 0), pointe en (0, L) sur l'axe y, face vers +z.
+function yuccaLeaf(L, W, droop) {
+    const s = new THREE.Shape();
+    const half = [
+        [0.25, 0],
+        [0.5, 0.15],
+        [0.5, 0.6],
+        [0.3, 0.88],
+        [0, 1],
+    ];
+    s.moveTo(-0.25 * W, 0);
+    half.forEach(([x, y]) => s.lineTo(x * W, y * L));
+    half.slice(0, -1).reverse().forEach(([x, y]) => s.lineTo(-x * W, y * L));
+    const geo = new THREE.ShapeGeometry(s, 8);
+    const p = geo.attributes.position;
+    for (let i = 0; i < p.count; i++) {
+        const x = p.getX(i) / W,
+            y = p.getY(i) / L;
+        p.setZ(i, Math.abs(x) * 0.25 * W - y * y * droop * L);
+    }
+    geo.computeVertexNormals();
+    return geo;
+}
+
+// Yucca elephantipes ≈ 199 cm : pot Ø 32 cm, trois troncs de hauteurs différentes,
+// chacun coiffé d'une rosette de feuilles en lame (les jeunes dressées, les vieilles retombantes).
+function yucca(w, d) {
+    const g = new THREE.Group();
+    let seed = 1990;
+    const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    const r = Math.min(w, d) / 2,
+        potH = 30;
+    const potMat = std(0xe9e6df, {roughness: 0.85});
+    Cyl(g, r, r * 0.82, potH, 0, potH / 2, 0, potMat);
+    Cyl(g, r - 1.2, r - 1.2, 1, 0, potH - 2, 0, std(0x3a2a1e, {roughness: 1}));
+    const bark = std(0x7a6450, {roughness: 0.95});
+    const scar = std(0x5e4b3b, {roughness: 1});
+    const leafMat = new THREE.MeshStandardMaterial({color: 0x3f7d36, roughness: 0.6, side: THREE.DoubleSide});
+    const oldMat = new THREE.MeshStandardMaterial({color: 0x5d8a3c, roughness: 0.7, side: THREE.DoubleSide});
+
+    const up = new THREE.Vector3(0, 1, 0);
+    // [angle, écart au centre en tête (cm), hauteur du sommet du tronc (cm), rayon du tronc]
+    // troncs penchés vers l'avant (+z), loin du mur
+    const trunks = [
+        [1.3, 8, 152, 4.2],
+        [0.2, 14, 112, 3.6],
+        [2.5, 15, 78, 3.2],
+    ];
+    for (const [phi, spread, top, tr] of trunks) {
+        const c = Math.cos(phi),
+            s = Math.sin(phi);
+        const base = new THREE.Vector3((c * 4) / 100, (potH - 2) / 100, (s * 4) / 100);
+        const mid = new THREE.Vector3((c * spread * 0.45) / 100, (potH + (top - potH) * 0.5) / 100, (s * spread * 0.45) / 100);
+        const head = new THREE.Vector3((c * spread) / 100, top / 100, (s * spread) / 100);
+        const curve = new THREE.CatmullRomCurve3([base, mid, head]);
+        const trunk = new THREE.Mesh(new THREE.TubeGeometry(curve, 16, tr / 100, 10), bark);
+        trunk.castShadow = trunk.receiveShadow = true;
+        g.add(trunk);
+        // pied renflé (patte d'éléphant) et cicatrices de feuilles annelées
+        const foot = Cyl(g, tr, tr * 1.5, 8, base.x * 100, potH + 2, base.z * 100, bark);
+        foot.castShadow = true;
+        for (let t = 0.15; t < 0.97; t += 0.06 + rnd() * 0.05) {
+            const pt = curve.getPoint(t),
+                tg = curve.getTangent(t);
+            const ring = new THREE.Mesh(new THREE.TorusGeometry(tr / 100, 0.0035, 4, 14), scar);
+            ring.position.copy(pt);
+            ring.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), tg);
+            g.add(ring);
+        }
+        // coupe du tronc sous la rosette
+        const cap = Cyl(g, tr * 0.9, tr, 3, head.x * 100, top + 1, head.z * 100, scar);
+        cap.castShadow = true;
+
+        // rosette : du plus vieux (bas, retombant) au plus jeune (haut, dressé)
+        const n = 34;
+        for (let i = 0; i < n; i++) {
+            const k = i / (n - 1);
+            const a = i * 2.39996 + rnd() * 0.3;
+            const elev = -0.55 + k * 1.95 + (rnd() - 0.5) * 0.25; // -30° → +80°
+            const L = 50 - k * 18 + rnd() * 10,
+                W = 4.2 + rnd() * 0.8;
+            const dir = new THREE.Vector3(Math.cos(a) * Math.cos(elev), Math.sin(elev), Math.sin(a) * Math.cos(elev)).normalize();
+            const xAxis = new THREE.Vector3().crossVectors(up, dir).normalize();
+            const zAxis = new THREE.Vector3().crossVectors(xAxis, dir).normalize();
+            if (zAxis.y < 0) zAxis.negate(), xAxis.negate();
+            const droop = 0.08 + (1 - k) * 0.22;
+            const leaf = new THREE.Mesh(yuccaLeaf(L / 100, W / 100, droop), k < 0.25 ? oldMat : leafMat);
+            const at = head.clone().add(new THREE.Vector3(0, (-6 + k * 7) / 100, 0));
+            leaf.matrixAutoUpdate = false;
+            leaf.matrix.makeBasis(xAxis, dir, zAxis).setPosition(at);
+            leaf.castShadow = leaf.receiveShadow = true;
+            g.add(leaf);
+        }
+    }
     return g;
 }
 
@@ -2772,6 +2963,85 @@ function skadisDrone(w, d) {
     return g;
 }
 
+// Kamado GRILLMEISTER Ø 40 (Lidl) sans son chariot, posé sur un petit meuble bas en teck.
+// Œuf : Ø ext. ≈ 52 cm, ≈ 62 cm de haut avec la cheminée ; meuble 45 cm → grille à ≈ 80 cm.
+function kamadoCabinet(w, d) {
+    const g = new THREE.Group(),
+        hw = w / 2,
+        hd = d / 2,
+        h = 45;
+    const teak = std(0x9a6a43, {roughness: 0.7});
+    // meuble : 4 pieds, plateau plein, étagère à lattes (charbon, allume-feu)
+    for (const sx of [-1, 1])
+        for (const sz of [-1, 1]) {
+            const x = sx * (hw - 2.5),
+                z = sz * (hd - 2.5);
+            B(g, x - 2.5, x + 2.5, 0, h - 3, z - 2.5, z + 2.5, teak);
+        }
+    B(g, -hw, hw, h - 3, h, -hd, hd, teak);
+    B(g, -hw + 5, hw - 5, h - 9, h - 3, -hd + 2, -hd + 4, teak);
+    for (let i = 0; i < 5; i++) {
+        const z = -hd + 6 + (i * (d - 12)) / 4;
+        B(g, -hw + 5, hw - 5, 8, 10, z - 4, z + 4, teak);
+    }
+    B(g, -hw + 8, -hw + 30, 10, 30, -hd + 8, hd - 18, std(0x2b2b2b, {roughness: 0.95})); // sac de charbon
+    B(g, -hw + 34, -hw + 48, 10, 17, -8, 6, std(0xb8452f, {roughness: 0.8})); // allume-feu
+
+    // œuf en céramique : ellipsoïde (R 26 cm), base jusqu'au joint à 34 cm, dôme au-dessus
+    const ceram = std(0x141516, {roughness: 0.3}),
+        steel = std(0x2a2b2d, {roughness: 0.4, metalness: 0.7, envMap: MAT.chrome.envMap}),
+        inox = std(0xc9ccd0, {metalness: 0.9, roughness: 0.25, envMap: MAT.chrome.envMap}),
+        bamboo = std(0xc9a46c, {roughness: 0.6});
+    const R = 26,
+        cy = 30,
+        seam = 34;
+    const shell = (y0, y1, a) => {
+        const pts = [new THREE.Vector2(0, y0 / 100)];
+        for (let i = 0; i <= 16; i++) {
+            const y = y0 + ((y1 - y0) * i) / 16;
+            pts.push(new THREE.Vector2((R * Math.sqrt(Math.max(0, 1 - ((y - cy) / a) ** 2))) / 100, y / 100));
+        }
+        pts.push(new THREE.Vector2(0, y1 / 100));
+        const m = new THREE.Mesh(new THREE.LatheGeometry(pts, 48), ceram);
+        m.position.y = h / 100;
+        m.castShadow = m.receiveShadow = true;
+        g.add(m);
+    };
+    shell(3, seam, 30);
+    shell(seam + 0.6, 58, 32);
+    // pieds céramique sous l'œuf
+    for (let k = 0; k < 3; k++) {
+        const a = (k * 2 * Math.PI) / 3 + Math.PI / 2;
+        B(g, Math.cos(a) * 9 - 2, Math.cos(a) * 9 + 2, h, h + 4, Math.sin(a) * 9 - 2, Math.sin(a) * 9 + 2, ceram);
+    }
+    // cerclages acier de part et d'autre du joint, charnière à ressort au dos
+    for (const y of [seam - 2.5, seam + 3]) {
+        const band = new THREE.Mesh(new THREE.TorusGeometry((R + 0.3) / 100, 0.012, 6, 48), steel);
+        band.rotation.x = Math.PI / 2;
+        band.position.y = (h + y) / 100;
+        g.add(band);
+    }
+    B(g, -4, 4, h + seam - 6, h + seam + 7, -R - 3, -R + 1, steel);
+    Cyl(g, 1.6, 1.6, 16, 0, h + seam - 2, -R - 3.5, steel);
+    // poignée bambou à l'avant du dôme
+    rod(g, [-8, h + seam + 3, R], [-8, h + seam + 3, R + 7], 0.8, steel);
+    rod(g, [8, h + seam + 3, R], [8, h + seam + 3, R + 7], 0.8, steel);
+    rod(g, [-11, h + seam + 3, R + 7.5], [11, h + seam + 3, R + 7.5], 1.6, bamboo);
+    // thermomètre en façade du dôme
+    const ty = 48,
+        tz = R * Math.sqrt(1 - ((ty - cy) / 32) ** 2);
+    const th = Cyl(g, 3.5, 3.5, 1.2, 0, h + ty, tz + 0.2, inox, true);
+    th.rotation.x = Math.PI / 2 - 0.55;
+    // cheminée et clapet « daisy wheel »
+    Cyl(g, 7, 8, 5, 0, h + 59, 0, steel);
+    Cyl(g, 6.5, 6.5, 2, 0, h + 62, 0, steel);
+    Cyl(g, 1.2, 1.2, 1.5, 0, h + 63.5, 0, inox);
+    // trappe d'aération inox en bas de la base
+    B(g, -5, 5, h + 9, h + 17, R - 5.5, R - 3, inox);
+    B(g, -1.5, 1.5, h + 17, h + 19, R - 5, R - 3, inox);
+    return g;
+}
+
 export const BUILDERS = {
     skadisCamera,
     skadisDrone,
@@ -2785,6 +3055,7 @@ export const BUILDERS = {
     herbShelf,
     bistroTableRound,
     bistroChair,
+    kamadoCabinet,
     stringLights,
     oliveTree,
     railPlanter,
@@ -2803,7 +3074,8 @@ export const BUILDERS = {
     standingDesk,
     onewheelStand,
     monstera,
-    tvUnit65,
+    yucca,
+    tvCabinetMobile,
     plywoodBar,
     teddy,
     sofa,

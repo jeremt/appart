@@ -156,8 +156,10 @@ export const furnitureDefs = [
     {id: 'etageres-canape', type: 'sofaShelves', name: 'Étagères au-dessus du canapé', r: [330, SPLIT_Y + INT, 510, SPLIT_Y + INT + 22], rot: 0},
     {id: 'tapis', type: 'rug', name: 'Tapis laine 200 x 140', r: [320, 395, 520, 535], rot: 0},
     {id: 'table-basse', type: 'matikaTable', name: 'Table basse rehaussable Matika L120', r: [360, 435, 480, 515], rot: 0, url: 'https://www.maisonsdumonde.com/FR/fr/p/table-basse-rehaussable-en-bois-et-acier-noir-l120-matika-M22179481.htm'},
-    {id: 'meuble-tv', type: 'tvUnit65', name: 'Meuble TV + TCL 65" (65P89L)', r: [350, 588, 530, 628], rot: 180},
+    {id: 'meuble-tv', type: 'tvCabinetMobile', name: 'Meuble TV mobile noyer sur roulettes + TCL 65" (65P89L)', r: [360, 586, 520, 628], rot: 180},
     {id: 'colonne-salon', type: 'storageColumn', name: 'Colonne de rangement', r: [295, 593, 330, 628], rot: 180},
+    // à gauche du canapé, contre la cloison (laisse 68 cm de passage devant la porte de la chambre)
+    {id: 'yucca', type: 'yucca', name: 'Yucca 199 cm', r: [293, SPLIT_Y + INT + 1, 325, SPLIT_Y + INT + 33], rot: 0},
     {id: 'monstera', type: 'monstera', name: 'Monstera', r: [550, 559, 600, 609], rot: 0},
     {id: 'onewheel', type: 'onewheelStand', name: 'Onewheel sur support', r: [182, 598, 222, 628], rot: 180},
     // étagères au-dessus du Onewheel (dessus à 100 et 150 cm), entre l'étagère en grès et la gaine
@@ -190,4 +192,5 @@ export const furnitureDefs = [
     {id: 'table-bistrot', type: 'bistroTableRound', name: 'Table bistrot', c: [695, 520], size: [60, 60], rot: 0},
     {id: 'chaise-bistrot-1', type: 'bistroChair', name: 'Chaise bistrot', c: [695, 470], size: [42, 46], rot: 0},
     {id: 'chaise-bistrot-2', type: 'bistroChair', name: 'Chaise bistrot', c: [695, 572], size: [42, 46], rot: 180},
+    {id: 'kamado', type: 'kamadoCabinet', name: 'Kamado GRILLMEISTER Ø 40 cm (Lidl) sur meuble bas', r: [718, 395, 778, 455], rot: -90, url: 'https://www.lidl.fr/p/grillmeister-barbecue-en-ceramique-o-40-cm/p100401324'},
 ];
