@@ -134,6 +134,7 @@ const teddyColors = [
 // `r` = emprise [x1, y1, x2, y2], `rot` = orientation de la face avant
 // (0 : vers le bas du plan, 90 : vers la droite, -90 : vers la gauche, 180 : vers le haut).
 // `c` + `size` = centre + [largeur, profondeur] locales.
+// `heightRange` = [min, max] cm pour un meuble à hauteur réglable (curseur du panneau).
 // `variants` = coloris au choix ({code, name, color, url}), `variant` = code par défaut.
 export const furnitureDefs = [
     // Bain + WC
@@ -156,8 +157,8 @@ export const furnitureDefs = [
     {id: 'lampadaire', type: 'arcLamp', name: 'Lampadaire arc', c: [555, 345], size: [36, 36], rot: -45},
     {id: 'etageres-canape', type: 'sofaShelves', name: 'Étagères au-dessus du canapé', r: [330, SPLIT_Y + INT, 510, SPLIT_Y + INT + 22], rot: 0},
     {id: 'tapis', type: 'rug', name: 'Tapis laine 200 x 140', r: [320, 395, 520, 535], rot: 0},
-    {id: 'table-basse', type: 'matikaTable', name: 'Table basse rehaussable Matika L120', r: [360, 435, 480, 515], rot: 0, url: 'https://www.maisonsdumonde.com/FR/fr/p/table-basse-rehaussable-en-bois-et-acier-noir-l120-matika-M22179481.htm'},
-    {id: 'meuble-tv', type: 'tvCabinetMobile', name: 'Meuble TV mobile noyer sur roulettes + TCL 65" (65P89L)', r: [360, 586, 520, 628], rot: 180},
+    {id: 'table-basse', type: 'matikaTable', name: 'Table basse rehaussable Matika L120', r: [360, 435, 480, 515], rot: 0, heightRange: [49, 76], url: 'https://www.maisonsdumonde.com/FR/fr/p/table-basse-rehaussable-en-bois-et-acier-noir-l120-matika-M22179481.htm'},
+    {id: 'meuble-tv', type: 'tvCabinetMobile', name: 'Support TV à roulettes Duiliuu 50"-100\" + TCL 65" (65P89L) + Nintendo Switch et 2 manettes', r: [394, 558, 486, 628], rot: 180, url: 'https://www.amazon.fr/dp/B0D2MCVY3W'},
     {id: 'colonne-salon', type: 'storageColumn', name: 'Colonne de rangement', r: [295, 593, 330, 628], rot: 180},
     // à gauche du canapé, contre la cloison (laisse 68 cm de passage devant la porte de la chambre)
     {id: 'monstera', type: 'monstera', name: 'Monstera', r: [550, 559, 600, 609], rot: 0},

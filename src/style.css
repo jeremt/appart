@@ -323,3 +323,11 @@ button.primary {
 .swatch.active {
     border-color: #f59e0b;
 }
+
+#p-height-box {
+    margin-top: 10px;
+}
+#p-height {
+    width: 100%;
+    accent-color: #f59e0b;
+}

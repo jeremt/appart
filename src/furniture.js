@@ -1034,141 +1034,102 @@ function plywoodBar(w, d) {
     return g;
 }
 
-// ---------- Meuble TV mobile + TCL 65P89L ----------
+// ---------- Support TV à roulettes + TCL 65P89L + Switch ----------
 
-// Meuble TV roulant en noyer : flancs fins en trapèze, partie haute inclinée vers l'arrière qui
-// encadre la TCL QD-Mini LED 65" (dalle 144,4 x 83,5 cm), plan incliné à rebord sous l'écran
-// (consoles, livres, chargeur), bas vertical à portes vitrées cannelées ambrées rétroéclairées.
-const flutedAmber = new THREE.MeshPhysicalMaterial({
-    color: 0xd9a25c,
-    transparent: true,
-    opacity: 0.45,
-    roughness: 0.25,
-    depthWrite: false,
-});
-const flutedRib = new THREE.MeshPhysicalMaterial({
-    color: 0xe8b46c,
-    transparent: true,
-    opacity: 0.3,
-    roughness: 0.15,
-    depthWrite: false,
-});
+// Support TV Duiliuu à roulettes (Amazon B0D2MCVY3W), cotes de la fiche : base 89 x 69,5 cm, hauteur
+// réglable 105,5 -> 129,5 cm (modélisé en position haute), cadre VESA de 91 cm de large. De profil :
+// montant vertical sous le cadre, qui se plie à ~80 cm et descend en pente vers les roulettes avant ;
+// jambe de force arrière entre l'angle de la base et le montant. Deux étagères en bois sombre.
+// TCL QD-Mini LED 65" (dalle 144,4 x 83,5 cm) vissée devant le cadre, centrée sur le support.
 const tvGlowMat = std(0xffcf8a, {roughness: 0.5, emissive: 0xffb45a, emissiveIntensity: 0.05});
 tvGlowMat.userData.night = 2.5;
 
-// Flanc : profil (z, y) en cm extrudé sur l'épaisseur x1 -> x2.
-function sidePanel(g, x1, x2, pts, mat) {
-    const s = new THREE.Shape(pts.map(([z, y]) => new THREE.Vector2(-z / 100, y / 100)));
-    const geo = new THREE.ExtrudeGeometry(s, {depth: (x2 - x1) / 100, bevelEnabled: false});
-    geo.rotateY(Math.PI / 2);
-    const m = new THREE.Mesh(geo, mat);
-    m.position.x = x1 / 100;
-    m.castShadow = m.receiveShadow = true;
-    g.add(m);
-    return m;
+// Manette Switch Pro : corps + deux poignées, sticks et boutons ; posée à plat, sticks vers +z (y = dessus du support)
+function proController(g, x, y, z, rot, color = 0x222326) {
+    const c = new THREE.Group();
+    const body = std(color, {roughness: 0.5});
+    B(c, -5.5, 5.5, 0, 2.8, -3.2, 3.2, body);
+    for (const s of [-1, 1]) {
+        const grip = B(c, -2, 2, 0, 2.6, -1, 8, body);
+        grip.position.x = (s * 6.2) / 100;
+        grip.position.z = 0.006;
+        grip.rotation.y = s * 0.28;
+    }
+    for (const [sx, sz] of [[-5.2, -0.8], [2.6, 2.4]]) Cyl(c, 1.2, 1.4, 1, sx, 3.2, sz, MAT.matteBlack);
+    for (const [bx, bz] of [[5, -2.2], [6.4, -0.6], [3.6, -0.6], [5, 1]]) Cyl(c, 0.45, 0.45, 0.4, bx, 3, bz, MAT.white);
+    c.position.set(x / 100, y / 100, z / 100);
+    c.rotation.y = rot;
+    g.add(c);
 }
 
 function tvCabinetMobile(w, d) {
     const g = new THREE.Group(),
         hw = w / 2,
         hd = d / 2,
-        t = 4, // épaisseur des flancs
-        foot = 10, // dessous du caisson (roulettes comprises)
-        cab = 36, // dessus du caisson bas = pied du plan incliné
-        L = 120, // longueur du cadre incliné
-        sinA = (d - 8) / L,
-        a = Math.asin(sinA),
+        steel = MAT.blackMetal,
+        yTop = 129.5, // dessus du cadre (position haute)
+        yBend = 80, // coude des montants
         TW = 144.4,
         TH = 83.5,
-        ix = hw - t; // demi-largeur intérieure
-    // flancs : bas vertical, haut incliné vers l'arrière (dessus plat de 8 cm au fond)
-    const yTop = cab + L * Math.cos(a),
-        prof = [
-            [hd, foot],
-            [hd, cab],
-            [-hd + 8, yTop],
-            [-hd, yTop],
-            [-hd, foot],
-        ];
-    sidePanel(g, -hw, -hw + t, prof, MAT.walnut);
-    sidePanel(g, hw - t, hw, prof, MAT.walnut);
-    // pieds : longerons bois sous les flancs + roulettes
+        tvY = yTop - 51, // dessous de la TV : centrée sur les platines VESA
+        ux = hw - 3, // axe des montants
+        zb = -4, // plan du cadre vertical
+        zF = hd - 4, // roulettes avant
+        zR = -hd + 4, // roulettes arrière
+        zAt = (y) => zF + ((zb - zF) * (y - 5)) / (yBend - 5); // z de la pente à la hauteur y
     for (const sx of [-1, 1]) {
-        const xc = sx * (hw - t / 2);
-        B(g, xc - 2, xc + 2, 7, foot, -hd + 1, hd - 1, MAT.walnut);
-        for (const sz of [-1, 1]) {
-            const z = sz * (hd - 5);
-            B(g, xc - 1.8, xc + 1.8, 5.6, 7, z - 2.2, z + 2.2, MAT.blackMetal);
-            B(g, xc - 0.4, xc + 0.4, 2.2, 5.6, z - 0.4, z + 0.4, MAT.blackMetal);
-            Cyl(g, 2.5, 2.5, 1.6, xc, 2.5, z + 1.2, MAT.matteBlack, true);
-            Cyl(g, 2.5, 2.5, 1.6, xc, 2.5, z - 1.2, MAT.matteBlack, true);
+        const x = sx * ux;
+        beam(g, [x, 5, zF], [x, 5, zR], 3, 3.5, steel); // rail de base
+        beam(g, [x, 5, zF], [x, yBend, zb], 3.5, 3.5, steel); // pente avant
+        beam(g, [x, yBend, zb], [x, yTop + 1, zb], 3.5, 3.5, steel); // montant vertical
+        beam(g, [x, 5, zR], [x, 62, zAt(62)], 3, 2.5, steel); // jambe de force arrière
+        for (const z of [zF, zR]) {
+            B(g, x - 1.3, x + 1.3, 3.2, 5, z - 1.8, z + 1.8, steel);
+            Cyl(g, 2.5, 2.5, 2, x, 2.5, z, MAT.matteBlack, true).rotation.z = Math.PI / 2;
         }
     }
-    // caisson bas : plateaux, fond, séparations
-    B(g, -ix, ix, foot, foot + 2, -hd, hd, MAT.walnut);
-    B(g, -ix, ix, cab - 2, cab, -hd, hd, MAT.walnut);
-    B(g, -ix, ix, foot, cab, -hd, -hd + 1.5, MAT.walnut);
-    const ww = 2 * ix;
-    for (const x of [-ww / 6, ww / 6]) B(g, x - 0.8, x + 0.8, foot + 2, cab - 2, -hd, hd - 2, MAT.walnut);
-    // contenu des niches
-    const cardMat = std(0xcbbba0, {roughness: 0.9});
-    B(g, -ix + 4, -ww / 6 - 5, foot + 2, foot + 17, -hd + 6, hd - 10, cardMat);
-    B(g, -ww / 6 + 4, ww / 6 - 4, foot + 2, foot + 6, -hd + 8, hd - 8, MAT.dark);
-    B(g, -ww / 6 + 8, ww / 6 - 12, foot + 6, foot + 11, -hd + 10, hd - 12, std(0xd9d4c8, {roughness: 0.8}));
-    B(g, ww / 6 + 5, ix - 5, foot + 2, foot + 7, -hd + 8, hd - 8, MAT.dark);
-    // rétroéclairage LED chaud
-    const glow = B(g, -ix + 3, ix - 3, cab - 4, cab - 2, -hd + 3, hd - 6, tvGlowMat);
-    glow.castShadow = false;
-    const lamp = new THREE.PointLight(0xffb45a, 0.5, 1.6, 2);
-    lamp.position.set(0, (cab - 6) / 100, 0);
-    lamp.userData.nightOnly = true;
-    lamp.visible = false;
-    g.add(lamp);
-    // portes vitrées cannelées ambrées
-    const nd = 3,
-        dw = ww / nd;
-    for (let i = 0; i < nd; i++) {
-        const x0 = -ix + i * dw + 0.3,
-            x1 = x0 + dw - 0.6,
-            y0 = foot + 2.5,
-            y1 = cab - 2.5;
-        B(g, x0, x1, y0, y0 + 1.2, hd - 1.8, hd - 0.4, MAT.walnut);
-        B(g, x0, x1, y1 - 1.2, y1, hd - 1.8, hd - 0.4, MAT.walnut);
-        B(g, x0, x0 + 1.2, y0, y1, hd - 1.8, hd - 0.4, MAT.walnut);
-        B(g, x1 - 1.2, x1, y0, y1, hd - 1.8, hd - 0.4, MAT.walnut);
-        B(g, x0 + 1.2, x1 - 1.2, y0 + 1.2, y1 - 1.2, hd - 1.2, hd - 0.9, flutedAmber);
-        for (let x = x0 + 1.8; x < x1 - 1.8; x += 1.5)
-            B(g, x, x + 0.9, y0 + 1.2, y1 - 1.2, hd - 0.9, hd - 0.3, flutedRib);
-        B(g, x1 - 4, x1 - 3.2, y0 + 4, y0 + 12, hd - 0.4, hd + 0.4, MAT.blackMetal); // poignée
+    beam(g, [-ux, 5, zF], [ux, 5, zF], 3, 3.5, steel); // traverses de base
+    beam(g, [-ux, 5, zR], [ux, 5, zR], 3, 3.5, steel);
+    // cadre VESA : deux barres et montants centraux
+    beam(g, [-ux, yTop, zb], [ux, yTop, zb], 3.5, 4, steel);
+    beam(g, [-ux, yTop - 18, zb], [ux, yTop - 18, zb], 2.5, 3, steel);
+    for (const x of [-2, 2]) beam(g, [x, yTop, zb], [x, yTop - 18, zb], 2.5, 2, steel);
+    // étagères en bois sombre, entre les montants
+    for (const y of [8, 46]) {
+        const zf = zAt(y) + 1.5;
+        B(g, -ux + 2, ux - 2, y, y + 2, zR - 1, zf, MAT.walnut);
     }
-    // partie haute : repère incliné (y le long de la pente, z normal vers l'avant)
-    const sg = new THREE.Group();
-    sg.position.set(0, cab / 100, hd / 100);
-    sg.rotation.x = -a;
-    g.add(sg);
-    const tvY = 62, // dessous de la TV (verticale)
-        lyTv = (tvY - cab) / Math.cos(a), // hauteur du plan incliné le long de la pente
-        zFront = hd - (tvY - cab) * Math.tan(a); // avant du cadre à cette hauteur
-    B(sg, -ix, ix, 0, lyTv - 1, -2, 0, MAT.walnut); // plan incliné
-    B(sg, -ix, ix, 0, 1.5, 0, 1.4, MAT.walnut); // rebord bas du plan
-    B(sg, -ix, ix, 31.5 + TH, L, -6, 0.5, MAT.walnut); // traverse haute (inclinée, au-dessus de la TV)
-    B(g, -ix, ix, tvY - 2, tvY, -hd + 1.5, zFront, MAT.walnut); // tablette plate sous la TV
-    B(g, -ix, ix, tvY - 2, yTop, -hd, -hd + 1.5, MAT.walnut); // fond vertical du cadre
-    // objets sur le plan incliné : multiprise encastrée, chargeur, console, livre
-    B(sg, -ix + 6, -ix + 24, 14, 18, -0.6, 0.3, MAT.dark);
-    B(sg, -ix + 11, -ix + 15, 14.6, 17.4, 0.3, 0.9, MAT.white);
-    B(sg, -ix + 30, -ix + 46, 5, 11, 0, 1.2, std(0x1b1b1d, {roughness: 0.4}));
-    B(sg, ix - 46, ix - 20, 3, 21, 0, 1.2, std(0x1d1d20, {roughness: 0.6}));
-    B(sg, ix - 42, ix - 30, 8, 9, 1.2, 1.4, std(0xc9b79c, {roughness: 0.8}));
-    B(sg, -8, 6, 4, 10, 0, 1.0, std(0x2a2a2e, {roughness: 0.4})); // console
-    B(sg, -8, -6, 4, 10, 1.0, 1.9, std(0xe4002b, {roughness: 0.4}));
-    B(sg, -6, -4, 4, 10, 1.0, 1.9, std(0x00a0e6, {roughness: 0.4}));
-    // TV droite à l'intérieur du cadre (le haut du cadre s'incline au-dessus d'elle)
-    const zc = -14;
+    // platines VESA verticales, TV devant le cadre
+    const zc = zb + 7;
+    for (const x of [-27, 27]) B(g, x - 2, x + 2, yTop - 41.5, yTop + 23, zb + 1.8, zb + 3.5, steel);
     B(g, -TW / 2, TW / 2, tvY, tvY + TH, zc - 1.2, zc + 1.2, MAT.dark); // dalle
     B(g, -TW / 2 + 20, TW / 2 - 20, tvY + 10, tvY + TH - 10, zc - 3.5, zc - 1.2, MAT.dark); // dos
     B(g, -TW / 2 + 0.6, TW / 2 - 0.6, tvY + 2, tvY + TH - 0.6, zc + 1.2, zc + 1.4, MAT.screen); // écran
     B(g, -9, 9, tvY - 0.8, tvY + 1.6, zc + 0.6, zc + 1.6, MAT.steel);
+    const glow = B(g, -TW / 2 + 10, TW / 2 - 10, tvY - 1.2, tvY - 0.4, zc - 1, zc + 1, tvGlowMat);
+    glow.castShadow = false;
+    // Switch sur un stand noir (étagère haute) : dock noir, console insérée, Joy-Con néon
+    const sy = 48,
+        sz = -10,
+        sx0 = -6;
+    const black = std(0x1a1b1d, {roughness: 0.4});
+    B(g, sx0 - 10, sx0 + 10, sy, sy + 0.8, sz - 4, sz + 4, black); // socle du stand
+    B(g, sx0 - 9.8, sx0 + 9.8, sy + 0.8, sy + 11, sz - 3, sz - 1.4, black); // dossier
+    B(g, sx0 - 9.8, sx0 + 9.8, sy + 0.8, sy + 2.2, sz - 1.4, sz + 3.5, black); // lèvre avant
+    B(g, sx0 - 9.5, sx0 + 9.5, sy + 2.2, sy + 10.6, sz - 1.4, sz - 0.2, MAT.dark); // console
+    B(g, sx0 - 8.1, sx0 + 8.1, sy + 2.8, sy + 10, sz - 0.2, sz - 0.05, MAT.screen); // écran
+    B(g, sx0 - 10.4, sx0 - 8.1, sy + 2.2, sy + 10.6, sz - 1.4, sz - 0.1, std(0xe4002b, {roughness: 0.4})); // Joy-Con gauche
+    B(g, sx0 + 8.1, sx0 + 10.4, sy + 2.2, sy + 10.6, sz - 1.4, sz - 0.1, std(0x00a0e6, {roughness: 0.4})); // Joy-Con droit
+    // deux manettes Pro à côté
+    proController(g, 12, 48, -6, 0.2);
+    proController(g, 32, 48, -6, -0.2, 0xe9e9e6);
+    // déco sur l'étagère basse : livres empilés, vase en grès, bougie
+    B(g, -22, 4, 10, 12.2, -12, 6, std(0xd8d2c4, {roughness: 0.8}));
+    B(g, -21, 3, 12.2, 14.2, -11, 5, std(0x3a4a5e, {roughness: 0.8}));
+    Cyl(g, 4.6, 5.2, 11, -9, 19.7, -3, std(0x8a7a66, {roughness: 0.9}));
+    Cyl(g, 2.6, 2.6, 1, -9, 25.5, -3, MAT.dark);
+    Cyl(g, 3, 3, 6, 22, 13, -4, std(0xe9e3d6, {roughness: 0.6}));
+    Cyl(g, 2.2, 2.2, 0.4, 22, 16.2, -4, std(0xc9a25a, {roughness: 0.5}));
     return g;
 }
 
@@ -2628,11 +2589,20 @@ function beam(g, p, q, a, b, mat) {
 
 // Matika L120 : plateau bois massif clair 120 x 80, piètement ciseaux en acier noir.
 // Dimensions fiche produit en position basse : 120 x 80 x 49 cm.
+// Hauteur réglable de 49 à 76 cm (fiche BUT / Mathi Design) : `userData.setHeight(h)` reconstruit la table.
 function matikaTable(w, d) {
-    const g = new THREE.Group(),
-        hw = w / 2,
+    const g = new THREE.Group();
+    g.userData.setHeight = (h) => {
+        g.clear();
+        matikaBuild(g, w, d, h);
+    };
+    g.userData.setHeight(49);
+    return g;
+}
+
+function matikaBuild(g, w, d, h) {
+    const hw = w / 2,
         hd = d / 2,
-        h = 49,
         t = 4; // épaisseur du plateau
     const wood = plywood().veneer.clone();
     wood.color.set(0xf2d9b4);
@@ -2655,7 +2625,6 @@ function matikaTable(w, d) {
     beam(g, [0, yTop / 2 + 1.5, -hd + 16], [0, yTop / 2 + 1.5, hd - 16], 2.5, 2.5, steel);
     // déco : photophore en verre ambré
     Cyl(g, 5, 5, 11, 12, h + 5.5, -6, std(0xd9b54a, {roughness: 0.1, transparent: true, opacity: 0.75}));
-    return g;
 }
 
 // ---------- Tabourets empilables IKEA KYRRE (604.169.25) ----------

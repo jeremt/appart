@@ -128,6 +128,11 @@ function applyState(item) {
     item.group.rotation.y = THREE.MathUtils.degToRad(item.state.rot);
     const v = variantOf(item);
     if (v) item.group.userData.setColor?.(v.color);
+    if (item.def.heightRange && item.group.userData.setHeight) {
+        const [lo, hi] = item.def.heightRange;
+        item.group.userData.setHeight(Math.min(hi, Math.max(lo, item.state.height ?? lo)));
+        item.h = Math.round(new THREE.Box3().setFromObject(item.group).getSize(new THREE.Vector3()).y * 100);
+    }
     if (item.state.deleted) furnRoot.remove(item.group);
     else furnRoot.add(item.group);
 }
@@ -373,6 +378,7 @@ function updateSelection() {
     link.hidden = !url;
     if (url) link.href = url;
     renderSwatches(variant);
+    renderHeight();
     for (const [id, v] of [
         ['#p-x', selected.state.x],
         ['#p-y', selected.state.y],
@@ -382,6 +388,30 @@ function updateSelection() {
         if (document.activeElement !== input) input.value = Math.round(v * 10) / 10;
     }
 }
+
+// Curseur de hauteur du meuble sélectionné (meubles réglables)
+let heightBefore = null;
+function renderHeight() {
+    const range = selected.def.heightRange;
+    $('#p-height-box').hidden = !range;
+    if (!range) return;
+    const input = $('#p-height');
+    input.min = range[0];
+    input.max = range[1];
+    if (document.activeElement !== input) input.value = selected.state.height ?? range[0];
+    $('#p-height-val').textContent = `${input.value} cm`;
+}
+$('#p-height').addEventListener('input', (e) => {
+    if (!selected) return;
+    heightBefore ??= snapshot();
+    selected.state.height = +e.target.value;
+    applyState(selected);
+    afterChange();
+});
+$('#p-height').addEventListener('change', () => {
+    if (heightBefore) undoStack.push(heightBefore);
+    heightBefore = null;
+});
 
 // Nuancier des coloris du meuble sélectionné
 function renderSwatches(current) {
