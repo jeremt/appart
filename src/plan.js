@@ -160,7 +160,6 @@ export const furnitureDefs = [
     {id: 'meuble-tv', type: 'tvCabinetMobile', name: 'Meuble TV mobile noyer sur roulettes + TCL 65" (65P89L)', r: [360, 586, 520, 628], rot: 180},
     {id: 'colonne-salon', type: 'storageColumn', name: 'Colonne de rangement', r: [295, 593, 330, 628], rot: 180},
     // à gauche du canapé, contre la cloison (laisse 68 cm de passage devant la porte de la chambre)
-    {id: 'yucca', type: 'yucca', name: 'Yucca 199 cm', r: [293, SPLIT_Y + INT + 1, 325, SPLIT_Y + INT + 33], rot: 0},
     {id: 'monstera', type: 'monstera', name: 'Monstera', r: [550, 559, 600, 609], rot: 0},
     {id: 'onewheel', type: 'onewheelStand', name: 'Onewheel sur support', r: [182, 598, 222, 628], rot: 180},
     // étagères au-dessus du Onewheel (dessus à 100 et 150 cm), entre l'étagère en grès et la gaine
