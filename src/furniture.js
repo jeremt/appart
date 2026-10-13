@@ -283,8 +283,8 @@ function topFreezer() {
     return g;
 }
 
-// Domino 2 feux à induction encastré dans le plan gris, au-dessus d'un frigo top blanc
-// (même gabarit 85 x 55 x 58 que le congélateur du bar) glissé sous le plan.
+// Table à induction 4 foyers encastrée dans le plan gris, au-dessus d'un four encastré 60 cm
+// (façade inox, hublot vitré, bandeau de commande) et d'un tiroir.
 function cooker(w, d) {
     const g = new THREE.Group(),
         hw = w / 2,
@@ -292,15 +292,29 @@ function cooker(w, d) {
     // joues latérales qui portent le plan de travail
     for (const s of [-1, 1]) B(g, s * hw - (s > 0 ? 2 : 0), s * hw + (s < 0 ? 2 : 0), 0, 87, -hd, hd - 2, MAT.white);
     B(g, -hw, hw, 85, 87, -hd, -hd + 3, MAT.white); // traverse arrière
-    const fr = topFreezer();
-    fr.position.z = (-hd + 3 + 29) / 100;
-    g.add(fr);
-    // plaque vitrocéramique noire affleurante, 2 foyers l'un derrière l'autre
-    const pw = 29;
+    B(g, -hw, hw, 0, 9, -hd, hd - 6, MAT.dark); // socle
+    // four encastré : caisson noir, façade inox à fleur de la joue
+    const ow = w - 4,
+        zf = hd - 2;
+    B(g, -hw + 2, hw - 2, 28, 85, -hd + 3, zf, MAT.black);
+    B(g, -ow / 2, ow / 2, 59, 84, zf, zf + 2, MAT.steel); // bandeau de commande
+    B(g, -ow / 2 + 3, ow / 2 - 3, 78, 81, zf + 2, zf + 2.4, MAT.black); // afficheur
+    for (const x of [-ow / 2 + 7, ow / 2 - 7]) Cyl(g, 2, 2, 1.6, x, 66, zf + 2.8, MAT.metal, true);
+    B(g, -ow / 2, ow / 2, 29, 59, zf, zf + 2, MAT.steel); // porte
+    B(g, -ow / 2 + 4, ow / 2 - 4, 33, 55, zf + 2, zf + 2.5, MAT.screen); // hublot
+    B(g, -ow / 2 + 5, ow / 2 - 5, 56.5, 58, zf + 2.5, zf + 4.5, MAT.metal); // poignée
+    // tiroir sous le four
+    B(g, -hw + 0.3, hw - 0.3, 10, 28, zf, zf + 2, MAT.front);
+    B(g, -hw + 8, hw - 8, 24, 25.5, zf + 2, zf + 4, MAT.metal);
+    // table vitrocéramique noire affleurante, 4 foyers
+    const pw = w - 4;
     B(g, -hw, hw, 87, 90, -hd, hd + 1, MAT.counter);
-    B(g, -pw / 2, pw / 2, 90, 90.4, -hd + 6, hd - 4, MAT.black);
-    for (const [z, r] of [[-hd + 6 + 13, 9], [hd - 4 - 15, 7.5]]) Cyl(g, r, r, 0.1, 0, 90.45, z, MAT.groove);
-    B(g, -pw / 2 + 4, pw / 2 - 4, 90.4, 90.5, hd - 6, hd - 5.4, MAT.groove); // commandes tactiles
+    B(g, -pw / 2, pw / 2, 90, 90.4, -hd + 5, hd - 3, MAT.black);
+    const px = pw / 4,
+        z1 = -hd + 5 + 13,
+        z2 = hd - 3 - 17;
+    for (const [x, z, r] of [[-px, z1, 7.5], [px, z1, 9], [-px, z2, 8], [px, z2, 6.5]]) Cyl(g, r, r, 0.1, x, 90.45, z, MAT.groove);
+    B(g, -pw / 2 + 8, pw / 2 - 8, 90.4, 90.5, hd - 5, hd - 4.4, MAT.groove); // commandes tactiles
     wallCabinets(g, w, d);
     return g;
 }
@@ -952,13 +966,14 @@ function plywoodBar(w, d) {
         h = 105,
         top = 3,
         over = 2.5,
+        overEnd = 7, // débord du plan inox côté cuisine (bout -x)
         R = 13,
         m = (v) => v / 100;
     const {veneer, edge} = plywood();
     const inox = new THREE.MeshStandardMaterial({color: 0xd2d5d8, metalness: 1, roughness: 0.3, envMap: MAT.chrome.envMap});
-    const bw = w - over, // le caisson est en retrait du plan sauf côté mur
+    const bw = w - overEnd, // le caisson est en retrait du plan sauf côté mur
         bd = d - 2 * over,
-        bx = -over / 2;
+        bx = -overEnd / 2;
     const cav = {depth: 30, endLeft: R + 4, endRight: 3};
     const plinth = prism(g, barShape(m(bw - 2), m(bd - 2), m(R - 1)), 0, 6, std(0x5b5650, {roughness: 0.8}));
     plinth.position.x = m(bx);
@@ -977,13 +992,21 @@ function plywoodBar(w, d) {
     fr.rotation.y = Math.PI;
     fr.position.set(m(xb - 27.5), 0, m(zBack + 29));
     g.add(fr);
-    B(g, xf - 1.8, xf, 6, h - top, zBack, zIn, veneer);
-    B(g, xf - 1.8, xf, 6, h - top, zBack, zBack + 0.2, edge);
-    B(g, xf, xb, 86, 87.8, zBack + 0.2, zIn - 1, veneer);
-    B(g, xf, xb, 86, 87.8, zBack, zBack + 0.2, edge);
+    // frigo top blanc glissé à côté du congélateur (même gabarit 85 x 55 x 58)
+    const xg = xf - 1.8 - 55;
+    const fg = topFreezer();
+    fg.rotation.y = Math.PI;
+    fg.position.set(m(xg + 27.5), 0, m(zBack + 29));
+    g.add(fg);
+    for (const x of [xf, xg]) {
+        B(g, x - 1.8, x, 6, h - top, zBack, zIn, veneer);
+        B(g, x - 1.8, x, 6, h - top, zBack, zBack + 0.2, edge);
+    }
+    B(g, xg - 1.8, xb, 86, 87.8, zBack + 0.2, zIn - 1, veneer);
+    B(g, xg - 1.8, xb, 86, 87.8, zBack, zBack + 0.2, edge);
     for (const y of [6, 37, 68]) {
-        B(g, xa, xf - 1.8, y, y + 1.8, zBack + 0.2, zIn - 1, veneer);
-        B(g, xa, xf - 1.8, y, y + 1.8, zBack, zBack + 0.2, edge);
+        B(g, xa, xg - 1.8, y, y + 1.8, zBack + 0.2, zIn - 1, veneer);
+        B(g, xa, xg - 1.8, y, y + 1.8, zBack, zBack + 0.2, edge);
     }
     // chant à plis sous le plan inox, tout autour du caisson
     // (UV de l'extrusion en mètres : on étire le motif pour que les 9 plis tiennent sur 1,8 cm)
@@ -3042,7 +3065,35 @@ function kamadoCabinet(w, d) {
     return g;
 }
 
+// ---------- Moulin à poivre, pot à sel en bois, huile d'olive ----------
+// Posés sur le plan de travail à droite des plaques : poser avec `elev` (plan à 90 cm).
+function condiments() {
+    const g = new THREE.Group();
+    const wood = std(0x6b4630, {roughness: 0.6});
+    const lightWood = std(0xb98a58, {roughness: 0.7});
+    const glass = std(0x2c4a1f, {roughness: 0.15, metalness: 0.1});
+    // moulin à poivre : fût en noyer galbé, chapeau, bouton en inox
+    Cyl(g, 2.6, 3.4, 4, -7, 2, 0, wood);
+    Cyl(g, 1.9, 2.6, 8, -7, 8, 0, wood);
+    Cyl(g, 2.3, 1.9, 2, -7, 13, 0, wood);
+    Cyl(g, 0.6, 0.6, 1.4, -7, 15.2, 0, MAT.metal);
+    Cyl(g, 1.4, 1.4, 0.5, -7, 16.1, 0, MAT.metal);
+    // pot à sel en bois clair, sel visible
+    Cyl(g, 4, 3.6, 5.5, 1, 2.75, 0, lightWood);
+    Cyl(g, 3.2, 3.2, 0.2, 1, 5.5, 0, MAT.white);
+    // bouteille d'huile d'olive : verre vert, épaulement, goulot, bouchon doseur, étiquette
+    const bx = 9;
+    Cyl(g, 3.4, 3.4, 12, bx, 6, 0, glass);
+    Cyl(g, 1.3, 3.4, 4, bx, 14, 0, glass);
+    Cyl(g, 1.3, 1.3, 6, bx, 19, 0, glass);
+    Cyl(g, 1.5, 1.5, 2.5, bx, 23.2, 0, MAT.metal);
+    B(g, bx - 2.2, bx + 2.2, 3, 11, 3.4, 3.5, MAT.white);
+    B(g, bx - 1.5, bx + 1.5, 7, 9, 3.5, 3.55, MAT.dark);
+    return g;
+}
+
 export const BUILDERS = {
+    condiments,
     skadisCamera,
     skadisDrone,
     monitorArm,

@@ -144,11 +144,12 @@ export const furnitureDefs = [
     // Cuisine
     {id: 'evier', type: 'sink', name: 'Évier', r: [0, SPLIT_Y + INT, 63, 402], rot: 90},
     {id: 'plan-travail', type: 'counter', name: 'Plan de travail + micro-ondes encastré', r: [0, 402, 63, 464], rot: 90},
-    {id: 'plaques', type: 'cooker', name: 'Plaques 2 feux + frigo top 85 x 55 x 58', r: [0, 464, 63, 523], rot: 90},
+    {id: 'plaques', type: 'cooker', name: 'Plaques à induction 4 feux + four encastré 60 cm', r: [0, 464, 63, 523], rot: 90},
     {id: 'grille-cuisine', type: 'kitchenGrid', name: 'Grille murale ustensiles, poêle + wok de Buyer Carbone Plus 35 cm (5114.35)', r: [80, SPLIT_Y + INT, 150, SPLIT_Y + INT + 20], rot: 0},
-    {id: 'bar', type: 'plywoodBar', name: 'Bar en contreplaqué + congélateur top Thomson THTTFZ5WH + casseroles', r: [151, SPLIT_Y + INT, 215, SPLIT_Y + INT + 145], rot: 90, url: 'https://www.darty.com/nav/achat/gros_electromenager/congelateur-armoire/congelateur_sous_plan/thomson_thttfz5wh.html'},
-    // au mur au-dessus du plan de travail
-    {id: 'barre-couteaux', type: 'knifeBar', name: 'Barre aimantée à couteaux', r: [0, 413, 4, 453], rot: 90, elev: 100},
+    {id: 'bar', type: 'plywoodBar', name: 'Bar en contreplaqué + congélateur top Thomson THTTFZ5WH + frigo top + casseroles', r: [151, SPLIT_Y + INT, 215, SPLIT_Y + INT + 175], rot: 90, url: 'https://www.darty.com/nav/achat/gros_electromenager/congelateur-armoire/congelateur_sous_plan/thomson_thttfz5wh.html'},
+    // au mur au-dessus du bar
+    {id: 'barre-couteaux', type: 'knifeBar', name: 'Barre aimantée à couteaux', r: [163, SPLIT_Y + INT, 203, SPLIT_Y + INT + 4], rot: 0, elev: 120},
+    {id: 'condiments', type: 'condiments', name: 'Moulin à poivre, pot à sel en bois, huile d\'olive', r: [18, 440, 38, 462], rot: 90, elev: 90},
     // Séjour
     {id: 'canape', type: 'teddy', name: 'Canapé OMHU Teddy', r: [325, SPLIT_Y + INT, 525, SPLIT_Y + INT + 100], rot: 0, variants: teddyColors, variant: '5782'},
     // lampadaire arc à droite du canapé, arc orienté vers la table basse
