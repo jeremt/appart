@@ -151,7 +151,7 @@ export const furnitureDefs = [
     {id: 'plaques', type: 'cooker', name: 'Plaques à induction 4 feux + four encastré 60 cm', r: [0, 464, 63, 523], rot: 90},
     {id: 'grille-cuisine', type: 'kitchenGrid', name: 'Grille murale ustensiles, poêle + wok de Buyer Carbone Plus 35 cm (5114.35)', r: [80, SPLIT_Y + INT, 150, SPLIT_Y + INT + 20], rot: 0},
     // bar : 3 caissons blancs (congélateur, 5 tiroirs, grand tiroir) sous un plan de travail, puis étagère en bois arrondie
-    {id: 'bar', type: 'ikeaBar', name: 'Bar : caissons blancs + plan de travail 63,5 cm + congélateur top Thomson THTTFZ5WH + étagère en bois arrondie', r: [151, SPLIT_Y + INT, 215, SPLIT_Y + INT + 170], rot: -90, url: 'https://www.darty.com/nav/achat/gros_electromenager/congelateur-armoire/congelateur_sous_plan/thomson_thttfz5wh.html'},
+    {id: 'bar', type: 'ikeaBar', name: 'Bar : caissons blancs, façades noyer + niche poubelle SONGMICS LTB593E01 + plan de travail 63,5 cm + congélateur top Thomson THTTFZ5WH + étagère en bois arrondie', r: [151, SPLIT_Y + INT, 215, SPLIT_Y + INT + 186], rot: -90, url: 'https://www.darty.com/nav/achat/gros_electromenager/congelateur-armoire/congelateur_sous_plan/thomson_thttfz5wh.html'},
     // au mur au-dessus du bar
     {id: 'barre-couteaux', type: 'knifeBar', name: 'Barre aimantée à couteaux', r: [163, SPLIT_Y + INT, 203, SPLIT_Y + INT + 4], rot: 0, elev: 120},
     {id: 'condiments', type: 'condiments', name: 'Moulin à poivre, pot à sel en bois, huile d\'olive', r: [18, 440, 38, 462], rot: 90, elev: 90},
@@ -190,12 +190,11 @@ export const furnitureDefs = [
     {id: 'chevet', type: 'nightstand', name: 'Chevet', r: [290, 2, 326, 40], rot: 90},
     // Balcon
     {id: 'guirlande', type: 'stringLights', name: 'Guirlande guinguette', r: [771, 132, 777, 612], rot: 90},
-    {id: 'olivier', type: 'oliveTree', name: 'Olivier en pot', c: [752, 590], size: [50, 50], rot: 0},
     {id: 'jardiniere-1', type: 'railPlanter', name: 'Jardinière de lavande', r: [758, 190, 778, 260], rot: -90, elev: 70},
     {id: 'jardiniere-2', type: 'railPlanter', name: 'Jardinière de lavande', r: [758, 300, 778, 370], rot: -90, elev: 70},
     {id: 'etagere-aromatiques', type: 'herbShelf', name: 'Étagère d\'aromatiques', r: [722, 130, 778, 165], rot: 0},
-    {id: 'table-bistrot', type: 'bistroTableRound', name: 'Table bistrot', c: [695, 520], size: [60, 60], rot: 0},
-    {id: 'chaise-bistrot-1', type: 'bistroChair', name: 'Chaise bistrot', c: [695, 470], size: [42, 46], rot: 0},
-    {id: 'chaise-bistrot-2', type: 'bistroChair', name: 'Chaise bistrot', c: [695, 572], size: [42, 46], rot: 180},
-    {id: 'kamado', type: 'kamadoCabinet', name: 'Kamado GRILLMEISTER Ø 40 cm (Lidl) sur meuble bas', r: [718, 395, 778, 455], rot: -90, url: 'https://www.lidl.fr/p/grillmeister-barbecue-en-ceramique-o-40-cm/p100401324'},
+    // salon de jardin bas (canapé au sud face au nord, pouf en biais, table basse au milieu)
+    {id: 'salon-canape', type: 'gardenSofa', name: 'Canapé de jardin bas 2 places', r: [640, 553, 770, 623], rot: 180},
+    {id: 'salon-pouf', type: 'gardenPouf', name: 'Pouf de jardin bas', c: [731, 424], size: [40, 40], rot: -12},
+    {id: 'salon-table', type: 'gardenTable', name: 'Table basse de jardin', r: [675, 475, 735, 520], rot: 0},
 ];

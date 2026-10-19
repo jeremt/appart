@@ -1031,6 +1031,42 @@ function plywood() {
     return plyMats;
 }
 
+// Noyer : fil horizontal marqué, tons brun chaud.
+let walnutMat = null;
+function walnutWood() {
+    if (walnutMat) return walnutMat;
+    const S = 1024,
+        SIZE = 1.2;
+    const c = document.createElement('canvas');
+    c.width = c.height = S;
+    const g = c.getContext('2d');
+    let seed = 77;
+    const r = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    g.fillStyle = 'hsl(24, 38%, 28%)';
+    g.fillRect(0, 0, S, S);
+    for (let y = 0; y < S; y += 40 + r() * 100) {
+        g.fillStyle = `hsla(${20 + r() * 10}, 40%, ${20 + r() * 14}%, 0.4)`;
+        g.fillRect(0, y, S, 30 + r() * 90);
+    }
+    for (let i = 0; i < 520; i++) {
+        const y = r() * S,
+            amp = 1 + r() * 5,
+            ph = r() * 6;
+        g.strokeStyle = `hsla(22, 40%, ${12 + r() * 22}%, ${0.15 + r() * 0.3})`;
+        g.lineWidth = 0.6 + r() * 1.8;
+        g.beginPath();
+        for (let x = -10; x <= S + 10; x += 16) g.lineTo(x, y + Math.sin(x / (50 + amp * 20) + ph) * amp);
+        g.stroke();
+    }
+    const map = new THREE.CanvasTexture(c);
+    map.colorSpace = THREE.SRGBColorSpace;
+    map.wrapS = map.wrapT = THREE.RepeatWrapping;
+    map.repeat.set(1 / SIZE, 1 / SIZE);
+    map.anisotropy = 8;
+    walnutMat = new THREE.MeshStandardMaterial({map, roughness: 0.5});
+    return walnutMat;
+}
+
 // Contour (en m) arrondi seulement côté -x (le côté +x vient contre le mur).
 // `cavity` = {depth, endLeft, endRight} : niche ouverte côté +y du contour (= arrière -z du meuble).
 function barShape(w, d, rad, cavity) {
@@ -2988,82 +3024,55 @@ function skadisDrone(w, d) {
     return g;
 }
 
-// Kamado GRILLMEISTER Ø 40 (Lidl) sans son chariot, posé sur un petit meuble bas en teck.
-// Œuf : Ø ext. ≈ 52 cm, ≈ 62 cm de haut avec la cheminée ; meuble 45 cm → grille à ≈ 80 cm.
-function kamadoCabinet(w, d) {
+// Salon de jardin bas : structure aluminium anthracite, coussins écrus. Assise à 28 cm, dossier à 62 cm.
+// Face avant vers +z ; `seats` = nombre de places (canapé 2 places ou fauteuil 1 place).
+const gardenFrame = std(0x2c2e31, {roughness: 0.5, metalness: 0.4, envMap: MAT.chrome.envMap});
+const gardenCushion = std(0xd9d2c3, {roughness: 0.95});
+function gardenSeat(w, d, seats) {
     const g = new THREE.Group(),
         hw = w / 2,
         hd = d / 2,
-        h = 45;
-    const teak = std(0x9a6a43, {roughness: 0.7});
-    // meuble : 4 pieds, plateau plein, étagère à lattes (charbon, allume-feu)
-    for (const sx of [-1, 1])
-        for (const sz of [-1, 1]) {
-            const x = sx * (hw - 2.5),
-                z = sz * (hd - 2.5);
-            B(g, x - 2.5, x + 2.5, 0, h - 3, z - 2.5, z + 2.5, teak);
-        }
-    B(g, -hw, hw, h - 3, h, -hd, hd, teak);
-    B(g, -hw + 5, hw - 5, h - 9, h - 3, -hd + 2, -hd + 4, teak);
-    for (let i = 0; i < 5; i++) {
-        const z = -hd + 6 + (i * (d - 12)) / 4;
-        B(g, -hw + 5, hw - 5, 8, 10, z - 4, z + 4, teak);
+        aw = 9; // accoudoirs
+    for (const sx of [-1, 1]) {
+        B(g, sx > 0 ? hw - aw : -hw, sx > 0 ? hw : -hw + aw, 12, 42, -hd, hd, gardenFrame);
+        B(g, sx * (hw - 3) - 2, sx * (hw - 3) + 2, 0, 12, -hd + 3, hd - 3, gardenFrame); // pieds
     }
-    B(g, -hw + 8, -hw + 30, 10, 30, -hd + 8, hd - 18, std(0x2b2b2b, {roughness: 0.95})); // sac de charbon
-    B(g, -hw + 34, -hw + 48, 10, 17, -8, 6, std(0xb8452f, {roughness: 0.8})); // allume-feu
+    B(g, -hw, hw, 12, 24, -hd, hd, gardenFrame); // assise
+    B(g, -hw, hw, 12, 62, -hd, -hd + 6, gardenFrame); // dossier
+    const iw = w - 2 * aw,
+        cw = iw / seats;
+    for (let i = 0; i < seats; i++) {
+        const x0 = -iw / 2 + i * cw + 0.5,
+            x1 = x0 + cw - 1;
+        RB(g, x0, x1, 24, 34, -hd + 6, hd - 1, 3, gardenCushion);
+        RB(g, x0, x1, 34, 62, -hd + 6, -hd + 17, 4, gardenCushion);
+    }
+    return g;
+}
+const gardenSofa = (w, d) => gardenSeat(w, d, 2);
 
-    // œuf en céramique : ellipsoïde (R 26 cm), base jusqu'au joint à 34 cm, dôme au-dessus
-    const ceram = std(0x141516, {roughness: 0.3}),
-        steel = std(0x2a2b2d, {roughness: 0.4, metalness: 0.7, envMap: MAT.chrome.envMap}),
-        inox = std(0xc9ccd0, {metalness: 0.9, roughness: 0.25, envMap: MAT.chrome.envMap}),
-        bamboo = std(0xc9a46c, {roughness: 0.6});
-    const R = 26,
-        cy = 30,
-        seam = 34;
-    const shell = (y0, y1, a) => {
-        const pts = [new THREE.Vector2(0, y0 / 100)];
-        for (let i = 0; i <= 16; i++) {
-            const y = y0 + ((y1 - y0) * i) / 16;
-            pts.push(new THREE.Vector2((R * Math.sqrt(Math.max(0, 1 - ((y - cy) / a) ** 2))) / 100, y / 100));
-        }
-        pts.push(new THREE.Vector2(0, y1 / 100));
-        const m = new THREE.Mesh(new THREE.LatheGeometry(pts, 48), ceram);
-        m.position.y = h / 100;
-        m.castShadow = m.receiveShadow = true;
-        g.add(m);
-    };
-    shell(3, seam, 30);
-    shell(seam + 0.6, 58, 32);
-    // pieds céramique sous l'œuf
-    for (let k = 0; k < 3; k++) {
-        const a = (k * 2 * Math.PI) / 3 + Math.PI / 2;
-        B(g, Math.cos(a) * 9 - 2, Math.cos(a) * 9 + 2, h, h + 4, Math.sin(a) * 9 - 2, Math.sin(a) * 9 + 2, ceram);
-    }
-    // cerclages acier de part et d'autre du joint, charnière à ressort au dos
-    for (const y of [seam - 2.5, seam + 3]) {
-        const band = new THREE.Mesh(new THREE.TorusGeometry((R + 0.3) / 100, 0.012, 6, 48), steel);
-        band.rotation.x = Math.PI / 2;
-        band.position.y = (h + y) / 100;
-        g.add(band);
-    }
-    B(g, -4, 4, h + seam - 6, h + seam + 7, -R - 3, -R + 1, steel);
-    Cyl(g, 1.6, 1.6, 16, 0, h + seam - 2, -R - 3.5, steel);
-    // poignée bambou à l'avant du dôme
-    rod(g, [-8, h + seam + 3, R], [-8, h + seam + 3, R + 7], 0.8, steel);
-    rod(g, [8, h + seam + 3, R], [8, h + seam + 3, R + 7], 0.8, steel);
-    rod(g, [-11, h + seam + 3, R + 7.5], [11, h + seam + 3, R + 7.5], 1.6, bamboo);
-    // thermomètre en façade du dôme
-    const ty = 48,
-        tz = R * Math.sqrt(1 - ((ty - cy) / 32) ** 2);
-    const th = Cyl(g, 3.5, 3.5, 1.2, 0, h + ty, tz + 0.2, inox, true);
-    th.rotation.x = Math.PI / 2 - 0.55;
-    // cheminée et clapet « daisy wheel »
-    Cyl(g, 7, 8, 5, 0, h + 59, 0, steel);
-    Cyl(g, 6.5, 6.5, 2, 0, h + 62, 0, steel);
-    Cyl(g, 1.2, 1.2, 1.5, 0, h + 63.5, 0, inox);
-    // trappe d'aération inox en bas de la base
-    B(g, -5, 5, h + 9, h + 17, R - 5.5, R - 3, inox);
-    B(g, -1.5, 1.5, h + 17, h + 19, R - 5, R - 3, inox);
+// Pouf de jardin bas 40 x 40 x 35 cm : cadre aluminium et coussin écru.
+function gardenPouf(w, d) {
+    const g = new THREE.Group(),
+        hw = w / 2,
+        hd = d / 2;
+    B(g, -hw, hw, 3, 15, -hd, hd, gardenFrame);
+    for (const sx of [-1, 1])
+        for (const sz of [-1, 1]) B(g, sx * (hw - 2.5) - 1.5, sx * (hw - 2.5) + 1.5, 0, 3, sz * (hd - 2.5) - 1.5, sz * (hd - 2.5) + 1.5, gardenFrame);
+    RB(g, -hw + 0.5, hw - 0.5, 15, 35, -hd + 0.5, hd - 0.5, 5, gardenCushion);
+    return g;
+}
+
+// Table basse de salon de jardin : plateau en teck, piétement aluminium, h 35 cm.
+function gardenTable(w, d) {
+    const g = new THREE.Group(),
+        hw = w / 2,
+        hd = d / 2,
+        teak = std(0x9a6a43, {roughness: 0.7});
+    B(g, -hw, hw, 31, 35, -hd, hd, teak);
+    B(g, -hw + 2, hw - 2, 27, 31, -hd + 2, hd - 2, gardenFrame);
+    for (const sx of [-1, 1])
+        for (const sz of [-1, 1]) B(g, sx * (hw - 4) - 1.5, sx * (hw - 4) + 1.5, 0, 31, sz * (hd - 4) - 1.5, sz * (hd - 4) + 1.5, gardenFrame);
     return g;
 }
 
@@ -3094,20 +3103,9 @@ function condiments() {
     return g;
 }
 
-// ---------- Petits meubles blancs à boutons en bois, à côté du bar ----------
+// ---------- Petits meubles blancs, à côté du bar ----------
 
 const paintWhite = std(0xf3f2ee, {roughness: 0.5});
-const knobWood = std(0xb9814a, {roughness: 0.5});
-
-// Bouton de tiroir en bois tourné, saillant de la façade (z = plan de la façade).
-function drawerKnob(g, x, y, z) {
-    Cyl(g, 0.7, 0.7, 1.6, x, y, z + 0.8, knobWood, true);
-    const b = new THREE.Mesh(new THREE.SphereGeometry(0.017, 14, 10), knobWood);
-    b.scale.z = 0.8;
-    b.position.set(x / 100, y / 100, (z + 2.2) / 100);
-    b.castShadow = true;
-    g.add(b);
-}
 
 // Bouteille en révolution : corps, épaulement, goulot (cm).
 function bottle(g, x, y, z, color, h = 30, r = 3.7) {
@@ -3129,7 +3127,7 @@ function roundedShelf(w, d, top = 90) {
         hd = d / 2,
         R = 14,
         m = (v) => v / 100;
-    const {veneer} = plywood();
+    const veneer = walnutWood();
     const board = (y0, y1) => prism(g, barShape(m(w), m(d), m(R)), y0, y1, veneer);
     board(top - 3, top);
     board(46, 47.8);
@@ -3147,9 +3145,22 @@ function roundedShelf(w, d, top = 90) {
     return g;
 }
 
+// Poubelle à pédale SONGMICS PLUSHIC LTB593E01 (30 L, inox argent, couvercle noir) : ~34 x 28,5 x 54,4 cm
+// (dimensions de la gamme, non confirmées pour cette référence). Origine au sol, centrée en (x, z), pédale côté +z.
+function pedalBin(g, x, z) {
+    const bw = 34,
+        bd = 28.5,
+        bh = 54.4;
+    const steel = std(0xc3c6ca, {roughness: 0.3, metalness: 0.8, envMap: MAT.chrome.envMap});
+    B(g, x - bw / 2, x + bw / 2, 3, bh - 4, z - bd / 2, z + bd / 2, steel);
+    B(g, x - bw / 2 + 1, x + bw / 2 - 1, 0, 3, z - bd / 2 + 1, z + bd / 2 - 1, MAT.matteBlack); // socle
+    B(g, x - bw / 2 - 0.3, x + bw / 2 + 0.3, bh - 4, bh, z - bd / 2 - 0.3, z + bd / 2 + 0.3, MAT.matteBlack); // couvercle
+    B(g, x - 5, x + 5, 0.5, 2.2, z + bd / 2, z + bd / 2 + 7, MAT.matteBlack); // pédale
+}
+
 // Bar : trois caissons blancs (60, 40 et 30 cm) (laqué, boutons en bois) sous un plan de travail stratifié gris de
 // 186 x 63,5 x 2,8 cm (gabarit IKEA standard) arrondi en bout, qui couvre aussi l'étagère ouverte. Côté +x : contre la cloison.
-// 1 : congélateur top Thomson THTTFZ5WH ; 2 : 5 tiroirs ; 3 : grand tiroir.
+// 1 : congélateur top Thomson THTTFZ5WH ; niche poubelle de 36 cm ; 2 : 5 tiroirs ; 3 : grand tiroir.
 // Façades côté cuisine (-z local) : le meuble est construit puis miroité en x pour que le mur reste côté +x.
 function ikeaBar(w, d) {
     const g = new THREE.Group(),
@@ -3160,28 +3171,45 @@ function ikeaBar(w, d) {
         z0 = -hd, // dos des caissons contre le plan
         z1 = z0 + cd,
         cws = [60, 40, 30], // largeurs des caissons depuis le mur
+        gap = 36, // niche de la poubelle entre le congélateur et les tiroirs
         top = 87.2; // dessus des caissons (plan : 87,2 -> 90)
-    const cx = cws.map((cw, i) => hw - cws.slice(0, i).reduce((a, b) => a + b, 0) - cw / 2);
-    const drawers = (x, n, knobAt, CW) => {
+    const cx = cws.map((cw, i) => hw - cws.slice(0, i).reduce((a, b) => a + b, 0) - (i > 0 ? gap : 0) - cw / 2);
+    const drawers = (x, n, CW) => {
         const fh = (top - 6.5) / n;
         for (let i = 0; i < n; i++) {
             const y0 = 6.5 + i * fh + 0.2,
                 y1 = 6.5 + (i + 1) * fh - 0.2;
-            B(g, x - CW / 2 + 0.4, x + CW / 2 - 0.4, y0, y1, z1 - 1.8, z1, paintWhite);
-            drawerKnob(g, x, knobAt ?? y1 - Math.min(fh * 0.33, 14), z1);
+            // façade sans poignée : le haut est biseauté (45°) pour glisser les doigts
+            const xa = x - CW / 2 + 0.4,
+                xb = x + CW / 2 - 0.4,
+                bv = 2;
+            B(g, xa, xb, y0, y1 - bv, z1 - 1.8, z1, walnutWood());
+            const sh = new THREE.Shape();
+            sh.moveTo(m(z1 - 1.8), m(y1 - bv));
+            sh.lineTo(m(z1), m(y1 - bv));
+            sh.lineTo(m(z1 - 1.8), m(y1));
+            const bev = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, {depth: m(xb - xa), bevelEnabled: false}), walnutWood());
+            bev.rotation.y = -Math.PI / 2;
+            bev.position.x = m(xb);
+            bev.castShadow = true;
+            g.add(bev);
         }
     };
     // caissons : socle en retrait, joues, fond, dessus
     cx.forEach((x, i) => {
         const CW = cws[i];
         B(g, x - CW / 2 + 1, x + CW / 2 - 1, 0, 6, z0 + 1, z1 - 4, paintWhite);
-        B(g, x - CW / 2, x - CW / 2 + 1.8, 6, top, z0, z1 - 1.8, paintWhite);
-        B(g, x + CW / 2 - 1.8, x + CW / 2, 6, top, z0, z1 - 1.8, paintWhite);
-        B(g, x - CW / 2, x + CW / 2, 6, 7.8, z0, z1 - 1.8, paintWhite);
-        B(g, x - CW / 2, x + CW / 2, top - 1.8, top, z0, z1 - 1.8, paintWhite);
-        B(g, x - CW / 2, x + CW / 2, 6, top, z0, z0 + 1, paintWhite);
+        B(g, x - CW / 2, x - CW / 2 + 1.8, 6, top, z0 + 1, z1 - 1.8, paintWhite);
+        B(g, x + CW / 2 - 1.8, x + CW / 2, 6, top, z0 + 1, z1 - 1.8, paintWhite);
+        B(g, x - CW / 2, x + CW / 2, 6, 7.8, z0 + 1, z1 - 1.8, paintWhite);
+        B(g, x - CW / 2, x + CW / 2, top - 1.8, top, z0 + 1, z1 - 1.8, paintWhite);
+        B(g, x - CW / 2, x + CW / 2, 6, top, z0, z0 + 1, walnutWood());
     });
     const CW = cws[0];
+    // niche poubelle : fond en noyer + poubelle SONGMICS, façade alignée sur les tiroirs
+    const gx = cx[0] - CW / 2 - gap / 2;
+    B(g, gx - gap / 2, gx + gap / 2, 0, top, z0 + 0.05, z0 + 1, walnutWood());
+    pedalBin(g, gx, z1 - 14.5);
     // 1 : congélateur top Thomson (55 x 58 x 85) glissé dans le caisson de 60, porte à fleur des autres façades
     const c1 = cx[0];
     B(g, c1 - CW / 2 + 1.8, c1 + CW / 2 - 1.8, 85, top - 1.8, z0 + 1, z1 - 1.8, paintWhite);
@@ -3190,10 +3218,10 @@ function ikeaBar(w, d) {
     fr.position.set(m(c1), 0, m(z1 - 29));
     g.add(fr);
     // 2 : colonne de 5 tiroirs, 3 : grand tiroir
-    drawers(cx[1], 5, undefined, cws[1]);
-    drawers(cx[2], 1, 72, cws[2]);
+    drawers(cx[1], 5, cws[1]);
+    drawers(cx[2], 1, cws[2]);
     // plan de travail 63,5 x 2,8 cm, bords droits, à fleur des trois caissons
-    const cw = cws.reduce((a, b) => a + b, 0);
+    const cw = cws.reduce((a, b) => a + b, 0) + gap;
     B(g, hw - cw, hw, top, 90, z0, z0 + 63.5, worktop);
     // étagère en bois collée au dernier caisson, dessus en bois à la même hauteur
     const sw = w - cw;
@@ -3219,7 +3247,9 @@ export const BUILDERS = {
     herbShelf,
     bistroTableRound,
     bistroChair,
-    kamadoCabinet,
+    gardenSofa,
+    gardenPouf,
+    gardenTable,
     stringLights,
     oliveTree,
     railPlanter,
