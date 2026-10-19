@@ -48,7 +48,7 @@ export const openings = [
     {id: 'fixe-sejour', kind: 'window', x1: IW, y1: 419, x2: IW + EXT, y2: 581, bottom: 0, top: 215},
     {id: 'pf-chambre', kind: 'door', name: 'Porte-fenêtre chambre', x1: IW, y1: 156, x2: IW + EXT, y2: 243, top: 215, leaves: ['end'], swing: -1, open: false, style: 'glass'},
     {id: 'p-chambre', kind: 'door', name: 'Porte chambre', x1: BATH_X + INT, y1: SPLIT_Y, x2: 307, y2: SPLIT_Y + INT, top: 205, leaves: ['start'], swing: -1, open: true},
-    {id: 'p-sdb', kind: 'door', name: 'Porte salle de bain', x1: BATH_X, y1: 143, x2: BATH_X + INT, y2: 224, top: 205, leaves: ['start'], swing: 1, open: true, style: 'frosted'},
+    {id: 'p-sdb', kind: 'door', name: 'Porte salle de bain', x1: BATH_X, y1: 143, x2: BATH_X + INT, y2: 224, top: 205, leaves: ['start'], swing: 1, open: true},
 ];
 
 // Pièces : `area` = surface indiquée sur le plan.
