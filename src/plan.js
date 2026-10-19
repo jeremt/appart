@@ -97,6 +97,9 @@ export const wallTiles = [
     [35, BATH_TOP, BATH_X, BATH_TOP + 1, 0, 210],
     [BATH_X - 1, BATH_TOP + 1, BATH_X, 101, 0, 210],
     [35, BATH_TOP + 1, 36, 94, 0, 210],
+    // crédence de la cuisine : carreaux anthracite sur le mur de l'évier et des plaques, et sur la cloison côté évier
+    [0, SPLIT_Y + INT, 1, 523, 90, 150, 'kitchenTile'],
+    [0, SPLIT_Y + INT, 63, SPLIT_Y + INT + 1, 90, 150, 'kitchenTile'],
 ];
 
 // Coloris unis du canapé OMHU Teddy (velours côtelé) : teinte relevée sur les photos produit,
@@ -144,10 +147,11 @@ export const furnitureDefs = [
     {id: 'colonne-sdb', type: 'bathColumn', name: 'Colonne de rangement', r: [180, 256, 215, 296], rot: -90},
     // Cuisine
     {id: 'evier', type: 'sink', name: 'Évier', r: [0, SPLIT_Y + INT, 63, 402], rot: 90},
-    {id: 'plan-travail', type: 'counter', name: 'Plan de travail + micro-ondes encastré', r: [0, 402, 63, 464], rot: 90},
+    {id: 'plan-travail', type: 'counter', name: 'Plan de travail + frigo top inox + micro-ondes GoldStar encastré', r: [0, 402, 63, 464], rot: 90},
     {id: 'plaques', type: 'cooker', name: 'Plaques à induction 4 feux + four encastré 60 cm', r: [0, 464, 63, 523], rot: 90},
     {id: 'grille-cuisine', type: 'kitchenGrid', name: 'Grille murale ustensiles, poêle + wok de Buyer Carbone Plus 35 cm (5114.35)', r: [80, SPLIT_Y + INT, 150, SPLIT_Y + INT + 20], rot: 0},
-    {id: 'bar', type: 'plywoodBar', name: 'Bar en contreplaqué + congélateur top Thomson THTTFZ5WH + frigo top + casseroles', r: [151, SPLIT_Y + INT, 215, SPLIT_Y + INT + 175], rot: 90, url: 'https://www.darty.com/nav/achat/gros_electromenager/congelateur-armoire/congelateur_sous_plan/thomson_thttfz5wh.html'},
+    // bar : 3 caissons blancs (congélateur, 5 tiroirs, grand tiroir) sous un plan de travail, puis étagère en bois arrondie
+    {id: 'bar', type: 'ikeaBar', name: 'Bar : caissons blancs + plan de travail 63,5 cm + congélateur top Thomson THTTFZ5WH + étagère en bois arrondie', r: [151, SPLIT_Y + INT, 215, SPLIT_Y + INT + 170], rot: -90, url: 'https://www.darty.com/nav/achat/gros_electromenager/congelateur-armoire/congelateur_sous_plan/thomson_thttfz5wh.html'},
     // au mur au-dessus du bar
     {id: 'barre-couteaux', type: 'knifeBar', name: 'Barre aimantée à couteaux', r: [163, SPLIT_Y + INT, 203, SPLIT_Y + INT + 4], rot: 0, elev: 120},
     {id: 'condiments', type: 'condiments', name: 'Moulin à poivre, pot à sel en bois, huile d\'olive', r: [18, 440, 38, 462], rot: 90, elev: 90},

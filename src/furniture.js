@@ -180,21 +180,60 @@ function sofaL(w, d) {
     return g;
 }
 
-function kitchenBase(g, w, d, hole) {
+// Cuisine : façades blanches brillantes, plan stratifié gris clair (relevés sur les photos).
+const kitchenWhite = std(0xf6f6f4, {roughness: 0.32});
+const worktop = std(0x9fa1a4, {roughness: 0.4});
+const inoxFridge = std(0x80858a, {metalness: 0.55, roughness: 0.38});
+
+// Frigo top inox encastré sous le plan : corps, porte basse, freezer en haut, poignée verticale.
+function underFridge(g, fw, hd) {
+    inoxFridge.envMap = MAT.chrome.envMap;
+    const zf = hd - 3;
+    B(g, -fw / 2, fw / 2, 2, 85, -hd + 1.5, zf, inoxFridge);
+    B(g, -fw / 2 + 0.3, fw / 2 - 0.3, 3, 84.5, zf, zf + 1.5, inoxFridge); // porte unique
+    B(g, -fw / 2 + 2.5, -fw / 2 + 4.5, 45, 80, zf + 1.5, zf + 3.8, MAT.steel); // poignée
+    B(g, -fw / 2 + 2, fw / 2 - 2, 0.5, 2, zf - 5, zf, MAT.dark); // pieds / grille
+}
+
+function kitchenBase(g, w, d, hole, fridge = false, doorW = 0) {
     const hw = w / 2,
         hd = d / 2;
     B(g, -hw, hw, 0, 9, -hd, hd - 6, MAT.dark);
-    B(g, -hw, hw, 9, 87, -hd, hd - 2, MAT.white);
-    const n = Math.max(1, Math.round(w / 55)),
-        dw = w / n;
-    for (let i = 0; i < n; i++) {
-        const a = -hw + i * dw + 0.3,
-            b = a + dw - 0.6;
-        B(g, a, b, 10, 86, hd - 2, hd, MAT.front);
-        B(g, a + 6, b - 6, 80, 81.5, hd, hd + 2, MAT.metal);
+    if (fridge) {
+        // caisson ouvert (joues, fond, dessus) dans lequel glisse le frigo
+        for (const s of [-1, 1]) B(g, s * hw - (s > 0 ? 2 : 0), s * hw + (s < 0 ? 2 : 0), 9, 87, -hd, hd - 2, kitchenWhite);
+        B(g, -hw, hw, 9, 87, -hd, -hd + 1.5, kitchenWhite);
+        B(g, -hw, hw, 85, 87, -hd, hd - 2, kitchenWhite);
+        underFridge(g, w - 7, hd);
+    } else {
+        B(g, -hw, hw, 9, 87, -hd, hd - 2, MAT.white);
+        if (doorW) {
+            // une seule porte de `doorW` cm côté +x, le reste en panneau plein
+            B(g, hw - doorW + 0.3, hw - 0.3, 10, 86, hd - 2, hd, kitchenWhite);
+            B(g, hw - doorW + 6, hw - 6, 80, 81.5, hd, hd + 2, MAT.metal);
+            B(g, -hw + 0.3, hw - doorW - 0.3, 10, 86, hd - 2, hd, kitchenWhite);
+        } else {
+            const n = Math.max(1, Math.round(w / 55)),
+                dw = w / n;
+            for (let i = 0; i < n; i++) {
+                const a = -hw + i * dw + 0.3,
+                    b = a + dw - 0.6;
+                B(g, a, b, 10, 86, hd - 2, hd, kitchenWhite);
+                B(g, a + 6, b - 6, 80, 81.5, hd, hd + 2, MAT.metal);
+            }
+        }
     }
-    if (hole) holedTop(g, -hw, hw, -hd, hd + 1, 87, 90, hole, MAT.counter);
-    else B(g, -hw, hw, 87, 90, -hd, hd + 1, MAT.counter);
+    if (hole) holedTop(g, -hw, hw, -hd, hd + 1, 87, 90, hole, worktop);
+    else B(g, -hw, hw, 87, 90, -hd, hd + 1, worktop);
+}
+
+// Prise double blanche posée sur le carrelage (x, y = centre, cm), au fond (z = -hd + 1).
+function socketPlate(g, x, y, z) {
+    B(g, x - 7.5, x + 7.5, y - 4, y + 4, z, z + 0.8, kitchenWhite);
+    for (const dx of [-3.7, 3.7]) {
+        Cyl(g, 2.6, 2.6, 0.2, x + dx, y, z + 0.9, MAT.white, true);
+        Cyl(g, 1.7, 1.7, 0.1, x + dx, y, z + 1.05, MAT.gloss, true);
+    }
 }
 
 // ---------- Rubans LED ----------
@@ -219,28 +258,79 @@ function stripLight(g, w, h, pos, target, intensity) {
     return l;
 }
 
-function wallCabinets(g, w, d, microwave = false) {
+// Caisson haut ouvert (joues, fond, dessus, dessous) entre y0 et y1, façade à z = zf.
+function openCarcass(g, hw, hd, y0, y1, zf, inner = MAT.white) {
+    B(g, -hw, -hw + 1.5, y0, y1, -hd, zf, MAT.white);
+    B(g, hw - 1.5, hw, y0, y1, -hd, zf, MAT.white);
+    B(g, -hw, hw, y1 - 1.5, y1, -hd, zf, MAT.white);
+    B(g, -hw, hw, y0, y0 + 1.5, -hd, zf, MAT.white);
+    B(g, -hw + 1.5, hw - 1.5, y0 + 1.5, y1 - 1.5, -hd, -hd + 1, inner);
+}
+
+// Micro-ondes GoldStar crème (relevé sur les photos) : bandeau de commandes en haut (2 boutons + touche verte),
+// hublot à cadre blanc et grille grise. Origine au centre du fond, posé en y.
+function microwaveGoldstar(g, x, y, z0, zf) {
+    const cream = std(0xe6dfc6, {roughness: 0.5});
+    B(g, x - 22, x + 22, y, y + 25.5, z0, zf, cream);
+    B(g, x - 20, x + 5, y + 1.5, y + 18, zf, zf + 0.5, MAT.plastic); // cadre du hublot
+    B(g, x - 17.5, x + 2.5, y + 3.5, y + 16, zf + 0.5, zf + 0.8, std(0x8f9193, {roughness: 0.7})); // grille
+    B(g, x + 8, x + 20, y + 5, y + 12, zf, zf + 0.4, std(0xd9d1b4, {roughness: 0.6})); // étiquette
+    for (const dx of [-12, -1]) Cyl(g, 2.1, 2.1, 1.2, x + dx, y + 21.7, zf + 0.6, MAT.white, true);
+    B(g, x + 12, x + 19, y + 20.2, y + 23.4, zf, zf + 0.9, std(0x7fcf91, {roughness: 0.4})); // touche verte
+}
+
+// Verre à pied : pied, jambe fine, calice évasé.
+function stemGlass(g, x, y, z, s = 1) {
+    const pts = [[0, 0], [3.2, 0], [3.2, 0.3], [0.4, 0.5], [0.4, 8], [2.6, 9.5], [3.4, 13], [3.2, 17], [0, 17.2]].map(
+        ([r, h]) => new THREE.Vector2((r * s) / 100, (h * s) / 100),
+    );
+    const m = new THREE.Mesh(new THREE.LatheGeometry(pts, 20), MAT.glass);
+    m.position.set(x / 100, y / 100, z / 100);
+    g.add(m);
+}
+
+// Hotte visière inox : chassis avec 4 boutons, vitre inclinée qui avance au-dessus des feux. Fond contre le mur (-z).
+function hood(g, hw, hd) {
+    const hx = hw - 2.5;
+    B(g, -hx, hx, 150, 168, -hd, -hd + 24, MAT.steel);
+    B(g, -hx, hx, 150, 153, -hd + 24, -hd + 47, MAT.steel);
+    B(g, -hx, hx, 150, 152.5, -hd + 47, -hd + 50, MAT.steel);
+    for (let i = 0; i < 4; i++) Cyl(g, 0.9, 0.9, 1, -hx + 8 + i * 4, 151.2, -hd + 51, MAT.matteBlack, true);
+    B(g, -hx + 3, -hx + 4.4, 150.6, 151.8, -hd + 50, -hd + 50.4, std(0xd8231b, {emissive: 0x801010, emissiveIntensity: 0.6}));
+    const v = new THREE.Group();
+    B(v, -hx + 1, hx - 1, -0.3, 0.3, -9.6, 9.6, std(0x1e2a26, {roughness: 0.1, metalness: 0.2, transparent: true, opacity: 0.85}));
+    v.rotation.x = 0.896; // bord bas vers l'avant, bord haut vers le mur
+    v.position.set(0, 1.585, (-hd + 40) / 100);
+    g.add(v);
+}
+
+function wallCabinets(g, w, d, mode = 'doors') {
     const hw = w / 2,
         hd = d / 2,
         zf = -hd + 33;
-    B(g, -hw, hw, 150, 215, -hd, zf, MAT.white);
-    if (microwave) {
-        // micro-ondes encastré en partie basse (niche 60 x 38), abattant au-dessus
-        const mw = Math.min(56, w - 4);
-        B(g, -mw / 2, mw / 2, 151, 189, zf, zf + 1, MAT.steel);
-        B(g, -mw / 2 + 1.5, mw / 2 - 13, 153, 187, zf + 1, zf + 1.6, MAT.screen); // porte vitrée
-        B(g, mw / 2 - 12, mw / 2 - 1.5, 153, 187, zf + 1, zf + 1.6, MAT.black); // bandeau de commande
-        B(g, mw / 2 - 9, mw / 2 - 4.5, 181, 183, zf + 1.6, zf + 1.8, MAT.steel); // afficheur
-        Cyl(g, 1.6, 1.6, 1, mw / 2 - 6.75, 172, zf + 2, MAT.steel, true);
-        B(g, -hw + 0.3, hw - 0.3, 190, 214, zf, zf + 2, MAT.front);
-        B(g, -hw + 6, hw - 6, 191.5, 193, zf + 2, zf + 4, MAT.metal);
+    const niche = std(0x45474b, {roughness: 0.7});
+    if (mode === 'micro') {
+        // micro-ondes posé dans une niche ouverte (50 cm de haut), abattant au-dessus
+        openCarcass(g, hw, hd, 150, 215, zf, niche);
+        B(g, -hw + 1.5, hw - 1.5, 189, 191, -hd, zf, MAT.white);
+        B(g, -hw + 1.5, hw - 1.5, 151.5, 152, -hd + 1, zf, niche);
+        microwaveGoldstar(g, 0, 151.5, -hd + 1.5, zf - 0.5);
+        B(g, -hw + 0.3, hw - 0.3, 191.5, 214.5, zf, zf + 2, kitchenWhite);
+        B(g, -hw + 6, hw - 6, 193, 194.5, zf + 2, zf + 4, MAT.metal);
+    } else if (mode === 'hood') {
+        hood(g, hw, hd);
+        B(g, -hw, hw, 168, 215, -hd, zf, MAT.white);
+        B(g, -hw + 0.3, hw - 0.3, 168.5, 214.5, zf, zf + 2, kitchenWhite);
+        B(g, -hw + 6, hw - 6, 170, 171.5, zf + 2, zf + 4, MAT.metal);
+        return;
     } else {
+        B(g, -hw, hw, 150, 215, -hd, zf, MAT.white);
         const n = Math.max(1, Math.round(w / 50)),
             dw = w / n;
         for (let i = 0; i < n; i++) {
             const a = -hw + i * dw + 0.3,
                 b = a + dw - 0.6;
-            B(g, a, b, 151, 214, zf, zf + 2, MAT.front);
+            B(g, a, b, 151, 214, zf, zf + 2, kitchenWhite);
             B(g, a + 6, b - 6, 153, 154.5, zf + 2, zf + 4, MAT.metal);
         }
     }
@@ -251,20 +341,38 @@ function wallCabinets(g, w, d, microwave = false) {
 
 function counter(w, d) {
     const g = new THREE.Group();
-    kitchenBase(g, w, d);
-    wallCabinets(g, w, d, true);
+    kitchenBase(g, w, d, undefined, true);
+    wallCabinets(g, w, d, 'micro');
+    socketPlate(g, 0, 105, -d / 2 + 1);
     return g;
 }
 
+// Robinet col de cygne chromé : fût vertical puis arc au-dessus de la cuve (vers +x), bec orienté vers le bas.
+function swanNeck(g, x, z) {
+    const pts = [new THREE.Vector3(x, 90.4, z), new THREE.Vector3(x, 100, z), new THREE.Vector3(x, 108, z)];
+    for (let a = Math.PI * 5 / 6; a >= 0; a -= Math.PI / 6) pts.push(new THREE.Vector3(x + 10 + 10 * Math.cos(a), 108 + 10 * Math.sin(a), z));
+    pts.push(new THREE.Vector3(x + 20, 104, z), new THREE.Vector3(x + 20, 100.5, z));
+    const m = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.map((p) => p.divideScalar(100))), 48, 0.0095, 8), MAT.chrome);
+    m.castShadow = true;
+    g.add(m);
+    Cyl(g, 1.9, 2.2, 3, x, 91.9, z, MAT.chrome);
+    rod(g, [x, 96, z + 1], [x, 98.5, z + 9], 0.6, MAT.chrome); // levier
+}
+
+// Évier inox une cuve + égouttoir nervuré (côté plaques), dans le plan gris ; robinet col de cygne.
 function sink(w, d) {
     const g = new THREE.Group(),
+        hw = w / 2,
         hd = d / 2;
-    // cuve inox encastrée de 18 cm de profondeur
-    const hole = {cx: 0, cz: 3, w: 44, d: hd * 2 - 22, r: 3};
-    kitchenBase(g, w, d, hole);
-    basin(g, hole, 90, 18, MAT.steel);
-    Cyl(g, 1.4, 1.4, 28, 0, 104, -hd + 5, MAT.metal);
-    B(g, -1.2, 1.2, 115, 118, -hd + 5, -hd + 22, MAT.metal);
+    const inox = std(0xd0d3d6, {metalness: 1, roughness: 0.3, envMap: MAT.chrome.envMap});
+    const plate = {cx: 0, cz: 1.5, w: 76, d: 54, r: 1.5};
+    kitchenBase(g, w, d, plate, false, 60);
+    // cuve côté angle (+x local = côté cloison), égouttoir vers les plaques
+    const bowlHole = {cx: 15.5, cz: 1.5, w: 40, d: 40, r: 6};
+    holedTop(g, -38.5, 38.5, plate.cz - 27.5, plate.cz + 27.5, 89.6, 90.4, bowlHole, inox);
+    basin(g, bowlHole, 90, 17, inox);
+    for (let i = 0; i < 11; i++) B(g, -36 + i * 2.8, -34.8 + i * 2.8, 90.4, 90.8, -22, 26, inox);
+    swanNeck(g, -1, -hd + 10);
     wallCabinets(g, w, d);
     return g;
 }
@@ -304,18 +412,18 @@ function cooker(w, d) {
     B(g, -ow / 2 + 4, ow / 2 - 4, 33, 55, zf + 2, zf + 2.5, MAT.screen); // hublot
     B(g, -ow / 2 + 5, ow / 2 - 5, 56.5, 58, zf + 2.5, zf + 4.5, MAT.metal); // poignée
     // tiroir sous le four
-    B(g, -hw + 0.3, hw - 0.3, 10, 28, zf, zf + 2, MAT.front);
+    B(g, -hw + 0.3, hw - 0.3, 10, 28, zf, zf + 2, kitchenWhite);
     B(g, -hw + 8, hw - 8, 24, 25.5, zf + 2, zf + 4, MAT.metal);
     // table vitrocéramique noire affleurante, 4 foyers
     const pw = w - 4;
-    B(g, -hw, hw, 87, 90, -hd, hd + 1, MAT.counter);
+    B(g, -hw, hw, 87, 90, -hd, hd + 1, worktop);
     B(g, -pw / 2, pw / 2, 90, 90.4, -hd + 5, hd - 3, MAT.black);
     const px = pw / 4,
         z1 = -hd + 5 + 13,
         z2 = hd - 3 - 17;
     for (const [x, z, r] of [[-px, z1, 7.5], [px, z1, 9], [-px, z2, 8], [px, z2, 6.5]]) Cyl(g, r, r, 0.1, x, 90.45, z, MAT.groove);
     B(g, -pw / 2 + 8, pw / 2 - 8, 90.4, 90.5, hd - 5, hd - 4.4, MAT.groove); // commandes tactiles
-    wallCabinets(g, w, d);
+    wallCabinets(g, w, d, 'hood');
     return g;
 }
 
@@ -957,81 +1065,6 @@ function prism(g, shape, y0, y1, mat) {
     m.castShadow = m.receiveShadow = true;
     g.add(m);
     return m;
-}
-
-// Meuble bar : adossé au mur par son extrémité +x, arrondi à l'autre bout, habillé de contreplaqué bouleau,
-// étagères ouvertes côté cuisine (-z), congélateur top encastré côté mur et plan de travail inox débordant.
-function plywoodBar(w, d) {
-    const g = new THREE.Group(),
-        h = 105,
-        top = 3,
-        over = 2.5,
-        overEnd = 7, // débord du plan inox côté cuisine (bout -x)
-        R = 13,
-        m = (v) => v / 100;
-    const {veneer, edge} = plywood();
-    const inox = new THREE.MeshStandardMaterial({color: 0xd2d5d8, metalness: 1, roughness: 0.3, envMap: MAT.chrome.envMap});
-    const bw = w - overEnd, // le caisson est en retrait du plan sauf côté mur
-        bd = d - 2 * over,
-        bx = -overEnd / 2;
-    const cav = {depth: 30, endLeft: R + 4, endRight: 3};
-    const plinth = prism(g, barShape(m(bw - 2), m(bd - 2), m(R - 1)), 0, 6, std(0x5b5650, {roughness: 0.8}));
-    plinth.position.x = m(bx);
-    const body = prism(g, barShape(m(bw), m(bd), m(R), {depth: m(cav.depth), endLeft: m(cav.endLeft), endRight: m(cav.endRight)}), 6, h - top, veneer);
-    body.position.x = m(bx);
-    prism(g, barShape(m(w), m(d), m(R + 1)), h - top, h, inox);
-    // niche : fond et étagères en contreplaqué, chants à plis visibles côté cuisine (-z)
-    const xa = bx - bw / 2 + cav.endLeft,
-        xb = bx + bw / 2 - cav.endRight,
-        zBack = -bd / 2,
-        zIn = -bd / 2 + cav.depth;
-    B(g, xa, xb, 6, h - top, zIn - 1, zIn, veneer);
-    // congélateur top encastré côté mur, façade affleurant le caisson ; joue + tablette au-dessus
-    const xf = xb - 55;
-    const fr = topFreezer();
-    fr.rotation.y = Math.PI;
-    fr.position.set(m(xb - 27.5), 0, m(zBack + 29));
-    g.add(fr);
-    // frigo top blanc glissé à côté du congélateur (même gabarit 85 x 55 x 58)
-    const xg = xf - 1.8 - 55;
-    const fg = topFreezer();
-    fg.rotation.y = Math.PI;
-    fg.position.set(m(xg + 27.5), 0, m(zBack + 29));
-    g.add(fg);
-    for (const x of [xf, xg]) {
-        B(g, x - 1.8, x, 6, h - top, zBack, zIn, veneer);
-        B(g, x - 1.8, x, 6, h - top, zBack, zBack + 0.2, edge);
-    }
-    B(g, xg - 1.8, xb, 86, 87.8, zBack + 0.2, zIn - 1, veneer);
-    B(g, xg - 1.8, xb, 86, 87.8, zBack, zBack + 0.2, edge);
-    for (const y of [6, 37, 68]) {
-        B(g, xa, xg - 1.8, y, y + 1.8, zBack + 0.2, zIn - 1, veneer);
-        B(g, xa, xg - 1.8, y, y + 1.8, zBack, zBack + 0.2, edge);
-    }
-    // chant à plis sous le plan inox, tout autour du caisson
-    // (UV de l'extrusion en mètres : on étire le motif pour que les 9 plis tiennent sur 1,8 cm)
-    const band = edge.clone();
-    band.map = edge.map.clone();
-    band.map.wrapS = band.map.wrapT = THREE.RepeatWrapping;
-    band.map.repeat.set(20, 1 / 0.018);
-    band.map.needsUpdate = true;
-    prism(g, barShape(m(bw + 0.2), m(bd + 0.2), m(R + 0.1)), h - top - 1.8, h - top, band).position.x = m(bx);
-    // bout du bar (-x) : barre laiton sur équerres, casserole et faitout suspendus par le manche,
-    // ouverture tournée vers le bar
-    const {brass} = cookwareMat(),
-        xe = bx - bw / 2,
-        xr = xe - 4.2,
-        yr = 96;
-    B(g, xr - 0.3, xr + 0.3, yr, yr + 0.8, -15, 15, brass);
-    for (const z of [-15, 15]) B(g, xr - 0.3, xe, yr, yr + 0.8, z - 0.4, z + 0.4, brass);
-    for (const [z, r, depth] of [[-8, 9, 12], [8.5, 8, 10]]) {
-        B(g, xr - 0.2, xr + 0.2, yr - 3, yr + 1.5, z - 0.2, z + 0.2, brass); // crochet en S
-        const pot = hangingPot(r, depth);
-        pot.rotation.y = Math.PI / 2; // ouverture vers +x (le bar), fond vers la pièce
-        pot.position.set(m(xr), m(yr - 3), m(z));
-        g.add(pot);
-    }
-    return g;
 }
 
 // ---------- Support TV à roulettes + TCL 65P89L + Switch ----------
@@ -3061,7 +3094,118 @@ function condiments() {
     return g;
 }
 
+// ---------- Petits meubles blancs à boutons en bois, à côté du bar ----------
+
+const paintWhite = std(0xf3f2ee, {roughness: 0.5});
+const knobWood = std(0xb9814a, {roughness: 0.5});
+
+// Bouton de tiroir en bois tourné, saillant de la façade (z = plan de la façade).
+function drawerKnob(g, x, y, z) {
+    Cyl(g, 0.7, 0.7, 1.6, x, y, z + 0.8, knobWood, true);
+    const b = new THREE.Mesh(new THREE.SphereGeometry(0.017, 14, 10), knobWood);
+    b.scale.z = 0.8;
+    b.position.set(x / 100, y / 100, (z + 2.2) / 100);
+    b.castShadow = true;
+    g.add(b);
+}
+
+// Bouteille en révolution : corps, épaulement, goulot (cm).
+function bottle(g, x, y, z, color, h = 30, r = 3.7) {
+    const pts = [[0, 0], [r, 0], [r, 0.4], [r, h * 0.6], [r * 0.45, h * 0.8], [r * 0.45, h - 1.5], [r * 0.52, h - 1.5], [r * 0.52, h], [0, h]].map(
+        ([a, b]) => new THREE.Vector2(a / 100, b / 100),
+    );
+    const m = new THREE.Mesh(new THREE.LatheGeometry(pts, 20), std(color, {roughness: 0.12, metalness: 0.1}));
+    m.position.set(x / 100, y / 100, z / 100);
+    m.castShadow = true;
+    g.add(m);
+}
+
+// Étagère ouverte en contreplaqué bouleau, collée au caisson voisin (côté +x) et arrondie à son bout libre (-x) :
+// dessus en bois à hauteur `top`, verres sur le plateau du milieu, bouteilles sur celui du bas.
+// Origine au centre de l'emprise.
+function roundedShelf(w, d, top = 90) {
+    const g = new THREE.Group(),
+        hw = w / 2,
+        hd = d / 2,
+        R = 14,
+        m = (v) => v / 100;
+    const {veneer} = plywood();
+    const board = (y0, y1) => prism(g, barShape(m(w), m(d), m(R)), y0, y1, veneer);
+    board(top - 3, top);
+    board(46, 47.8);
+    board(12, 13.8);
+    B(g, hw - 1.8, hw, 0, top - 3, -hd, hd, veneer);
+    // bouteilles (plateau du bas, dessus à 13,8)
+    bottle(g, -4, 13.8, -18, 0x1f3a24);
+    bottle(g, 5, 13.8, -18, 0x2b1d20);
+    bottle(g, 13, 13.8, -18, 0x5f7a3a, 29, 3.4);
+    bottle(g, 0, 13.8, 0, 0x6b3a14, 24, 3.3);
+    bottle(g, 10, 13.8, 6, 0xcfe0d8, 26, 3.2);
+    // verres (plateau du milieu, dessus à 47,8)
+    for (const [x, z] of [[-3, -18], [5, -18], [13, -18], [0, 0]]) stemGlass(g, x, 47.8, z);
+    for (const [x, z] of [[10, 6], [14, 14], [2, 12]]) Cyl(g, 3.3, 2.8, 9, x, 52.3, z, MAT.glass);
+    return g;
+}
+
+// Bar : trois caissons blancs (60, 40 et 30 cm) (laqué, boutons en bois) sous un plan de travail stratifié gris de
+// 186 x 63,5 x 2,8 cm (gabarit IKEA standard) arrondi en bout, qui couvre aussi l'étagère ouverte. Côté +x : contre la cloison.
+// 1 : congélateur top Thomson THTTFZ5WH ; 2 : 5 tiroirs ; 3 : grand tiroir.
+// Façades côté cuisine (-z local) : le meuble est construit puis miroité en x pour que le mur reste côté +x.
+function ikeaBar(w, d) {
+    const g = new THREE.Group(),
+        m = (v) => v / 100,
+        hw = w / 2,
+        hd = d / 2,
+        cd = 60, // profondeur des caissons
+        z0 = -hd, // dos des caissons contre le plan
+        z1 = z0 + cd,
+        cws = [60, 40, 30], // largeurs des caissons depuis le mur
+        top = 87.2; // dessus des caissons (plan : 87,2 -> 90)
+    const cx = cws.map((cw, i) => hw - cws.slice(0, i).reduce((a, b) => a + b, 0) - cw / 2);
+    const drawers = (x, n, knobAt, CW) => {
+        const fh = (top - 6.5) / n;
+        for (let i = 0; i < n; i++) {
+            const y0 = 6.5 + i * fh + 0.2,
+                y1 = 6.5 + (i + 1) * fh - 0.2;
+            B(g, x - CW / 2 + 0.4, x + CW / 2 - 0.4, y0, y1, z1 - 1.8, z1, paintWhite);
+            drawerKnob(g, x, knobAt ?? y1 - Math.min(fh * 0.33, 14), z1);
+        }
+    };
+    // caissons : socle en retrait, joues, fond, dessus
+    cx.forEach((x, i) => {
+        const CW = cws[i];
+        B(g, x - CW / 2 + 1, x + CW / 2 - 1, 0, 6, z0 + 1, z1 - 4, paintWhite);
+        B(g, x - CW / 2, x - CW / 2 + 1.8, 6, top, z0, z1 - 1.8, paintWhite);
+        B(g, x + CW / 2 - 1.8, x + CW / 2, 6, top, z0, z1 - 1.8, paintWhite);
+        B(g, x - CW / 2, x + CW / 2, 6, 7.8, z0, z1 - 1.8, paintWhite);
+        B(g, x - CW / 2, x + CW / 2, top - 1.8, top, z0, z1 - 1.8, paintWhite);
+        B(g, x - CW / 2, x + CW / 2, 6, top, z0, z0 + 1, paintWhite);
+    });
+    const CW = cws[0];
+    // 1 : congélateur top Thomson (55 x 58 x 85) glissé dans le caisson de 60, porte à fleur des autres façades
+    const c1 = cx[0];
+    B(g, c1 - CW / 2 + 1.8, c1 + CW / 2 - 1.8, 85, top - 1.8, z0 + 1, z1 - 1.8, paintWhite);
+    const fr = topFreezer();
+    fr.scale.x = -1; // double miroir : porte et poignée gardent leur sens
+    fr.position.set(m(c1), 0, m(z1 - 29));
+    g.add(fr);
+    // 2 : colonne de 5 tiroirs, 3 : grand tiroir
+    drawers(cx[1], 5, undefined, cws[1]);
+    drawers(cx[2], 1, 72, cws[2]);
+    // plan de travail 63,5 x 2,8 cm, bords droits, à fleur des trois caissons
+    const cw = cws.reduce((a, b) => a + b, 0);
+    B(g, hw - cw, hw, top, 90, z0, z0 + 63.5, worktop);
+    // étagère en bois collée au dernier caisson, dessus en bois à la même hauteur
+    const sw = w - cw;
+    const sh = roundedShelf(sw, 63.5, 90);
+    sh.position.set(m(-hw + sw / 2), 0, m(z0 + 31.75));
+    g.add(sh);
+    g.scale.x = -1; // avec rot -90 : façades vers la cuisine, mur côté y petit
+    return g;
+}
+
 export const BUILDERS = {
+    ikeaBar,
     condiments,
     skadisCamera,
     skadisDrone,
@@ -3096,7 +3240,6 @@ export const BUILDERS = {
     monstera,
     yucca,
     tvCabinetMobile,
-    plywoodBar,
     teddy,
     sofa,
     coffeeTable,

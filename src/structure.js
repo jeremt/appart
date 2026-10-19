@@ -205,8 +205,8 @@ export function buildStructure(tex) {
     }
 
     // faïence murale (UV recalées sur la taille de chaque plaque)
-    for (const [x1, y1, x2, y2, h0, h1] of wallTiles) {
-        const t = tex.wallTile;
+    for (const [x1, y1, x2, y2, h0, h1, kind = 'wallTile'] of wallTiles) {
+        const t = tex[kind];
         const map = t.tex.clone();
         map.needsUpdate = true;
         map.repeat.set(Math.max(x2 - x1, y2 - y1) / 100 / t.size, (h1 - h0) / 100 / t.size);

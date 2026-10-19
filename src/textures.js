@@ -179,6 +179,9 @@ export function makeTextures(renderer) {
     // faïence autour de la baignoire : 30x60 grège
     const wallTile = canvasTexture(1024, (g, s) => tileGrid(g, s, 2, 4, [35, 9, 58], '#8d877e', 51), aniso);
 
+    // crédence de cuisine : carreaux 30x60 anthracite, joints clairs
+    const kitchenTile = canvasTexture(1024, (g, s) => tileGrid(g, s, 2, 4, [225, 6, 15], '#cfcfcc', 61), aniso);
+
     const out = {
         parquet: mk(parquet, 1.6, 0.55),
         tiles: mk(tiles, 1.2, 0.35),
@@ -188,6 +191,7 @@ export function makeTextures(renderer) {
         tileLight: mk(tileLight, 1.2, 0.3),
         tileDark: mk(tileDark, 1.2, 0.35),
         wallTile: mk(wallTile, 1.2, 0.3),
+        kitchenTile: mk(kitchenTile, 1.2, 0.25),
     };
     // carrelage du séjour : teinte légèrement assombrie pour ne pas paraître blanc sous le soleil
     out.tileLight.material.color.setScalar(0.78);
