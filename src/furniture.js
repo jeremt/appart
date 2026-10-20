@@ -787,6 +787,31 @@ function bed(w, d) {
     return g;
 }
 
+// Tête de lit-tablette en noyer : caisson fermé à façade rainurée, dessus large pour poser
+// livres, verre d'eau, vase…
+function walnutHeadboard(w, d) {
+    const g = new THREE.Group(),
+        hw = w / 2,
+        hd = d / 2,
+        h = 100,
+        wood = walnutWood();
+    B(g, -hw, hw, 0, h - 3, -hd, -hd + 1.5, wood); // dos
+    for (const x of [-hw, hw - 1.8]) B(g, x, x + 1.8, 0, h - 3, -hd, hd, wood); // joues
+    B(g, -hw + 1.8, hw - 1.8, 1, h - 3, hd - 1.8, hd, wood); // façade
+    for (let x = -hw + 12; x < hw - 6; x += 12) B(g, x - 0.3, x + 0.3, 1, h - 3, hd, hd + 0.2, MAT.dark); // rainures
+    B(g, -hw - 1, hw + 1, h - 3, h, -hd, hd + 1.5, wood); // tablette, légèrement débordante
+    // quelques objets posés
+    const rnd = seeded(5);
+    let y = h;
+    for (const [bw, bh] of [[24, 3], [21, 2.5], [19, 3.5]]) {
+        B(g, -hw + 12, -hw + 12 + bw, y, y + bh, -hd + 2, -hd + 2 + 15, std([0x2f3e5c, 0xe8e0cf, 0xb5563a][Math.floor(rnd() * 3)], {roughness: 0.8}));
+        y += bh;
+    }
+    Cyl(g, 4.5, 3.5, 18, hw - 18, h + 9, 0, stoneware('beige'));
+    Cyl(g, 3.2, 2.8, 9, hw - 34, h + 4.5, 2, MAT.glass);
+    return g;
+}
+
 // Armoire blanche à façade quadrillée (portes sans poignées, rainures grises).
 function wardrobeGrid(w, d) {
     const g = new THREE.Group(),
@@ -801,21 +826,6 @@ function wardrobeGrid(w, d) {
     line(-hw / 2 - 0.4, -hw / 2 + 0.4, 40, 100);
     line(0, hw - 1, 40 - 0.4, 40 + 0.4);
     B(g, -hw + 8, hw - 20, h, h + 25, -hd + 8, hd - 8, MAT.cardboard);
-    return g;
-}
-
-function nightstand(w, d) {
-    const g = new THREE.Group(),
-        hw = w / 2,
-        hd = d / 2,
-        h = 48;
-    for (const sx of [-1, 1])
-        for (const sz of [-1, 1]) {
-            const x = sx * (hw - 1),
-                z = sz * (hd - 1);
-            B(g, x - 1, x + 1, 0, h, z - 1, z + 1, MAT.blackMetal);
-        }
-    for (const y of [10, h - 2]) B(g, -hw + 1, hw - 1, y, y + 1.5, -hd + 1, hd - 1, MAT.blackMetal);
     return g;
 }
 
@@ -3233,6 +3243,7 @@ function ikeaBar(w, d) {
 }
 
 export const BUILDERS = {
+    walnutHeadboard,
     ikeaBar,
     condiments,
     skadisCamera,
@@ -3280,7 +3291,6 @@ export const BUILDERS = {
     poster,
     bed,
     wardrobeGrid,
-    nightstand,
     chairScandi,
     bistroTable,
     vanityWasher,

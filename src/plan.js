@@ -177,7 +177,8 @@ export const furnitureDefs = [
     {id: 'porte-manteau', type: 'coatRack', name: 'Porte-manteau mural', r: [15, 613, 85, 628], rot: 180},
     {id: 'sac-chaussons', type: 'slipperBag', name: 'Sac à chaussons', r: [62, 610, 92, 628], rot: 180},
     // Chambre
-    {id: 'lit', type: 'bed', name: 'Lit 160 x 200', r: [407, 2, 612, 164], rot: -90},
+    {id: 'lit', type: 'bed', name: 'Lit 160 x 200', r: [389, 2, 594, 164], rot: -90},
+    {id: 'tete-de-lit', type: 'walnutHeadboard', name: 'Tête de lit-tablette en noyer', r: [594, 2, 612, 150], rot: -90},
     {id: 'armoire', type: 'wardrobeGrid', name: 'Armoire', r: [BATH_X + INT, 30, 285, 140], rot: 90},
     {id: 'bureau', type: 'standingDesk', name: 'Bureau assis-debout 160 x 60', r: [370, SPLIT_Y - 60, 530, SPLIT_Y], rot: 180},
     // panneaux perforés au-dessus du bureau (bas à 128 cm)
@@ -187,7 +188,6 @@ export const furnitureDefs = [
     {id: 'ecran', type: 'monitorArm', name: 'Écran 27" sur bras', r: [419, SPLIT_Y - 25, 481, SPLIT_Y - 5], rot: 180, elev: 74},
     {id: 'macbook', type: 'macbookPro', name: 'MacBook Pro 14"', c: [501, 272], size: [31.3, 22.1], rot: -165, elev: 74},
     {id: 'tabourets', type: 'kyrreStack', name: 'Tabourets IKEA KYRRE ×4 (604.169.25)', c: [330, 279], size: [42, 48], rot: 0, url: 'https://www.ikea.com/fr/fr/p/kyrre-tabouret-bouleau-60416925/'},
-    {id: 'chevet', type: 'nightstand', name: 'Chevet', r: [290, 2, 326, 40], rot: 90},
     // Balcon
     {id: 'guirlande', type: 'stringLights', name: 'Guirlande guinguette', r: [771, 132, 777, 612], rot: 90},
     {id: 'jardiniere-1', type: 'railPlanter', name: 'Jardinière de lavande', r: [758, 190, 778, 260], rot: -90, elev: 70},
