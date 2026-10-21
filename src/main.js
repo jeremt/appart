@@ -274,7 +274,7 @@ let mode = 'plan';
 const showLabels = {plan: true, orbit: false};
 const activeCam = () => (mode === 'plan' ? ortho : mode === 'orbit' ? persp : fpsCam);
 
-const MODES_HELP = 'Changer de vue à tout moment : <kbd>1</kbd> Plan · <kbd>2</kbd> 3D libre · <kbd>3</kbd> Visite · <kbd>N</kbd> jour / nuit';
+const MODES_HELP = 'Changer de vue à tout moment : <kbd>1</kbd> Plan · <kbd>2</kbd> 3D libre · <kbd>3</kbd> Visite · <kbd>N</kbd> jour / nuit · <kbd>S</kbd> capture dans le presse-papiers (<kbd>P</kbd> en visite)';
 const HELP = {
     plan: `<b>Plan 2D</b> — glisser : déplacer la vue · <kbd>Espace</kbd> + glisser : déplacer la vue même sur un meuble · molette : zoom<br>Clic sur un meuble : sélection · glisser : déplacer · <kbd>R</kbd> pivoter 90° (<kbd>⇧R</kbd> 15°) · <kbd>Suppr</kbd> supprimer · flèches : ajuster<br>Double-clic sur une porte : ouvrir / fermer<br>${MODES_HELP}`,
     orbit: `<b>3D libre</b> — clic gauche : tourner · <kbd>Espace</kbd> + glisser ou clic droit : déplacer la vue · molette : zoom<br>Glisser un meuble pour le déplacer · <kbd>R</kbd> pivoter · <kbd>Suppr</kbd> supprimer<br>Double-clic sur une porte : ouvrir / fermer<br>${MODES_HELP}`,
@@ -642,6 +642,32 @@ function toggleDoor(door) {
     door.target = door.target > 0.5 ? 0 : 1;
 }
 
+// ---------- Capture d'écran vers le presse-papiers ----------
+// La capture est prise à la fin de la prochaine image rendue (le canvas WebGL n'est pas conservé entre deux images).
+let shotResolve = null;
+const toast = (text) => {
+    const t = $('#toast');
+    t.textContent = text;
+    t.hidden = false;
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(() => (t.hidden = true), 2200);
+};
+function screenshotToClipboard() {
+    if (shotResolve) return;
+    const blob = new Promise((resolve) => (shotResolve = resolve));
+    navigator.clipboard
+        .write([new ClipboardItem({'image/png': blob})])
+        .then(() => toast('Capture copiée dans le presse-papiers'))
+        .catch(() => toast('Copie impossible (autorisation du presse-papiers ?)'));
+}
+function flushScreenshot() {
+    if (!shotResolve) return;
+    const resolve = shotResolve;
+    shotResolve = null;
+    renderer.domElement.toBlob((b) => resolve(b), 'image/png');
+}
+$('#btn-shot').addEventListener('click', screenshotToClipboard);
+
 // ---------- Clavier ----------
 const keys = new Set();
 window.addEventListener('keydown', (e) => {
@@ -656,6 +682,10 @@ window.addEventListener('keydown', (e) => {
     const modeKey = {Digit1: 'plan', Digit2: 'orbit', Digit3: 'fps', Numpad1: 'plan', Numpad2: 'orbit', Numpad3: 'fps'}[e.code];
     if (modeKey && !e.metaKey && !e.ctrlKey) {
         if (modeKey !== mode) setMode(modeKey);
+        return;
+    }
+    if (!e.metaKey && !e.ctrlKey && !e.altKey && (e.code === 'KeyP' || (e.code === 'KeyS' && mode !== 'fps'))) {
+        screenshotToClipboard();
         return;
     }
     if (e.code === 'Space' && mode !== 'fps') {
@@ -870,7 +900,7 @@ fixtures.visible = false;
 scene.add(fixtures);
 const fixtureMat = new THREE.MeshStandardMaterial({color: 0xffffff, emissive: 0xfff0d8, emissiveIntensity: 0});
 
-function ceilingLight(x, y, intensity, {shadow = true, h = 242, angle = Math.PI / 2.6} = {}) {
+function ceilingLight(x, y, intensity, {shadow = true, h = 242, angle = Math.PI / 2.6, fixture = true} = {}) {
     const p = toWorld(x, y, h);
     const spot = new THREE.SpotLight(0xffe0b5, intensity, 8, angle, 1, 1.4);
     spot.position.copy(p);
@@ -883,11 +913,12 @@ function ceilingLight(x, y, intensity, {shadow = true, h = 242, angle = Math.PI 
         Object.assign(spot.shadow.camera, {near: 0.1, far: 6});
     }
     interiorLights.add(spot, spot.target);
+    if (!fixture) return;
     const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.03, 24), fixtureMat);
     disc.position.copy(toWorld(x, y, 248));
     fixtures.add(disc);
 }
-ceilingLight(306, 473, 22); // séjour
+ceilingLight(425, 475, 22, {h: 206, angle: Math.PI / 2.2, fixture: false}); // séjour : dans la suspension GULLSUDARE
 ceilingLight(90, 420, 10); // cuisine
 ceilingLight(418, 155, 18); // chambre
 ceilingLight(108, 170, 14); // salle de bain
@@ -1034,6 +1065,7 @@ renderer.setAnimationLoop(() => {
             beforeScene: (c) => floorRefl.update(scene, c),
         });
     } else renderer.render(scene, cam);
+    flushScreenshot();
     labelRenderer.render(scene, cam);
 });
 

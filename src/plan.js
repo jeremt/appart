@@ -159,10 +159,12 @@ export const furnitureDefs = [
     {id: 'canape', type: 'teddy', name: 'Canapé OMHU Teddy', r: [325, SPLIT_Y + INT, 525, SPLIT_Y + INT + 100], rot: 0, variants: teddyColors, variant: '5782'},
     // lampadaire arc à droite du canapé, arc orienté vers la table basse
     {id: 'lampadaire', type: 'arcLamp', name: 'Lampadaire arc', c: [555, 345], size: [36, 36], rot: -45},
+    // suspension papier au-dessus de la table basse, dans l'axe du canapé (bas de la boule à 174 cm, plafond à 250)
+    {id: 'suspension-salon', type: 'paperPendant', name: 'Suspension IKEA GULLSUDARE Ø70, papier de riz fait main (805.836.16)', c: [425, 475], size: [70, 70], rot: 0, elev: 174, url: 'https://www.ikea.com/fr/fr/p/gullsudare-abat-jour-suspension-blanc-fait-main-80583616/'},
     {id: 'etageres-canape', type: 'sofaShelves', name: 'Étagères au-dessus du canapé', r: [330, SPLIT_Y + INT, 510, SPLIT_Y + INT + 22], rot: 0},
     {id: 'tapis', type: 'rug', name: 'Tapis laine 200 x 140', r: [320, 395, 520, 535], rot: 0},
     {id: 'table-basse', type: 'matikaTable', name: 'Table basse rehaussable Matika L120', r: [360, 435, 480, 515], rot: 0, heightRange: [49, 76], url: 'https://www.maisonsdumonde.com/FR/fr/p/table-basse-rehaussable-en-bois-et-acier-noir-l120-matika-M22179481.htm'},
-    {id: 'meuble-tv', type: 'tvCabinetMobile', name: 'Support TV à roulettes Duiliuu 50"-100\" + TCL 65" (65P89L) + Nintendo Switch et 2 manettes', r: [394, 558, 486, 628], rot: 180, url: 'https://www.amazon.fr/dp/B0D2MCVY3W'},
+    {id: 'meuble-tv', type: 'tvStandEasel', name: 'Support TV à roulettes CNTSLNB inox + plateau bois (86 x 50,5 x 126,5) + TCL 65" (65P89L) + Nintendo Switch et 2 manettes', r: [397, 577.5, 483, 628], rot: 180, url: 'https://www.amazon.fr/dp/B0FRXT8XT2'},
     {id: 'colonne-salon', type: 'storageColumn', name: 'Colonne de rangement', r: [295, 593, 330, 628], rot: 180},
     // à gauche du canapé, contre la cloison (laisse 68 cm de passage devant la porte de la chambre)
     {id: 'monstera', type: 'monstera', name: 'Monstera', r: [550, 559, 600, 609], rot: 0},

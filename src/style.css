@@ -331,3 +331,20 @@ button.primary {
     width: 100%;
     accent-color: #f59e0b;
 }
+
+#toast {
+    position: fixed;
+    left: 50%;
+    bottom: 28px;
+    transform: translateX(-50%);
+    padding: 8px 14px;
+    border-radius: 8px;
+    background: rgba(24, 26, 32, 0.92);
+    color: #fff;
+    font-size: 13px;
+    pointer-events: none;
+    z-index: 50;
+}
+#toast[hidden] {
+    display: none;
+}

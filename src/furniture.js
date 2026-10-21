@@ -1141,56 +1141,72 @@ function proController(g, x, y, z, rot, color = 0x222326) {
     g.add(c);
 }
 
-function tvCabinetMobile(w, d) {
+// Tube cintré passant par les points `pts` (cm), coins arrondis de rayon `rad`.
+function bentTube(g, pts, r, rad, mat) {
+    const v = pts.map((p) => new THREE.Vector3(...p).divideScalar(100));
+    const path = new THREE.CurvePath();
+    let from = v[0];
+    for (let i = 1; i < v.length - 1; i++) {
+        const k = Math.min(rad / 100, v[i].distanceTo(v[i - 1]) / 2, v[i].distanceTo(v[i + 1]) / 2);
+        const a = v[i].clone().addScaledVector(v[i - 1].clone().sub(v[i]).normalize(), k);
+        const b = v[i].clone().addScaledVector(v[i + 1].clone().sub(v[i]).normalize(), k);
+        path.add(new THREE.LineCurve3(from, a));
+        path.add(new THREE.QuadraticBezierCurve3(a, v[i], b));
+        from = b;
+    }
+    path.add(new THREE.LineCurve3(from, v[v.length - 1]));
+    const m = new THREE.Mesh(new THREE.TubeGeometry(path, 24 * v.length, r / 100, 12), mat);
+    m.castShadow = m.receiveShadow = true;
+    g.add(m);
+    return m;
+}
+
+// Support TV à roulettes CNTSLNB (86 x 50,5 x 110-126,5, réglé en position haute) : cadre en
+// tube inox poli Ø 2,2, chaque colonne se dédoublant en Y vers une roulette avant et une arrière,
+// plateau en bois 80 x 24 à rebords de 10 cm (dessus à 43,4 cm), crochets VESA de 42,9 cm.
+// Porte la TCL 65", la Switch sur son stand et deux manettes Pro posées sur le plateau.
+function tvStandEasel(w, d) {
     const g = new THREE.Group(),
-        hw = w / 2,
-        hd = d / 2,
-        steel = MAT.blackMetal,
-        yTop = 129.5, // dessus du cadre (position haute)
-        yBend = 80, // coude des montants
+        steel = MAT.chrome,
+        R = 1.1,
+        yTop = 126.5, // traverse haute
+        yNode = 30, // départ des jambes
+        ux = 37.5, // axe des colonnes
+        xb = w / 2 - 2, // roulettes légèrement écartées vers l'extérieur
+        zc0 = d / 2 - 2.5, // roulettes avant/arrière
+        sy = 43.4, // dessus du plateau
         TW = 144.4,
         TH = 83.5,
-        tvY = yTop - 51, // dessous de la TV : centrée sur les platines VESA
-        ux = hw - 3, // axe des montants
-        zb = -4, // plan du cadre vertical
-        zF = hd - 4, // roulettes avant
-        zR = -hd + 4, // roulettes arrière
-        zAt = (y) => zF + ((zb - zF) * (y - 5)) / (yBend - 5); // z de la pente à la hauteur y
+        tvY = yTop - 19 - TH / 2, // TV centrée sur les crochets
+        zc = 6.1; // milieu de la dalle, devant les crochets
+    bentTube(g, [[-ux, yNode, 0], [-ux, yTop, 0], [ux, yTop, 0], [ux, yNode, 0]], R, 6, steel);
+    rod(g, [-ux, yTop - 12, 0], [ux, yTop - 12, 0], R, steel); // seconde traverse
     for (const sx of [-1, 1]) {
-        const x = sx * ux;
-        beam(g, [x, 5, zF], [x, 5, zR], 3, 3.5, steel); // rail de base
-        beam(g, [x, 5, zF], [x, yBend, zb], 3.5, 3.5, steel); // pente avant
-        beam(g, [x, yBend, zb], [x, yTop + 1, zb], 3.5, 3.5, steel); // montant vertical
-        beam(g, [x, 5, zR], [x, 62, zAt(62)], 3, 2.5, steel); // jambe de force arrière
-        for (const z of [zF, zR]) {
-            B(g, x - 1.3, x + 1.3, 3.2, 5, z - 1.8, z + 1.8, steel);
-            Cyl(g, 2.5, 2.5, 2, x, 2.5, z, MAT.matteBlack, true).rotation.z = Math.PI / 2;
+        bentTube(g, [[sx * xb, 8, zc0], [sx * xb, 13, zc0], [sx * ux, yNode + 2, 0], [sx * xb, 13, -zc0], [sx * xb, 8, -zc0]], R, 4, steel);
+        for (const z of [zc0, -zc0]) {
+            const x = sx * xb;
+            B(g, x - 1.8, x + 1.8, 7.2, 8, z - 1.8, z + 1.8, steel); // platine
+            B(g, x - 1.2, x + 1.2, 4, 7.2, z - 0.6, z + 1.4, MAT.matteBlack); // chape pivotante
+            Cyl(g, 2.8, 2.8, 2, x, 2.8, z + 1.2, std(0xb9bcbf, {roughness: 0.3, transparent: true, opacity: 0.85}), true).rotation.z = Math.PI / 2;
+            B(g, x - 0.8, x + 0.8, 5.5, 6.2, z + 1.4, z + 3.6, MAT.matteBlack); // frein
         }
     }
-    beam(g, [-ux, 5, zF], [ux, 5, zF], 3, 3.5, steel); // traverses de base
-    beam(g, [-ux, 5, zR], [ux, 5, zR], 3, 3.5, steel);
-    // cadre VESA : deux barres et montants centraux
-    beam(g, [-ux, yTop, zb], [ux, yTop, zb], 3.5, 4, steel);
-    beam(g, [-ux, yTop - 18, zb], [ux, yTop - 18, zb], 2.5, 3, steel);
-    for (const x of [-2, 2]) beam(g, [x, yTop, zb], [x, yTop - 18, zb], 2.5, 2, steel);
-    // étagères en bois sombre, entre les montants
-    for (const y of [8, 46]) {
-        const zf = zAt(y) + 1.5;
-        B(g, -ux + 2, ux - 2, y, y + 2, zR - 1, zf, MAT.walnut);
-    }
-    // platines VESA verticales, TV devant le cadre
-    const zc = zb + 7;
-    for (const x of [-27, 27]) B(g, x - 2, x + 2, yTop - 41.5, yTop + 23, zb + 1.8, zb + 3.5, steel);
+    // plateau bois : fond, rebord arrière percé (passe-câbles) et joues latérales
+    B(g, -40, 40, sy - 2, sy, -12, 12, MAT.walnut);
+    B(g, -40, 40, sy, sy + 10, -12, -10.5, MAT.walnut);
+    for (const sx of [-1, 1]) B(g, sx * 38.6, sx * 40, sy, sy + 10, -10.5, 12, MAT.walnut);
+    Cyl(g, 1.8, 1.8, 1.6, -30, sy + 6, -11.25, MAT.dark, true);
+    // crochets VESA devant la traverse, TV devant les crochets
+    for (const x of [-20, 20]) B(g, x - 1.6, x + 1.6, yTop - 38.9, yTop + 4, R, R + 1.6, MAT.matteBlack);
     B(g, -TW / 2, TW / 2, tvY, tvY + TH, zc - 1.2, zc + 1.2, MAT.dark); // dalle
-    B(g, -TW / 2 + 20, TW / 2 - 20, tvY + 10, tvY + TH - 10, zc - 3.5, zc - 1.2, MAT.dark); // dos
+    B(g, -TW / 2 + 20, TW / 2 - 20, tvY + 10, tvY + TH - 10, R + 1.6, zc - 1.2, MAT.dark); // dos
     B(g, -TW / 2 + 0.6, TW / 2 - 0.6, tvY + 2, tvY + TH - 0.6, zc + 1.2, zc + 1.4, MAT.screen); // écran
     B(g, -9, 9, tvY - 0.8, tvY + 1.6, zc + 0.6, zc + 1.6, MAT.steel);
     const glow = B(g, -TW / 2 + 10, TW / 2 - 10, tvY - 1.2, tvY - 0.4, zc - 1, zc + 1, tvGlowMat);
     glow.castShadow = false;
-    // Switch sur un stand noir (étagère haute) : dock noir, console insérée, Joy-Con néon
-    const sy = 48,
-        sz = -10,
-        sx0 = -6;
+    // Switch sur un stand noir : dock noir, console insérée, Joy-Con néon
+    const sz = -5,
+        sx0 = -10;
     const black = std(0x1a1b1d, {roughness: 0.4});
     B(g, sx0 - 10, sx0 + 10, sy, sy + 0.8, sz - 4, sz + 4, black); // socle du stand
     B(g, sx0 - 9.8, sx0 + 9.8, sy + 0.8, sy + 11, sz - 3, sz - 1.4, black); // dossier
@@ -1200,15 +1216,8 @@ function tvCabinetMobile(w, d) {
     B(g, sx0 - 10.4, sx0 - 8.1, sy + 2.2, sy + 10.6, sz - 1.4, sz - 0.1, std(0xe4002b, {roughness: 0.4})); // Joy-Con gauche
     B(g, sx0 + 8.1, sx0 + 10.4, sy + 2.2, sy + 10.6, sz - 1.4, sz - 0.1, std(0x00a0e6, {roughness: 0.4})); // Joy-Con droit
     // deux manettes Pro à côté
-    proController(g, 12, 48, -6, 0.2);
-    proController(g, 32, 48, -6, -0.2, 0xe9e9e6);
-    // déco sur l'étagère basse : livres empilés, vase en grès, bougie
-    B(g, -22, 4, 10, 12.2, -12, 6, std(0xd8d2c4, {roughness: 0.8}));
-    B(g, -21, 3, 12.2, 14.2, -11, 5, std(0x3a4a5e, {roughness: 0.8}));
-    Cyl(g, 4.6, 5.2, 11, -9, 19.7, -3, std(0x8a7a66, {roughness: 0.9}));
-    Cyl(g, 2.6, 2.6, 1, -9, 25.5, -3, MAT.dark);
-    Cyl(g, 3, 3, 6, 22, 13, -4, std(0xe9e3d6, {roughness: 0.6}));
-    Cyl(g, 2.2, 2.2, 0.4, 22, 16.2, -4, std(0xc9a25a, {roughness: 0.5}));
+    proController(g, 11, sy, -2, 0.2);
+    proController(g, 26, sy, -2, -0.2, 0xe9e9e6);
     return g;
 }
 
@@ -2116,6 +2125,49 @@ function arcLamp(w, d, reach = 140) {
     light.position.set(0, 1.58, reach / 100);
     light.target.position.set(0, 0, reach / 100);
     g.add(light, light.target);
+    return g;
+}
+
+// Suspension IKEA GULLSUDARE Ø70 : boule de papier de riz tendue sur un fil d'acier en spirale
+// (nervures horizontales), ouverte en haut et en bas, cordon blanc jusqu'au plafond.
+// Origine au bas de l'abat-jour : `elev` = hauteur du bas de la boule, plafond à 250 cm.
+function paperPendant(w, d, ceiling = 76) {
+    const g = new THREE.Group();
+    const R = Math.min(w, d) / 2,
+        H = 66, // boule légèrement aplatie par le poids du papier
+        ribs = 17;
+    const paper = std(0xf4f1ea, {roughness: 0.92, side: THREE.DoubleSide, emissive: 0xffe2b8, emissiveIntensity: 0.04});
+    paper.userData.night = 0.9;
+    // profil : de l'ouverture du bas (Ø 22) à celle du haut (Ø 12), papier légèrement bombé entre deux fils
+    const pts = [];
+    const a0 = Math.asin(11 / R),
+        a1 = Math.PI - Math.asin(6 / R);
+    for (let i = 0; i <= ribs * 4; i++) {
+        const a = a0 + ((a1 - a0) * i) / (ribs * 4);
+        const bulge = 1 + 0.012 * Math.sin(((i % 4) / 4) * Math.PI);
+        pts.push(new THREE.Vector2((Math.sin(a) * R * bulge) / 100, ((1 - Math.cos(a)) * H) / 2 / 100));
+    }
+    const shade = new THREE.Mesh(new THREE.LatheGeometry(pts, 48), paper);
+    shade.receiveShadow = true; // ne porte pas d'ombre : la lumière du séjour est à l'intérieur
+    g.add(shade);
+    // anneau du haut, cordon et cache-piton au plafond
+    const cord = std(0xf2f2f2, {roughness: 0.5});
+    const ringY = H - (1 + Math.cos(a1)) * H / 2;
+    rod(g, [-6, ringY, 0], [6, ringY, 0], 0.15, MAT.metal);
+    rod(g, [0, ringY, -6], [0, ringY, 6], 0.15, MAT.metal);
+    Cyl(g, 1.4, 1.4, 6, 0, ringY + 1, 0, cord); // douille
+    rod(g, [0, ringY + 4, 0], [0, ceiling - 1.5, 0], 0.3, cord);
+    Cyl(g, 5.5, 5.5, 2, 0, ceiling - 1, 0, cord);
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.045, 16, 10), std(0xfff4e0, {emissive: 0xffe2b0, emissiveIntensity: 0.05}));
+    bulb.material.userData.night = 3;
+    bulb.position.set(0, (H / 2 + 6) / 100, 0);
+    g.add(bulb);
+    // halo vers le plafond et les murs proches (l'éclairage principal reste le spot du séjour)
+    const light = new THREE.PointLight(0xffd9a8, 1.2, 1.8, 2);
+    light.position.copy(bulb.position);
+    light.userData.nightOnly = true;
+    light.visible = false;
+    g.add(light);
     return g;
 }
 
@@ -3266,6 +3318,7 @@ export const BUILDERS = {
     railPlanter,
     herbPots,
     arcLamp,
+    paperPendant,
     kitchenGrid,
     knifeBar,
     coatRack,
@@ -3280,7 +3333,7 @@ export const BUILDERS = {
     onewheelStand,
     monstera,
     yucca,
-    tvCabinetMobile,
+    tvStandEasel,
     teddy,
     sofa,
     coffeeTable,
