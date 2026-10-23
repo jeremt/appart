@@ -2709,7 +2709,7 @@ function towelRadiator(w, d) {
     const g = new THREE.Group(),
         hw = w / 2,
         hd = d / 2,
-        y0 = 15, // fixé au mur, bas à 15 cm du sol
+        y0 = 60, // fixé au mur, bas à 60 cm du sol
         h = 114,
         z = -hd + 5.5; // axe des barreaux, à ~5 cm du mur
     const white = MAT.gloss;
