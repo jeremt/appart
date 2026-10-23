@@ -172,7 +172,9 @@ export const furnitureDefs = [
     {id: 'etageres-canape', type: 'sofaShelves', name: 'Étagères au-dessus du canapé', r: [330, SPLIT_Y + INT, 510, SPLIT_Y + INT + 22], rot: 0},
     {id: 'tapis', type: 'rug', name: 'Tapis laine 200 x 140', r: [320, 395, 520, 535], rot: 0},
     {id: 'table-basse', type: 'matikaTable', name: 'Table basse rehaussable Matika L120', r: [360, 435, 480, 515], rot: 0, heightRange: [49, 76], url: 'https://www.maisonsdumonde.com/FR/fr/p/table-basse-rehaussable-en-bois-et-acier-noir-l120-matika-M22179481.htm'},
-    {id: 'meuble-tv', type: 'tvStandEasel', name: 'Support TV à roulettes CNTSLNB inox + plateau bois (86 x 50,5 x 126,5) + TCL 65" (65P89L) + Nintendo Switch et 2 manettes', r: [397, 577.5, 483, 628], rot: 180, url: 'https://www.amazon.fr/dp/B0FRXT8XT2'},
+    {id: 'meuble-tv', type: 'tvStandEasel', name: 'Support TV à roulettes CNTSLNB inox + plateau bois (86 x 50,5 x 126,5) + TCL 65" (65P89L) + Nintendo Switch et 2 manettes', r: [382, 577.5, 468, 628], rot: 180, url: 'https://www.amazon.fr/dp/B0FRXT8XT2'},
+    // à gauche du meuble TV, contre le mur sud (photo IMG_6673)
+    {id: 'radiateur-salon', type: 'panelRadiator', name: 'Radiateur à panneaux 80 x 60', r: [500, 616, 580, 628], rot: 180},
     {id: 'colonne-salon', type: 'storageColumn', name: 'Colonne de rangement', r: [295, 593, 330, 628], rot: 180},
     // à gauche du canapé, contre la cloison (laisse 68 cm de passage devant la porte de la chambre)
     {id: 'monstera', type: 'monstera', name: 'Monstera', r: [550, 559, 600, 609], rot: 0},
@@ -191,6 +193,8 @@ export const furnitureDefs = [
     {id: 'tete-de-lit', type: 'walnutHeadboard', name: 'Tête de lit-tablette en noyer', r: [594, 2, 612, 150], rot: -90},
     {id: 'armoire', type: 'wardrobeGrid', name: 'Armoire', r: [BATH_X + INT, 30, 285, 140], rot: 90},
     {id: 'bureau', type: 'standingDesk', name: 'Bureau assis-debout 160 x 60', r: [370, SPLIT_Y - 60, 530, SPLIT_Y], rot: 180},
+    // à gauche du bureau, contre la cloison (photo IMG_6672)
+    {id: 'radiateur-chambre', type: 'tallPanelRadiator', name: 'Radiateur à panneaux 60 x 70', r: [542, SPLIT_Y - 12, 602, SPLIT_Y], rot: 180},
     // panneaux perforés au-dessus du bureau (bas à 128 cm)
     {id: 'skadis-1', type: 'skadisCamera', name: 'Panneau perforé IKEA SKÅDIS 76x56 (505.343.78) + Sony α6500', r: [374, SPLIT_Y - 20, 450, SPLIT_Y], rot: 180, elev: 128, url: 'https://www.ikea.com/fr/fr/p/skadis-panneau-perfore-noir-50534378/'},
     {id: 'skadis-2', type: 'skadisDrone', name: 'Panneau perforé IKEA SKÅDIS 76x56 (505.343.78) + DJI Mavic Air', r: [454, SPLIT_Y - 20, 530, SPLIT_Y], rot: 180, elev: 128, url: 'https://www.ikea.com/fr/fr/p/skadis-panneau-perfore-noir-50534378/'},

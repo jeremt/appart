@@ -2738,6 +2738,47 @@ function towelRadiator(w, d) {
     return g;
 }
 
+// ---------- Radiateur à panneaux (chauffage central, type 21) ----------
+
+// Double panneau acier blanc à cannelures verticales, grille de convection sur le dessus,
+// robinet thermostatique en haut à gauche, purgeur en haut à droite, tubes d'arrivée en bas à droite.
+// `h` = hauteur du radiateur (cm), bas à 15 cm du sol.
+function panelRadiator(w, d, h = 60) {
+    const g = new THREE.Group(),
+        hw = w / 2,
+        hd = d / 2,
+        y0 = 15,
+        y1 = y0 + h,
+        zb = -hd + 3, // dos du panneau arrière (3 cm du mur, consoles)
+        zf = hd; // face avant
+    const white = MAT.gloss,
+        dark = std(0x6e6e6a, {roughness: 0.8});
+    // corps : deux panneaux et convecteur entre les deux (vu en sombre par la grille)
+    B(g, -hw + 1, hw - 1, y0 + 1, y1 - 1, zb + 2, zf - 2, dark);
+    B(g, -hw, hw, y0, y1, zb, zb + 2, white);
+    B(g, -hw, hw, y0, y1, zf - 2, zf - 0.4, white);
+    // cannelures verticales de la face avant
+    for (let x = -hw + 4; x <= hw - 4; x += 5) B(g, x - 1.2, x + 1.2, y0 + 3, y1 - 3, zf - 0.4, zf, white);
+    // joues latérales
+    for (const s of [-1, 1]) B(g, s * hw - (s > 0 ? 0.5 : 0), s * hw + (s < 0 ? 0.5 : 0), y0, y1 - 0.5, zb + 2, zf - 2, white);
+    // grille du dessus : lamelles perpendiculaires au mur
+    for (let x = -hw + 1.5; x <= hw - 1.5; x += 1.4) B(g, x - 0.35, x + 0.35, y1 - 0.4, y1, zb + 2, zf - 2, white);
+    // consoles murales
+    for (const x of [-hw + 10, hw - 10]) B(g, x - 1.5, x + 1.5, y1 - 8, y1 - 3, -hd, zb, white);
+    // robinet thermostatique (tête blanche horizontale) en haut à gauche, purgeur à droite
+    const chrome = MAT.chrome;
+    rod(g, [-hw, y1 - 4, zb + 4], [-hw - 3, y1 - 4, zb + 4], 0.9, chrome);
+    rod(g, [-hw - 3, y1 - 4, zb + 4], [-hw - 10, y1 - 4, zb + 4], 2.4, white);
+    rod(g, [hw, y1 - 4, zb + 4], [hw + 1.5, y1 - 4, zb + 4], 0.7, chrome);
+    // tubes d'arrivée / retour en bas à droite, vers le sol
+    for (const z of [zb + 1, zb + 4]) rod(g, [hw - 4, y0, z], [hw - 4, 0, z], 0.8, chrome);
+    return g;
+}
+
+function tallPanelRadiator(w, d) {
+    return panelRadiator(w, d, 70);
+}
+
 // ---------- Table basse rehaussable Matika (Maisons du Monde) ----------
 
 // Tube rectangulaire (section a x b cm) entre deux points (cm), orienté pour que b soit horizontal.
@@ -3341,6 +3382,8 @@ export const BUILDERS = {
     storageColumn,
     bathColumn,
     towelRadiator,
+    panelRadiator,
+    tallPanelRadiator,
     sofaShelves,
     stonewareShelf,
     herbShelf,
