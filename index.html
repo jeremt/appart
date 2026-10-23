@@ -10,19 +10,23 @@
 
         <header id="toolbar">
             <div class="brand">Appart 3D</div>
-            <div class="seg" id="modes">
-                <button data-mode="plan" title="Touche 1">Plan 2D</button>
-                <button data-mode="orbit" title="Touche 2">3D libre</button>
-                <button data-mode="fps" title="Touche 3">Visite</button>
+            <button id="btn-menu" aria-label="Menu" aria-expanded="false" aria-controls="menu">☰</button>
+            <div id="menu">
+                <div class="seg" id="modes">
+                    <button data-mode="plan" title="Touche 1">Plan 2D</button>
+                    <button data-mode="orbit" title="Touche 2">3D libre</button>
+                    <button data-mode="fps" title="Touche 3">Visite</button>
+                </div>
+                <label class="chk"><input type="checkbox" id="opt-labels" checked /> Cotes & pièces</label>
+                <label class="chk"><input type="checkbox" id="opt-edit" /> Déplacer les meubles</label>
+                <label class="chk edit-only"><input type="checkbox" id="opt-snap" checked /> Pas de 5 cm</label>
+                <button id="btn-undo" title="Ctrl/⌘ + Z">Annuler</button>
+                <button id="btn-reset" class="edit-only">Réinitialiser</button>
+                <button id="btn-night" title="Mode nuit (touche N)">☾ Nuit</button>
+                <button id="btn-hq" title="Rendu haute qualité : reflets du sol, occlusion ambiante, ombres douces progressives">HD</button>
+                <button id="btn-shot" title="Capture dans le presse-papiers (touche S, ou P en visite)">📷</button>
+                <button id="btn-help" title="Aide et raccourcis">? Aide</button>
             </div>
-            <label class="chk"><input type="checkbox" id="opt-labels" checked /> Cotes & pièces</label>
-            <label class="chk"><input type="checkbox" id="opt-snap" checked /> Pas de 5 cm</label>
-            <button id="btn-undo" title="Ctrl/⌘ + Z">Annuler</button>
-            <button id="btn-reset">Réinitialiser</button>
-            <button id="btn-night" title="Mode nuit (touche N)">☾ Nuit</button>
-            <button id="btn-hq" title="Rendu haute qualité : reflets du sol, occlusion ambiante, ombres douces progressives">HD</button>
-            <button id="btn-shot" title="Capture dans le presse-papiers (touche S, ou P en visite)">📷</button>
-            <button id="btn-help" title="Aide et raccourcis">? Aide</button>
         </header>
 
         <aside id="panel" hidden>
@@ -37,19 +41,21 @@
                 <div class="muted">Hauteur : <span id="p-height-val"></span></div>
                 <input type="range" id="p-height" step="1" />
             </div>
-            <div class="fields">
-                <label>X (cm)<input type="number" id="p-x" step="1" /></label>
-                <label>Y (cm)<input type="number" id="p-y" step="1" /></label>
-                <label>Rotation (°)<input type="number" id="p-rot" step="15" /></label>
+            <div class="edit-only">
+                <div class="fields">
+                    <label>X (cm)<input type="number" id="p-x" step="1" /></label>
+                    <label>Y (cm)<input type="number" id="p-y" step="1" /></label>
+                    <label>Rotation (°)<input type="number" id="p-rot" step="15" /></label>
+                </div>
+                <div class="row">
+                    <button id="p-rotl">⟲ 90°</button>
+                    <button id="p-rotr">⟳ 90°</button>
+                </div>
+                <button id="p-del" class="danger">Supprimer</button>
             </div>
-            <div class="row">
-                <button id="p-rotl">⟲ 90°</button>
-                <button id="p-rotr">⟳ 90°</button>
-            </div>
-            <button id="p-del" class="danger">Supprimer</button>
         </aside>
 
-        <aside id="trash" hidden>
+        <aside id="trash" class="edit-only" hidden>
             <h4>Meubles supprimés</h4>
             <ul id="trash-list"></ul>
         </aside>

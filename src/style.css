@@ -72,6 +72,18 @@ kbd {
     align-items: center;
     padding: 8px 10px;
 }
+#menu {
+    display: contents;
+}
+#btn-menu {
+    display: none;
+    font-size: 16px;
+    line-height: 1;
+    padding: 6px 10px;
+}
+body:not(.editing) .edit-only {
+    display: none;
+}
 .brand {
     font-weight: 700;
     letter-spacing: 0.02em;
@@ -347,4 +359,63 @@ button.primary {
 }
 #toast[hidden] {
     display: none;
+}
+
+/* ---------- Mobile : barre repliée derrière un menu burger ---------- */
+@media (max-width: 720px) {
+    #toolbar {
+        right: 12px;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+        padding: 6px 8px;
+        max-height: calc(100% - 24px);
+        overflow-y: auto;
+    }
+    .brand {
+        line-height: 32px;
+    }
+    #btn-menu {
+        display: block;
+        position: absolute;
+        top: 6px;
+        right: 8px;
+    }
+    #menu {
+        display: none;
+    }
+    #toolbar.open #menu {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        padding: 10px 0 4px;
+    }
+    #menu .seg button {
+        flex: 1;
+    }
+    #menu .chk {
+        padding: 4px 2px;
+    }
+    #toolbar:not(.open) {
+        right: auto;
+        padding-right: 52px;
+    }
+    #panel {
+        top: auto;
+        bottom: 12px;
+        left: 12px;
+        right: 12px;
+        width: auto;
+        max-height: 50vh;
+        overflow-y: auto;
+    }
+    #trash {
+        left: 12px;
+        width: auto;
+        max-height: 30vh;
+    }
+    #help {
+        max-width: calc(100% - 24px);
+    }
 }

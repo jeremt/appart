@@ -276,8 +276,8 @@ const activeCam = () => (mode === 'plan' ? ortho : mode === 'orbit' ? persp : fp
 
 const MODES_HELP = 'Changer de vue à tout moment : <kbd>1</kbd> Plan · <kbd>2</kbd> 3D libre · <kbd>3</kbd> Visite · <kbd>N</kbd> jour / nuit · <kbd>S</kbd> capture dans le presse-papiers (<kbd>P</kbd> en visite)';
 const HELP = {
-    plan: `<b>Plan 2D</b> — glisser : déplacer la vue · <kbd>Espace</kbd> + glisser : déplacer la vue même sur un meuble · molette : zoom<br>Clic sur un meuble : sélection · glisser : déplacer · <kbd>R</kbd> pivoter 90° (<kbd>⇧R</kbd> 15°) · <kbd>Suppr</kbd> supprimer · flèches : ajuster<br>Double-clic sur une porte : ouvrir / fermer<br>${MODES_HELP}`,
-    orbit: `<b>3D libre</b> — clic gauche : tourner · <kbd>Espace</kbd> + glisser ou clic droit : déplacer la vue · molette : zoom<br>Glisser un meuble pour le déplacer · <kbd>R</kbd> pivoter · <kbd>Suppr</kbd> supprimer<br>Double-clic sur une porte : ouvrir / fermer<br>${MODES_HELP}`,
+    plan: `<b>Plan 2D</b> — glisser : déplacer la vue · <kbd>Espace</kbd> + glisser : déplacer la vue même sur un meuble · molette : zoom<br>Clic sur un meuble : sélection · avec « Déplacer les meubles » : glisser pour déplacer · <kbd>R</kbd> pivoter 90° (<kbd>⇧R</kbd> 15°) · <kbd>Suppr</kbd> supprimer · flèches : ajuster<br>Double-clic sur une porte : ouvrir / fermer<br>${MODES_HELP}`,
+    orbit: `<b>3D libre</b> — clic gauche : tourner · <kbd>Espace</kbd> + glisser ou clic droit : déplacer la vue · molette : zoom<br>Avec « Déplacer les meubles » : glisser un meuble pour le déplacer · <kbd>R</kbd> pivoter · <kbd>Suppr</kbd> supprimer<br>Double-clic sur une porte : ouvrir / fermer<br>${MODES_HELP}`,
     fps: `<b>Visite</b> — <kbd>ZQSD</kbd>/<kbd>WASD</kbd> se déplacer · <kbd>Maj</kbd> courir · <kbd>E</kbd> ou clic : porte · <kbd>Échap</kbd> libérer la souris<br>${MODES_HELP}`,
 };
 
@@ -336,6 +336,19 @@ $('#opt-labels').addEventListener('change', (e) => {
     showLabels[mode] = e.target.checked;
     updateLabelVisibility();
 });
+// Déplacement des meubles désactivé par défaut : on peut naviguer sans risquer de les bouger.
+let editing = false;
+$('#opt-edit').addEventListener('change', (e) => {
+    editing = e.target.checked;
+    document.body.classList.toggle('editing', editing);
+    if (selected) updateSelection();
+});
+const toolbar = $('#toolbar');
+function setMenuOpen(open) {
+    toolbar.classList.toggle('open', open);
+    $('#btn-menu').setAttribute('aria-expanded', open);
+}
+$('#btn-menu').addEventListener('click', () => setMenuOpen(!toolbar.classList.contains('open')));
 let snap = true;
 $('#opt-snap').addEventListener('change', (e) => (snap = e.target.checked));
 $('#btn-undo').addEventListener('click', undo);
@@ -567,6 +580,7 @@ let down = null;
 viewport.addEventListener(
     'pointerdown',
     (e) => {
+        if (e.target === renderer.domElement) setMenuOpen(false);
         if (mode === 'fps' || e.button !== 0 || e.target !== renderer.domElement) return;
         if (spacePan) {
             renderer.domElement.style.cursor = 'grabbing';
@@ -576,6 +590,8 @@ viewport.addEventListener(
         setNdc(e);
         const {item} = pickRay();
         if (!item) return;
+        // hors édition, le meuble est seulement sélectionné au relâchement et la vue reste manipulable
+        if (!editing) return void (down.item = item);
         // on bloque OrbitControls pendant le déplacement du meuble
         e.stopPropagation();
         select(item);
@@ -613,7 +629,7 @@ window.addEventListener('pointermove', (e) => {
     if (mode !== 'fps' && !spacePan && e.target === renderer.domElement && e.buttons === 0) {
         setNdc(e);
         const {item, door} = pickRay();
-        renderer.domElement.style.cursor = item ? 'grab' : door ? 'pointer' : '';
+        renderer.domElement.style.cursor = item ? (editing ? 'grab' : 'pointer') : door ? 'pointer' : '';
     }
 });
 
@@ -627,7 +643,7 @@ window.addEventListener('pointerup', (e) => {
         return;
     }
     if (down && mode !== 'fps' && e.target === renderer.domElement && Math.hypot(e.clientX - down.x, e.clientY - down.y) < 4)
-        select(null);
+        select(down.item ?? null);
     down = null;
 });
 
@@ -700,6 +716,8 @@ window.addEventListener('keydown', (e) => {
     }
     if (e.code === 'KeyN' && !e.metaKey && !e.ctrlKey) return setNight(!night);
     if (!selected) return;
+    if (e.key === 'Escape') return select(null);
+    if (!editing) return;
     const step = e.shiftKey ? 10 : 1;
     switch (true) {
         case e.key === 'Delete' || e.key === 'Backspace':
@@ -708,9 +726,6 @@ window.addEventListener('keydown', (e) => {
             break;
         case k === 'r':
             rotate(e.shiftKey ? 15 : 90);
-            break;
-        case e.key === 'Escape':
-            select(null);
             break;
         case e.key === 'ArrowLeft':
             e.preventDefault();
