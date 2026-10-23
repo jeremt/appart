@@ -144,6 +144,14 @@ export const furnitureDefs = [
     {id: 'baignoire', type: 'bathtub', name: 'Baignoire', r: [42, BATH_TOP, 212, 101], rot: 0},
     {id: 'meuble-vasque', type: 'vanityWasher', name: 'Meuble vasque + lave-linge', r: [0, 104, 52, 226], rot: 90},
     {id: 'wc', type: 'toilet', name: 'WC', r: [56, 257, 121, 296], rot: 90},
+    {
+        id: 'seche-serviettes',
+        type: 'towelRadiator',
+        name: 'Sèche-serviettes électrique 400 W (Castorama FIO1140-400E1B)',
+        r: [BATH_X - 10, 102, BATH_X, 142],
+        rot: -90,
+        url: 'https://www.castorama.fr/mkp/s-che-serviette-lectrique-blanc-hxl-1140x400mm-400-watt-400-watt-fio1140-400e1b/7421125280697_CAFR.prd',
+    },
     {id: 'colonne-sdb', type: 'bathColumn', name: 'Colonne de rangement', r: [180, 256, 215, 296], rot: -90},
     // Cuisine
     {id: 'evier', type: 'sink', name: 'Évier', r: [0, SPLIT_Y + INT, 63, 402], rot: 90},

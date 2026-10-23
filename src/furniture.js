@@ -2703,6 +2703,41 @@ function bathColumn(w, d) {
     return g;
 }
 
+// ---------- Sèche-serviettes électrique blanc 114 x 40 cm (Castorama FIO1140-400E1B) ----------
+
+function towelRadiator(w, d) {
+    const g = new THREE.Group(),
+        hw = w / 2,
+        hd = d / 2,
+        y0 = 15, // fixé au mur, bas à 15 cm du sol
+        h = 114,
+        z = -hd + 5.5; // axe des barreaux, à ~5 cm du mur
+    const white = MAT.gloss;
+    // collecteurs verticaux
+    for (const x of [-hw + 1.5, hw - 1.5]) rod(g, [x, y0, z], [x, y0 + h, z], 1.5, white);
+    // barreaux ronds, par groupes (espaces pour glisser les serviettes)
+    const groups = [[5, 6], [40, 6], [78, 7]];
+    for (const [start, n] of groups)
+        for (let i = 0; i < n; i++) {
+            const y = y0 + start + i * 4.2;
+            rod(g, [-hw + 1.5, y, z], [hw - 1.5, y, z], 1.1, white);
+        }
+    // bouchons haut / bas et pattes de fixation murales
+    for (const x of [-hw + 1.5, hw - 1.5]) {
+        for (const y of [y0, y0 + h]) Cyl(g, 1.5, 1.5, 0.6, x, y, z, white);
+        for (const y of [y0 + 20, y0 + h - 10]) rod(g, [x, y, -hd], [x, y, z], 0.7, white);
+    }
+    // boîtier de commande électrique en bas à droite
+    B(g, hw - 9, hw - 1, y0 - 2, y0 + 14, z - 2, z + 3, white);
+    // serviette pliée sur le groupe du milieu
+    const towel = std(0xb9a88e, {roughness: 1});
+    const top = y0 + 40 + 5 * 4.2 + 1.5;
+    B(g, -hw + 5, hw - 5, top - 1.5, top, z - 2.5, z + 2.5, towel);
+    B(g, -hw + 5, hw - 5, top - 34, top, z - 3.5, z - 2.5, towel); // pan arrière
+    B(g, -hw + 5, hw - 5, top - 30, top, z + 2.5, z + 3.5, towel); // pan avant
+    return g;
+}
+
 // ---------- Table basse rehaussable Matika (Maisons du Monde) ----------
 
 // Tube rectangulaire (section a x b cm) entre deux points (cm), orienté pour que b soit horizontal.
@@ -3305,6 +3340,7 @@ export const BUILDERS = {
     matikaTable,
     storageColumn,
     bathColumn,
+    towelRadiator,
     sofaShelves,
     stonewareShelf,
     herbShelf,
