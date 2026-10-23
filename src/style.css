@@ -336,6 +336,13 @@ button.primary {
     border-color: #f59e0b;
 }
 
+#p-mode-box {
+    margin-top: 10px;
+}
+#p-modes {
+    margin-bottom: 0;
+}
+
 #p-height-box {
     margin-top: 10px;
 }

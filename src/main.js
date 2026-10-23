@@ -133,6 +133,8 @@ function applyState(item) {
         item.group.userData.setHeight(Math.min(hi, Math.max(lo, item.state.height ?? lo)));
         item.h = Math.round(new THREE.Box3().setFromObject(item.group).getSize(new THREE.Vector3()).y * 100);
     }
+    // bascule animée sauf au chargement (`item.ready` absent)
+    if (item.def.modes) item.group.userData.setMode(item.state.mode ?? item.def.modes[0].code, !item.ready);
     if (item.state.deleted) furnRoot.remove(item.group);
     else furnRoot.add(item.group);
 }
@@ -159,6 +161,7 @@ try {
         }
 } catch {}
 items.forEach(applyState);
+items.forEach((i) => (i.ready = true));
 
 // ---------- Annulation ----------
 const undoStack = [];
@@ -392,6 +395,7 @@ function updateSelection() {
     if (url) link.href = url;
     renderSwatches(variant);
     renderHeight();
+    renderModes();
     for (const [id, v] of [
         ['#p-x', selected.state.x],
         ['#p-y', selected.state.y],
@@ -425,6 +429,24 @@ $('#p-height').addEventListener('change', () => {
     if (heightBefore) undoStack.push(heightBefore);
     heightBefore = null;
 });
+
+// Boutons de configuration du meuble sélectionné (ex. table basse / table à manger)
+function renderModes() {
+    const modes = selected.def.modes;
+    $('#p-mode-box').hidden = !modes;
+    if (!modes) return;
+    const item = selected,
+        current = item.state.mode ?? modes[0].code;
+    $('#p-modes').replaceChildren(
+        ...modes.map((m) => {
+            const b = document.createElement('button');
+            b.textContent = m.name;
+            b.className = m.code === current ? 'active' : '';
+            b.onclick = () => m.code !== current && change(() => (item.state.mode = m.code));
+            return b;
+        }),
+    );
+}
 
 // Nuancier des coloris du meuble sélectionné
 function renderSwatches(current) {
@@ -1057,6 +1079,17 @@ renderer.setAnimationLoop(() => {
             d.t = THREE.MathUtils.clamp(d.t + Math.sign(d.target - d.t) * dt * 1.8, 0, 1);
             applyDoor(d);
             markDirty();
+        }
+    // meubles en cours de transformation (pieds qui se replient…)
+    for (const it of items)
+        if (it.group.userData.tick?.(dt)) {
+            markDirty();
+            if (selected === it) selBox.box.setFromObject(it.group);
+            if (!it.group.userData.tick(0)) {
+                it.h = Math.round(new THREE.Box3().setFromObject(it.group).getSize(new THREE.Vector3()).y * 100);
+                if (selected === it) updateSelection();
+                scheduleReflections();
+            }
         }
     if (mode === 'fps') {
         updateFps(dt);

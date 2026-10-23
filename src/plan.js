@@ -138,6 +138,7 @@ const teddyColors = [
 // (0 : vers le bas du plan, 90 : vers la droite, -90 : vers la gauche, 180 : vers le haut).
 // `c` + `size` = centre + [largeur, profondeur] locales.
 // `heightRange` = [min, max] cm pour un meuble à hauteur réglable (curseur du panneau).
+// `modes` = configurations au choix ({code, name}, la première par défaut), boutons du panneau.
 // `variants` = coloris au choix ({code, name, color, url}), `variant` = code par défaut.
 export const furnitureDefs = [
     // Bain + WC
@@ -165,13 +166,12 @@ export const furnitureDefs = [
     {id: 'condiments', type: 'condiments', name: 'Moulin à poivre, pot à sel en bois, huile d\'olive', r: [18, 440, 38, 462], rot: 90, elev: 90},
     // Séjour
     {id: 'canape', type: 'teddy', name: 'Canapé OMHU Teddy', r: [325, SPLIT_Y + INT, 525, SPLIT_Y + INT + 100], rot: 0, variants: teddyColors, variant: '5782'},
-    // lampadaire arc à droite du canapé, arc orienté vers la table basse
-    {id: 'lampadaire', type: 'arcLamp', name: 'Lampadaire arc', c: [555, 345], size: [36, 36], rot: -45},
     // suspension papier au-dessus de la table basse, dans l'axe du canapé (bas de la boule à 174 cm, plafond à 250)
     {id: 'suspension-salon', type: 'paperPendant', name: 'Suspension IKEA GULLSUDARE Ø70, papier de riz fait main (805.836.16)', c: [425, 475], size: [70, 70], rot: 0, elev: 174, url: 'https://www.ikea.com/fr/fr/p/gullsudare-abat-jour-suspension-blanc-fait-main-80583616/'},
     {id: 'etageres-canape', type: 'sofaShelves', name: 'Étagères au-dessus du canapé', r: [330, SPLIT_Y + INT, 510, SPLIT_Y + INT + 22], rot: 0},
     {id: 'tapis', type: 'rug', name: 'Tapis laine 200 x 140', r: [320, 395, 520, 535], rot: 0},
-    {id: 'table-basse', type: 'matikaTable', name: 'Table basse rehaussable Matika L120', r: [360, 435, 480, 515], rot: 0, heightRange: [49, 76], url: 'https://www.maisonsdumonde.com/FR/fr/p/table-basse-rehaussable-en-bois-et-acier-noir-l120-matika-M22179481.htm'},
+    // inspirée du projet Family Handyman (lien = le tuto), adaptée à l'emprise 120 x 80 de l'ancienne table
+    {id: 'table-basse', type: 'convertibleTable', name: 'Table basse / table à manger convertible en noyer (120 x 80, 45 ou 75 cm)', r: [360, 435, 480, 515], rot: 0, modes: [{code: 'coffee', name: 'Table basse'}, {code: 'dining', name: 'Table à manger'}], url: 'https://www.familyhandyman.com/project/coffee-dining-table/'},
     {id: 'meuble-tv', type: 'tvStandEasel', name: 'Support TV à roulettes CNTSLNB inox + plateau bois (86 x 50,5 x 126,5) + TCL 65" (65P89L) + Nintendo Switch et 2 manettes', r: [382, 577.5, 468, 628], rot: 180, url: 'https://www.amazon.fr/dp/B0FRXT8XT2'},
     // à gauche du meuble TV, contre le mur sud (photo IMG_6673)
     {id: 'radiateur-salon', type: 'panelRadiator', name: 'Radiateur à panneaux 80 x 60', r: [500, 616, 580, 628], rot: 180},

@@ -2779,7 +2779,7 @@ function tallPanelRadiator(w, d) {
     return panelRadiator(w, d, 70);
 }
 
-// ---------- Table basse rehaussable Matika (Maisons du Monde) ----------
+// ---------- Table basse / table à manger convertible en noyer ----------
 
 // Tube rectangulaire (section a x b cm) entre deux points (cm), orienté pour que b soit horizontal.
 function beam(g, p, q, a, b, mat) {
@@ -2794,44 +2794,112 @@ function beam(g, p, q, a, b, mat) {
     return m;
 }
 
-// Matika L120 : plateau bois massif clair 120 x 80, piètement ciseaux en acier noir.
-// Dimensions fiche produit en position basse : 120 x 80 x 49 cm.
-// Hauteur réglable de 49 à 76 cm (fiche BUT / Mathi Design) : `userData.setHeight(h)` reconstruit la table.
-function matikaTable(w, d) {
-    const g = new THREE.Group();
-    g.userData.setHeight = (h) => {
-        g.clear();
-        matikaBuild(g, w, d, h);
-    };
-    g.userData.setHeight(49);
-    return g;
+// Pied fuselé qui descend de l'origine (axe de la charnière) sur une longueur L, section centrée
+// de a0 x b0 en haut à a1 x b1 en bas, incliné de `ang` (rad, > 0 : pied vers +x). Fil dans la longueur.
+function taperedLeg(g, L, a0, a1, b0, b1, ang, mat) {
+    const geo = new THREE.BoxGeometry(1, 1, 1);
+    geo.translate(0.5, 0, 0);
+    const p = geo.attributes.position;
+    for (let i = 0; i < p.count; i++) {
+        const s = p.getX(i);
+        p.setXYZ(i, (s * L) / 100, (p.getY(i) * (a0 + (a1 - a0) * s)) / 100, (p.getZ(i) * (b0 + (b1 - b0) * s)) / 100);
+    }
+    geo.rotateZ(-Math.PI / 2);
+    geo.computeVertexNormals();
+    const m = new THREE.Mesh(geo, mat);
+    m.rotation.z = ang;
+    m.castShadow = m.receiveShadow = true;
+    g.add(m);
+    return m;
 }
 
-function matikaBuild(g, w, d, h) {
-    const hw = w / 2,
+// Inspirée de la table convertible de Family Handyman (familyhandyman.com/project/coffee-dining-table),
+// ramenée à 120 x 80. Plateau en noyer à chants doublés (5 cm), deux traverses de fixation à ±16 cm
+// du centre. Sous chacune, à l'avant et à l'arrière, une paire de pieds assemblés à mi-bois en V
+// (pied long + pied court d'équerre, sans traverse) pivote sur une charnière :
+// - table basse (45 cm) : les pieds longs partent en biais vers le centre et se croisent sous la
+//   table (les paires de gauche et de droite sont décalées en profondeur), les pieds courts
+//   descendent en biais vers l'extérieur : 8 pieds au sol ;
+// - table à manger (75 cm) : les paires pivotent vers l'extérieur jusqu'à ce que les pieds longs
+//   soient d'équerre avec le plateau ; les pieds courts viennent alors à plat contre le dessous du plateau.
+// `userData.setMode('coffee' | 'dining', instant)` choisit le mode, `userData.tick(dt)` anime la bascule
+// (le plateau monte ou descend en suivant le pied long qui reste au sol).
+function convertibleTable(w, d) {
+    const g = new THREE.Group(),
+        hw = w / 2,
         hd = d / 2,
-        t = 4; // épaisseur du plateau
-    const wood = plywood().veneer.clone();
-    wood.color.set(0xf2d9b4);
-    wood.roughness = 0.6;
-    B(g, -hw, hw, h - t, h, -hd, hd, wood);
-    const steel = std(0x1c1d1f, {roughness: 0.5, metalness: 0.4});
-    // deux ciseaux parallèles (avant / arrière) dans le sens de la longueur
-    const fx = hw - 22, // demi-écartement des pieds au sol
-        tx = hw - 34, // demi-écartement sous le plateau
-        yTop = h - t - 2.5;
-    for (const z of [-hd + 16, hd - 16]) {
-        beam(g, [-fx, 2.5, z], [tx, yTop, z], 4, 2.2, steel); // branche montante →
-        beam(g, [fx, 2.5, z + (z > 0 ? -3 : 3)], [-tx, yTop, z + (z > 0 ? -3 : 3)], 4, 2.2, steel); // ← décalée
-        B(g, -fx - 3, fx + 3, 0, 3, z - 2, z + 2, steel); // patin au sol
-        B(g, -tx - 3, tx + 3, yTop, yTop + 2.5, z - 2, z + 2, steel); // rail sous plateau
-        Cyl(g, 2.2, 2.2, 1.6, fx + 3, 2.2, z, MAT.dark, true); // roulette
+        t = 5, // épaisseur vue du plateau (panneau 2 cm + chants retombants 3 cm)
+        slab = 2,
+        band = 7, // largeur des bandes de doublage sous les bords
+        xh = 16, // axe des charnières (le pied court rangé s'arrête avant le bout du plateau)
+        P = 2.5, // axe sous les traverses de fixation
+        R = 2.5, // demi-section des pieds en haut
+        H = {coffee: 45, dining: 75},
+        ALPHA = Math.PI / 2, // pied court d'équerre avec le pied long
+        wood = walnutWood();
+    const lift = new THREE.Group();
+    g.add(lift);
+    B(lift, -hw, hw, t - slab, t, -hd, hd, wood);
+    for (const s of [-1, 1]) {
+        B(lift, -hw, hw, 0, t - slab, s > 0 ? hd - band : -hd, s > 0 ? hd : -hd + band, wood);
+        B(lift, s > 0 ? hw - band : -hw, s > 0 ? hw : -hw + band, 0, t - slab, -hd + band, hd - band, wood);
+        B(lift, s * xh - 7.5, s * xh + 7.5, 0, t - slab, -hd + band, hd - band, wood);
     }
-    // traverses entre les deux ciseaux
-    beam(g, [-fx, 1.5, -hd + 16], [-fx, 1.5, hd - 16], 3, 3, steel);
-    beam(g, [0, yTop / 2 + 1.5, -hd + 16], [0, yTop / 2 + 1.5, hd - 16], 2.5, 2.5, steel);
-    // déco : photophore en verre ambré
-    Cyl(g, 5, 5, 11, 12, h + 5.5, -6, std(0xd9b54a, {roughness: 0.1, transparent: true, opacity: 0.75}));
+
+    // pied long d'équerre en table à manger ; inclinaison φ en table basse (point bas du pied au sol)
+    const Ld = H.dining - t - P,
+        Pc = H.coffee - t - P,
+        reach = (L, a) => L * Math.cos(a) + R * Math.sin(Math.abs(a)); // hauteur entre l'axe et le sol
+    let lo = 0,
+        hi = Math.PI / 2;
+    for (let i = 0; i < 40; i++) {
+        const m = (lo + hi) / 2;
+        reach(Ld, m) > Pc ? (lo = m) : (hi = m);
+    }
+    const phi = lo,
+        gam = ALPHA - phi, // pied court en table basse
+        S = (Pc - R * Math.sin(gam)) / Math.cos(gam);
+
+    const pairs = [];
+    for (const side of [1, -1]) {
+        const end = new THREE.Group();
+        end.scale.x = side; // bout gauche = miroir du bout droit
+        lift.add(end);
+        const zp = side > 0 ? hd - 9 : hd - 16; // paires décalées pour se croiser sans se toucher
+        for (const z of [-zp, zp]) {
+            B(end, xh - 1.5, xh + 1.5, -P, 0, z - 2.5, z + 2.5, wood); // chape de charnière
+            const p = new THREE.Group();
+            p.position.set(xh / 100, -P / 100, z / 100);
+            end.add(p);
+            taperedLeg(p, Ld, 2 * R, 3.6, 2 * R, 3.6, 0, wood);
+            taperedLeg(p, S, 2 * R, 3.6, 2 * R, 3.6, ALPHA, wood);
+            Cyl(p, R, R, 2 * R, 0, 0, 0, wood, true); // tête arrondie autour de l'axe
+            pairs.push(p);
+        }
+    }
+
+    // k : 0 = table basse, 1 = table à manger
+    const ease = (v) => v * v * (3 - 2 * v);
+    let k = 0,
+        target = 0;
+    const apply = () => {
+        const a = -phi * (1 - ease(k));
+        for (const p of pairs) p.rotation.z = a;
+        lift.position.y = (reach(Ld, a) + P) / 100;
+    };
+    g.userData.setMode = (mode, instant) => {
+        target = mode === 'dining' ? 1 : 0;
+        if (instant) k = target;
+        apply();
+    };
+    g.userData.tick = (dt) => {
+        if (k === target) return false;
+        k = target > k ? Math.min(target, k + dt / 1.6) : Math.max(target, k - dt / 1.6);
+        apply();
+        return true;
+    };
+    apply();
+    return g;
 }
 
 // ---------- Tabourets empilables IKEA KYRRE (604.169.25) ----------
@@ -3378,7 +3446,7 @@ export const BUILDERS = {
     skadisDrone,
     monitorArm,
     kyrreStack,
-    matikaTable,
+    convertibleTable,
     storageColumn,
     bathColumn,
     towelRadiator,
