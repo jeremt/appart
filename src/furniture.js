@@ -2129,9 +2129,9 @@ function arcLamp(w, d, reach = 140) {
 }
 
 // Suspension IKEA GULLSUDARE Ø70 : boule de papier de riz tendue sur un fil d'acier en spirale
-// (nervures horizontales), ouverte en haut et en bas, cordon blanc jusqu'au plafond.
+// (nervures horizontales), ouverte en haut et en bas, cordon noir jusqu'au plafond.
 // Origine au bas de l'abat-jour : `elev` = hauteur du bas de la boule, plafond à 250 cm.
-function paperPendant(w, d, ceiling = 76) {
+function paperPendant(w, d, ceiling = 105) {
     const g = new THREE.Group();
     const R = Math.min(w, d) / 2,
         H = 66, // boule légèrement aplatie par le poids du papier
@@ -2151,7 +2151,7 @@ function paperPendant(w, d, ceiling = 76) {
     shade.receiveShadow = true; // ne porte pas d'ombre : la lumière du séjour est à l'intérieur
     g.add(shade);
     // anneau du haut, cordon et cache-piton au plafond
-    const cord = std(0xf2f2f2, {roughness: 0.5});
+    const cord = std(0x151515, {roughness: 0.5});
     const ringY = H - (1 + Math.cos(a1)) * H / 2;
     rod(g, [-6, ringY, 0], [6, ringY, 0], 0.15, MAT.metal);
     rod(g, [0, ringY, -6], [0, ringY, 6], 0.15, MAT.metal);

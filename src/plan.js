@@ -166,8 +166,8 @@ export const furnitureDefs = [
     {id: 'condiments', type: 'condiments', name: 'Moulin à poivre, pot à sel en bois, huile d\'olive', r: [18, 440, 38, 462], rot: 90, elev: 90},
     // Séjour
     {id: 'canape', type: 'teddy', name: 'Canapé OMHU Teddy', r: [325, SPLIT_Y + INT, 525, SPLIT_Y + INT + 100], rot: 0, variants: teddyColors, variant: '5782'},
-    // suspension papier au-dessus de la table basse, dans l'axe du canapé (bas de la boule à 174 cm, plafond à 250)
-    {id: 'suspension-salon', type: 'paperPendant', name: 'Suspension IKEA GULLSUDARE Ø70, papier de riz fait main (805.836.16)', c: [425, 475], size: [70, 70], rot: 0, elev: 174, url: 'https://www.ikea.com/fr/fr/p/gullsudare-abat-jour-suspension-blanc-fait-main-80583616/'},
+    // suspension papier au-dessus de la table basse, dans l'axe du canapé (bas de la boule à 145 cm, plafond à 250)
+    {id: 'suspension-salon', type: 'paperPendant', name: 'Suspension IKEA GULLSUDARE Ø70, papier de riz fait main (805.836.16)', c: [425, 475], size: [70, 70], rot: 0, elev: 145, url: 'https://www.ikea.com/fr/fr/p/gullsudare-abat-jour-suspension-blanc-fait-main-80583616/'},
     {id: 'etageres-canape', type: 'sofaShelves', name: 'Étagères au-dessus du canapé', r: [330, SPLIT_Y + INT, 510, SPLIT_Y + INT + 22], rot: 0},
     {id: 'tapis', type: 'rug', name: 'Tapis laine 200 x 140', r: [320, 395, 520, 535], rot: 0},
     // inspirée du projet Family Handyman (lien = le tuto), adaptée à l'emprise 120 x 80 de l'ancienne table
