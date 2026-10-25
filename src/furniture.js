@@ -2453,97 +2453,149 @@ function floatingShelf(g, w, d, y, mat = MAT.oak) {
     B(g, -w / 2, w / 2, y - 3, y, -d / 2, d / 2, mat);
 }
 
-// Rangée de livres posés sur une tablette, de x0 à x1 (cm) ; renvoie la position x atteinte.
-function books(g, x0, x1, y, zBack, rnd) {
-    const colors = [0xb5563a, 0x2f3e5c, 0xd9a43a, 0x7c8f6b, 0xe8e0cf, 0x1d1d1f, 0x9b3d4f, 0x5d7f95, 0xc9b79c];
-    let x = x0;
-    while (x < x1 - 2) {
-        const bw = 1.8 + rnd() * 2.8,
-            bh = 17 + rnd() * 9,
-            bd = 14 + rnd() * 5;
-        if (x + bw > x1) break;
-        const c = colors[Math.floor(rnd() * colors.length)];
-        B(g, x, x + bw, y, y + bh, zBack, zBack + bd, std(c, {roughness: 0.8}));
-        x += bw + 0.15;
-    }
-    return x;
-}
-
-// Plante tombante (pothos) : pot blanc, lianes qui débordent de la tablette et retombent.
-function trailingPlant(g, x, y, zFront, rnd) {
-    Cyl(g, 7, 5.5, 11, x, y + 5.5, zFront - 9, std(0xf1eee8, {roughness: 0.35}));
-    const leafGeo = new THREE.SphereGeometry(0.022, 8, 6);
-    leafGeo.scale(1, 0.25, 1.25);
-    const leaves = [];
-    const vines = 7;
-    for (let v = 0; v < vines; v++) {
-        const a = (v / vines) * Math.PI - Math.PI * 0.05 + rnd() * 0.2; // vers l'avant (+z)
-        const spread = (Math.cos(a) * 14) / 100;
-        const drop = 25 + rnd() * 45;
-        const m = (px, py, pz) => new THREE.Vector3(px, py, pz);
-        const pts = [
-            m(x / 100, (y + 11) / 100, (zFront - 9) / 100),
-            m(x / 100 + spread * 0.6, (y + 13) / 100, (zFront - 2) / 100),
-            m(x / 100 + spread, (y + 4) / 100, (zFront + 3) / 100),
-            m(x / 100 + spread * 1.2, (y - drop * 0.5) / 100, (zFront + 4) / 100),
-            m(x / 100 + spread * 1.1 + (rnd() - 0.5) * 0.06, (y - drop) / 100, (zFront + 3) / 100),
-        ];
-        const curve = new THREE.CatmullRomCurve3(pts);
-        const vine = new THREE.Mesh(new THREE.TubeGeometry(curve, 30, 0.0025, 4), std(0x5f7d3a));
-        g.add(vine);
-        const n = 10 + Math.floor(drop / 6);
-        for (let i = 1; i <= n; i++) {
-            const p = curve.getPoint(i / (n + 1));
-            const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(rnd() * 1.2 - 0.6, rnd() * Math.PI * 2, rnd() * 0.8 - 0.4));
-            const s = 0.7 + rnd() * 0.6;
-            leaves.push(new THREE.Matrix4().compose(p, q, new THREE.Vector3(s, s, s)));
+// Affiche abstraite peinte sur canvas, palette chaude (rouille, ocre, brun, crème, touches de bleu).
+function artMaterial(kind, w, h) {
+    const c = document.createElement('canvas');
+    c.width = 512;
+    c.height = Math.round((512 * h) / w);
+    const g = c.getContext('2d'),
+        W = c.width,
+        H = c.height;
+    const rnd = seeded(kind.length * 17 + 3);
+    const fill = (col, x, y, ww, hh) => {
+        g.fillStyle = col;
+        g.fillRect(x, y, ww, hh);
+    };
+    const ell = (col, x, y, rx, ry, rot = 0) => {
+        g.fillStyle = col;
+        g.beginPath();
+        g.ellipse(x, y, rx, ry, rot, 0, Math.PI * 2);
+        g.fill();
+    };
+    const stroke = (col, lw, pts) => {
+        g.strokeStyle = col;
+        g.lineWidth = lw;
+        g.lineCap = 'round';
+        g.beginPath();
+        g.moveTo(pts[0], pts[1]);
+        for (let i = 2; i < pts.length; i += 4) g.quadraticCurveTo(pts[i], pts[i + 1], pts[i + 2], pts[i + 3]);
+        g.stroke();
+    };
+    // fond « peint » : aplat + voiles irréguliers
+    const wash = (base, tones, n) => {
+        fill(base, 0, 0, W, H);
+        g.globalAlpha = 0.18;
+        for (let i = 0; i < n; i++) ell(tones[i % tones.length], rnd() * W, rnd() * H, 30 + rnd() * 120, 20 + rnd() * 80, rnd() * 3);
+        g.globalAlpha = 1;
+    };
+    if (kind === 'face') {
+        // visage masque bleu-gris, branche de feuilles et bol, sur fond rouille
+        wash('#a8452c', ['#8e3520', '#c0603a'], 40);
+        fill('#7a3a26', 0, H * 0.62, W, H * 0.38);
+        stroke('#e7d6bd', 6, [W * 0.18, H * 0.6, W * 0.2, H * 0.35, W * 0.24, H * 0.08]);
+        for (let i = 0; i < 6; i++) {
+            const t = 0.12 + i * 0.08,
+                s = i % 2 ? 1 : -1;
+            ell('#e7d6bd', W * (0.21 + s * 0.06), H * t + 20, 34, 12, s * 0.6);
+        }
+        g.fillStyle = '#8ea3a8';
+        g.beginPath();
+        g.roundRect(W * 0.42, H * 0.14, W * 0.42, H * 0.36, 60);
+        g.fill();
+        fill('#5a2a22', W * 0.58, H * 0.24, W * 0.06, H * 0.18);
+        ell('#f2ece1', W * 0.73, H * 0.26, 26, 12);
+        ell('#2a1e1a', W * 0.73, H * 0.26, 8, 8);
+        g.fillStyle = '#efe2c8';
+        g.beginPath();
+        g.ellipse(W * 0.6, H * 0.72, W * 0.3, H * 0.13, 0, 0, Math.PI);
+        g.fill();
+        ell('#b5432e', W * 0.48, H * 0.76, 22, 22);
+        g.strokeStyle = '#b5432e';
+        g.lineWidth = 3;
+        g.beginPath();
+        g.arc(W * 0.7, H * 0.74, 30, 0, Math.PI * 2);
+        g.stroke();
+    } else if (kind === 'poster') {
+        // figures cubistes + bandeau texte, façon affiche d'expo
+        wash('#d8b98f', ['#c9a271', '#e6cfa8'], 20);
+        fill('#7c8f6b', 0, 0, W * 0.4, H * 0.45);
+        fill('#2f3e5c', 0, H * 0.45, W * 0.3, H * 0.33);
+        ell('#c7c5a6', W * 0.3, H * 0.25, W * 0.13, H * 0.14);
+        ell('#8b4a2b', W * 0.64, H * 0.3, W * 0.12, H * 0.1);
+        g.fillStyle = '#8b4a2b';
+        g.beginPath();
+        g.moveTo(W * 0.48, H * 0.78);
+        g.quadraticCurveTo(W * 0.5, H * 0.38, W * 0.66, H * 0.4);
+        g.quadraticCurveTo(W * 0.86, H * 0.42, W * 0.84, H * 0.78);
+        g.fill();
+        ell('#f1e8d8', W * 0.4, H * 0.66, W * 0.16, H * 0.06, -0.3);
+        fill('#f4eee2', 0, H * 0.8, W, H * 0.2);
+        g.fillStyle = '#1d1d1f';
+        g.font = `bold ${Math.round(H * 0.07)}px Helvetica, Arial, sans-serif`;
+        g.textAlign = 'center';
+        g.fillText('MODERNE  1932', W / 2, H * 0.93);
+    } else if (kind === 'grass') {
+        // herbes sèches peintes en touches serrées sur fond rouille
+        wash('#9a4a2a', ['#7d3a20', '#b86a3e'], 30);
+        for (let i = 0; i < 420; i++) {
+            const x = rnd() * W,
+                y = H * (0.25 + rnd() * 0.75),
+                len = 20 + rnd() * 70,
+                a = -Math.PI / 2 + (rnd() - 0.5) * 0.9;
+            g.strokeStyle = ['#e6d3a8', '#b9a27a', '#6f6a3e', '#f2e6c8', '#3d2a1c'][Math.floor(rnd() * 5)];
+            g.lineWidth = 1 + rnd() * 2.5;
+            g.beginPath();
+            g.moveTo(x, y);
+            g.lineTo(x + Math.cos(a) * len, y + Math.sin(a) * len);
+            g.stroke();
+        }
+    } else if (kind === 'bird') {
+        // oiseau-trait bleu Klein sur orange vif
+        wash('#d0602f', ['#bf5225', '#e07a45'], 25);
+        stroke('#1f3fb0', 26, [W * 0.25, H * 0.25, W * 0.45, H * 0.45, W * 0.5, H * 0.55, W * 0.6, H * 0.4, W * 0.78, H * 0.2]);
+        stroke('#1f3fb0', 18, [W * 0.5, H * 0.55, W * 0.45, H * 0.7, W * 0.38, H * 0.82]);
+        ell('#7fb2e8', W * 0.52, H * 0.5, 10, 26, 0.4);
+    } else {
+        // lavis orangé et tracés fins au crayon
+        wash('#c26a3a', ['#a8502a', '#d98a55', '#8e3f22'], 60);
+        for (let i = 0; i < 7; i++) {
+            const p = [];
+            for (let k = 0; k < 9; k++) p.push(rnd() * W, rnd() * H);
+            stroke(i % 3 ? '#f0dfc7' : '#3a2418', 1.5, p);
         }
     }
-    const inst = new THREE.InstancedMesh(leafGeo, std(0x4c8a35, {roughness: 0.5}), leaves.length);
-    leaves.forEach((mtx, i) => inst.setMatrixAt(i, mtx));
-    inst.castShadow = true;
-    g.add(inst);
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return std(0xffffff, {map: t, roughness: 0.85});
 }
 
-// Petite lampe champignon colorée, allumée la nuit.
-function mushroomLamp(g, x, y, z, color) {
-    const lac = std(color, {roughness: 0.3});
-    Cyl(g, 5, 5.5, 1.2, x, y + 0.6, z, lac);
-    Cyl(g, 0.9, 1.2, 14, x, y + 8, z, lac);
-    const shade = new THREE.Mesh(new THREE.SphereGeometry(0.085, 24, 10, 0, Math.PI * 2, 0, Math.PI / 2), lac);
-    shade.position.set(x / 100, (y + 14) / 100, z / 100);
-    shade.castShadow = true;
-    g.add(shade);
-    const glow = std(0xfff1d8, {emissive: 0xffd9a0, emissiveIntensity: 0.25, side: THREE.BackSide});
-    glow.userData.night = 2;
-    const inner = new THREE.Mesh(new THREE.SphereGeometry(0.082, 24, 10, 0, Math.PI * 2, 0, Math.PI / 2), glow);
-    inner.position.copy(shade.position);
-    g.add(inner);
-    const light = new THREE.PointLight(0xffc98a, 1.2, 2.5, 1.6);
-    light.position.set(x / 100, (y + 12) / 100, z / 100);
-    light.userData.nightOnly = true;
-    light.visible = false;
-    g.add(light);
+// Tableau encadré centré en (x, y), dos au mur en -z : cadre de 2 cm, passe-partout blanc optionnel.
+function framedArt(g, x, y, w, h, zBack, kind, frameMat, mat = 5) {
+    const f = 2,
+        zf = zBack + 2.5;
+    B(g, x - w / 2, x + w / 2, y - h / 2, y + h / 2, zBack, zf - 0.6, frameMat);
+    B(g, x - w / 2 + f, x + w / 2 - f, y - h / 2 + f, y + h / 2 - f, zf - 0.6, zf - 0.4, MAT.linen);
+    const aw = w - 2 * (f + mat),
+        ah = h - 2 * (f + mat);
+    B(g, x - aw / 2, x + aw / 2, y - ah / 2, y + ah / 2, zf - 0.4, zf - 0.2, artMaterial(kind, aw, ah));
+    // bordure du cadre en relief
+    B(g, x - w / 2, x + w / 2, y + h / 2 - f, y + h / 2, zf - 0.6, zf, frameMat);
+    B(g, x - w / 2, x + w / 2, y - h / 2, y - h / 2 + f, zf - 0.6, zf, frameMat);
+    B(g, x - w / 2, x - w / 2 + f, y - h / 2, y + h / 2, zf - 0.6, zf, frameMat);
+    B(g, x + w / 2 - f, x + w / 2, y - h / 2, y + h / 2, zf - 0.6, zf, frameMat);
 }
 
-// Deux tablettes au-dessus du canapé : livres, lampe champignon, pothos.
-function sofaShelves(w, d) {
+// Mur de cadres asymétrique au-dessus du canapé : 5 formats et cadres dépareillés (blanc, rouge, chêne,
+// noir, noyer), grand portrait légèrement décentré à gauche, petits formats en grappe à droite.
+function sofaArt(w, d) {
     const g = new THREE.Group(),
-        hw = w / 2,
-        hd = d / 2;
-    const rnd = seeded(91);
-    const yA = 112,
-        yB = 152;
-    floatingShelf(g, w, d, yA);
-    floatingShelf(g, w, d, yB);
-    // tablette basse : livres à gauche, pile couchée, pothos à droite
-    let x = books(g, -hw + 4, -hw + 70, yA, -hd + 2, rnd);
-    for (let i = 0; i < 4; i++) B(g, x + 4, x + 26 - i * 1.5, yA + i * 3.2, yA + (i + 1) * 3.2 - 0.2, -hd + 3, -hd + 19 - i, std([0xe8e0cf, 0x2f3e5c, 0xb5563a, 0x7c8f6b][i], {roughness: 0.8}));
-    trailingPlant(g, hw - 22, yA, hd, rnd);
-    // tablette haute : lampe colorée à gauche, livres, vase
-    mushroomLamp(g, -hw + 16, yB, -2, 0xe8692e);
-    books(g, -hw + 40, hw - 30, yB, -hd + 2, rnd);
-    Cyl(g, 4, 3, 16, hw - 14, yB + 8, -1, std(0x3a3d41, {roughness: 0.5}));
+        zBack = -d / 2;
+    const red = std(0xa8432e, {roughness: 0.5});
+    framedArt(g, -10, 150, 50, 70, zBack, 'face', MAT.white, 4); // 50 x 70
+    framedArt(g, -63, 158, 40, 55, zBack, 'poster', red, 0); // 40 x 55
+    framedArt(g, 40, 168, 45, 35, zBack, 'grass', MAT.oak, 3); // 45 x 35
+    framedArt(g, 34, 125, 30, 40, zBack, 'bird', MAT.matteBlack, 3); // 30 x 40
+    framedArt(g, 78, 140, 28, 36, zBack, 'wash', MAT.walnut, 0); // 28 x 36
     return g;
 }
 
@@ -3452,7 +3504,7 @@ export const BUILDERS = {
     towelRadiator,
     panelRadiator,
     tallPanelRadiator,
-    sofaShelves,
+    sofaArt,
     stonewareShelf,
     herbShelf,
     bistroTableRound,
