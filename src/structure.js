@@ -262,8 +262,9 @@ export function buildEnvironment(tex) {
     };
     rail(b.x2 - 4, b.y1, b.x2, b.y2);
     rail(b.x1, b.y1, b.x2 - 4, b.y1 + 4);
-    add(planBox(b.x1, b.y2 - 3, b.x2, b.y2, 0, 200, M.frosted)); // pare-vue
-    add(planBox(b.x1, b.y2 - 4, b.x2, b.y2, 196, 200, M.rail));
+    // faces volontairement non coplanaires avec le garde-corps (sinon z-fighting)
+    add(planBox(b.x1, b.y2 - 3, b.x2 + 0.3, b.y2 + 0.5, 0, 199, M.frosted)); // pare-vue
+    add(planBox(b.x1 - 0.5, b.y2 - 4, b.x2 + 0.5, b.y2 + 1, 196, 200.5, M.rail));
 
     // sous-face du balcon de l'étage au-dessus (visible en visite seulement)
     const soffit = planBox(b.x1, b.y1, b.x2, b.y2, 270, 290, M.wallOut);

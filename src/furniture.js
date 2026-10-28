@@ -1213,8 +1213,8 @@ function tvStandEasel(w, d) {
     B(g, sx0 - 9.8, sx0 + 9.8, sy + 0.8, sy + 2.2, sz - 1.4, sz + 3.5, black); // lèvre avant
     B(g, sx0 - 9.5, sx0 + 9.5, sy + 2.2, sy + 10.6, sz - 1.4, sz - 0.2, MAT.dark); // console
     B(g, sx0 - 8.1, sx0 + 8.1, sy + 2.8, sy + 10, sz - 0.2, sz - 0.05, MAT.screen); // écran
-    B(g, sx0 - 10.4, sx0 - 8.1, sy + 2.2, sy + 10.6, sz - 1.4, sz - 0.1, std(0xe4002b, {roughness: 0.4})); // Joy-Con gauche
-    B(g, sx0 + 8.1, sx0 + 10.4, sy + 2.2, sy + 10.6, sz - 1.4, sz - 0.1, std(0x00a0e6, {roughness: 0.4})); // Joy-Con droit
+    B(g, sx0 - 10.4, sx0 - 8.1, sy + 2.1, sy + 10.7, sz - 1.5, sz - 0.12, std(0xe4002b, {roughness: 0.4})); // Joy-Con gauche
+    B(g, sx0 + 8.1, sx0 + 10.4, sy + 2.1, sy + 10.7, sz - 1.5, sz - 0.12, std(0x00a0e6, {roughness: 0.4})); // Joy-Con droit
     // deux manettes Pro à côté
     proController(g, 11, sy, -2, 0.2);
     proController(g, 26, sy, -2, -0.2, 0xe9e9e6);
@@ -1251,10 +1251,13 @@ function holedTop(g, x1, x2, z1, z2, y0, y1, hole, mat) {
 // Cuve sous le trou : parois de 1,2 cm, fond et bonde.
 function basin(g, hole, yTop, depth, mat) {
     const t = 1.2;
+    // cuve légèrement plus étroite que le trou : ses parois ne sont pas coplanaires avec celles du plan (z-fighting)
+    const e = 0.15;
+    const inner = (K) => rrect(K, cm(hole.cx), cm(-hole.cz), cm(hole.w - 2 * e), cm(hole.d - 2 * e), cm(hole.r - e));
     const ring = rrect(THREE.Shape, cm(hole.cx), cm(-hole.cz), cm(hole.w + 2 * t), cm(hole.d + 2 * t), cm(hole.r + t));
-    ring.holes.push(rrect(THREE.Path, cm(hole.cx), cm(-hole.cz), cm(hole.w), cm(hole.d), cm(hole.r)));
+    ring.holes.push(inner(THREE.Path));
     prism(g, ring, yTop - depth, yTop - 0.05, mat);
-    prism(g, rrect(THREE.Shape, cm(hole.cx), cm(-hole.cz), cm(hole.w), cm(hole.d), cm(hole.r)), yTop - depth - t, yTop - depth, mat);
+    prism(g, inner(THREE.Shape), yTop - depth - t, yTop - depth, mat);
     Cyl(g, 2.2, 2.2, 0.3, hole.cx, yTop - depth + 0.15, hole.cz, MAT.metal);
     Cyl(g, 1.2, 1.2, 0.4, hole.cx, yTop - depth + 0.25, hole.cz, MAT.dark);
 }
@@ -1353,6 +1356,72 @@ function monstera(w, d) {
     }
     // taille proportionnelle à l'emprise (70 cm = grande plante)
     g.scale.setScalar(Math.min(w, d) / 70);
+    return g;
+}
+
+// ---------- Chaises empilées GOPLUS ----------
+
+// Tube lissé passant par des points (cm).
+function tubePath(g, pts, r, mat) {
+    const curve = new THREE.CatmullRomCurve3(pts.map(([x, y, z]) => new THREE.Vector3(x / 100, y / 100, z / 100)));
+    const m = new THREE.Mesh(new THREE.TubeGeometry(curve, 28, r / 100, 8), mat);
+    m.castShadow = m.receiveShadow = true;
+    g.add(m);
+    return m;
+}
+
+// Chaise Tolix (51 x 44 x 85) : assise bois, jupe en tôle à arches, pieds évasés,
+// dossier en arceau avec un panneau central embouti.
+// Repère local : centre de l'emprise au sol, face avant vers +z.
+function goplusChair(metal, wood, inset) {
+    const g = new THREE.Group();
+    // jupe sous l'assise (quatre côtés) et arches entre les pieds
+    B(g, -20, 20, 37, 43, 18.5, 19.5, metal);
+    B(g, -20, 20, 37, 43, -19.5, -18.5, metal);
+    B(g, -20, -19, 37, 43, -19.5, 19.5, metal);
+    B(g, 19, 20, 37, 43, -19.5, 19.5, metal);
+    const arch = (pt) => tubePath(g, [[-1, 0], [-0.6, 0.62], [0, 0.78], [0.6, 0.62], [1, 0]].map(([u, v]) => pt(u * 19, 23 + v * 14)), 0.8, metal);
+    arch((u, y) => [u, y, 19.5]);
+    arch((u, y) => [u, y, -19.5]);
+    arch((u, y) => [-19.5, y, u]);
+    arch((u, y) => [19.5, y, u]);
+    // pieds évasés, légèrement arqués
+    for (const sx of [-1, 1])
+        for (const sz of [-1, 1]) {
+            tubePath(g, [[sx * 18, 40, sz * 18], [sx * 19.5, 22, sz * 19.5], [sx * 21.5, 4, sz * 21.5], [sx * 22, 0, sz * 22]], 1.5, metal);
+            Cyl(g, 1.7, 1.5, 1.2, sx * 22, 0.6, sz * 22, MAT.matteBlack);
+        }
+    // assise bois à bords arrondis, posée dans la jupe
+    RB(g, -20.5, 20.5, 43, 46, -20.5, 20.5, 1.2, wood);
+    // dossier : arceau qui part des pieds arrière et se referme en haut
+    tubePath(g, [[-18, 43, -18], [-21, 58, -21.5], [-22, 72, -25], [-17, 83, -28], [0, 85.5, -29], [17, 83, -28], [22, 72, -25], [21, 58, -21.5], [18, 43, -18]], 0.9, metal);
+    // panneau central (légèrement incliné vers l'arrière) et son embouti en trapèze
+    const panel = new THREE.Group();
+    panel.position.set(0, 68 / 100, -25.5 / 100);
+    panel.rotation.x = -0.2;
+    B(panel, -8.5, 8.5, -17, 17, -0.4, 0.4, metal);
+    B(panel, -5, 5, -12, 12, 0.4, 0.8, inset);
+    g.add(panel);
+    return g;
+}
+
+// Lot de 4 chaises GOPLUS empilées (chacune relevée de 11 cm et avancée de 2 cm), avec la Monstera
+// posée sur l'assise de la chaise du dessus.
+function stackedChairs(w, d) {
+    const g = new THREE.Group();
+    const metal = std(0x4d4a46, {metalness: 0.75, roughness: 0.42, envMap: MAT.chrome.envMap});
+    const inset = std(0x5b5853, {metalness: 0.7, roughness: 0.5, envMap: MAT.chrome.envMap});
+    const wood = std(0x5b3c27, {roughness: 0.7});
+    let top;
+    for (let k = 0; k < 4; k++) {
+        const c = goplusChair(metal, wood, inset);
+        c.position.set(0, (k * 11) / 100, (d / 2 - 28 + k * 2) / 100);
+        g.add(c);
+        top = c.position;
+    }
+    const plant = monstera(40, 40);
+    plant.position.set(top.x, top.y + 0.46, top.z);
+    g.add(plant);
     return g;
 }
 
@@ -1773,7 +1842,7 @@ function slipperBag(w, d) {
     B(g, -hw, hw, 0, h, hd - t, hd, felt);
     B(g, -hw, -hw + t, 0, h, -hd + t, hd - t, felt);
     B(g, hw - t, hw, 0, h, -hd + t, hd - t, felt);
-    B(g, -hw - 0.2, hw + 0.2, h - 2.5, h, hd - t - 0.1, hd + 0.2, std(0x6f6b66, {roughness: 1})); // ourlet
+    B(g, -hw - 0.2, hw + 0.2, h - 2.5, h + 0.1, hd - t - 0.1, hd + 0.2, std(0x6f6b66, {roughness: 1})); // ourlet
     for (const z of [-hd + t / 2, hd - t / 2]) {
         const a = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.008, 6, 20, Math.PI), felt);
         a.position.set(0, h / 100, z / 100);
@@ -1852,7 +1921,7 @@ function ninjaDoubleStack(w, d) {
     for (const [y0, y1] of [[2, 16], [17, 31]]) {
         RB(g, -hw + 1, hw - 1, y0, y1, hd - 4, hd, 1.2, drawer);
         B(g, -6, 6, y1 - 7, y1 - 4, hd, hd + 4.5, MAT.matteBlack);
-        B(g, -6, 6, y1 - 7, y1 - 6, hd, hd + 1, MAT.dark);
+        B(g, -6.05, 6.05, y1 - 7.05, y1 - 6, hd - 0.05, hd + 1, MAT.dark);
     }
     // tableau de commande : bandeau noir brillant incliné en haut de la façade
     B(g, -hw + 2, hw - 2, 32, h - 0.2, hd - 3.6, hd - 2.6, MAT.screen);
@@ -2711,7 +2780,7 @@ function storageColumn(w, d) {
         hd = d / 2,
         h = 180;
     for (const sx of [-1, 1])
-        for (const sz of [-1, 1]) B(g, sx * hw - (sx > 0 ? 2 : 0), sx * hw + (sx < 0 ? 2 : 0), 0, h, sz * hd - (sz > 0 ? 2 : 0), sz * hd + (sz < 0 ? 2 : 0), MAT.blackMetal);
+        for (const sz of [-1, 1]) B(g, sx * hw - (sx > 0 ? 2 : 0), sx * hw + (sx < 0 ? 2 : 0), 0, h - 0.2, sz * hd - (sz > 0 ? 2 : 0), sz * hd + (sz < 0 ? 2 : 0), MAT.blackMetal);
     const levels = [4, 40, 76, 112, 148, h - 2];
     for (const y of levels) B(g, -hw + 0.5, hw - 0.5, y, y + 2, -hd + 0.5, hd - 0.5, MAT.oak);
     B(g, -hw + 2, hw - 2, levels[0] + 2, h - 2, -hd, -hd + 0.6, MAT.oak); // fond
@@ -2739,7 +2808,7 @@ function bathColumn(w, d) {
     B(g, -hw, hw, 0, h, -hd, -hd + 1.5, white); // fond
     for (const sx of [-1, 1]) B(g, sx > 0 ? hw - 1.8 : -hw, sx > 0 ? hw : -hw + 1.8, 0, h, -hd, hd, white); // côtés
     for (const y of [8, 82, 118, 152, h - 2]) B(g, -hw, hw, y - 1.8, y, -hd, hd, white);
-    B(g, -hw, hw, 0, 8, -hd + 2, hd - 2, MAT.dark); // socle
+    B(g, -hw + 1.8, hw - 1.8, 0, 8, -hd + 2, hd - 2, MAT.dark); // socle, entre les côtés
     B(g, -hw + 0.3, hw - 0.3, 8.3, 80, hd - 1.8, hd, white); // porte
     B(g, hw - 5, hw - 3.5, 55, 75, hd, hd + 1.5, MAT.metal);
     // serviettes roulées (deux niveaux)
@@ -3403,6 +3472,84 @@ function roundedShelf(w, d, top = 90) {
     return g;
 }
 
+// Mug en céramique avec anse (base en y), anse côté +x.
+function mug(g, x, y, z, color, r = 4, h = 9) {
+    const mat = std(color, {roughness: 0.3});
+    Cyl(g, r, r * 0.92, h, x, y + h / 2, z, mat);
+    const handle = new THREE.Mesh(new THREE.TorusGeometry((h * 0.28) / 100, 0.006, 6, 14, Math.PI), mat);
+    handle.rotation.z = -Math.PI / 2;
+    handle.position.set((x + r) / 100, (y + h * 0.5) / 100, z / 100);
+    g.add(handle);
+}
+
+// Théière en fonte ronde : corps en révolution, bec, couvercle et anse (base en y).
+function teapot(g, x, y, z) {
+    const iron = std(0x2b2d2c, {roughness: 0.55, metalness: 0.4});
+    const pts = [];
+    for (let i = 0; i <= 12; i++) {
+        const t = i / 12;
+        pts.push(new THREE.Vector2((5 + 3.5 * Math.sin(t * Math.PI)) / 100, (11 * t) / 100));
+    }
+    const body = new THREE.Mesh(new THREE.LatheGeometry([new THREE.Vector2(0, 0), ...pts], 24), iron);
+    body.position.set(x / 100, y / 100, z / 100);
+    body.castShadow = true;
+    g.add(body);
+    Cyl(g, 4.2, 4.6, 1.2, x, y + 11.6, z, iron);
+    Cyl(g, 0.8, 1, 1.5, x, y + 12.9, z, iron);
+    const spout = Cyl(g, 0.7, 1.5, 7, x - 9.5, y + 7.5, z, iron);
+    spout.rotation.z = 0.9;
+    const handle = new THREE.Mesh(new THREE.TorusGeometry(0.055, 0.004, 6, 20, Math.PI), iron);
+    handle.position.set(x / 100, (y + 12) / 100, z / 100);
+    g.add(handle);
+}
+
+// Dos du bar côté séjour : étagère fine en noyer (profondeur `depth`), fond miroir, deux niveaux sur trois travées,
+// garnie d'accessoires de bar (bouteilles, verres, shaker) et de thé (théière, tasses, boîtes). Face avant vers -z,
+// fond posé contre le dos des caissons en z = zb. Dessus à 90 cm, au niveau du plan de travail.
+function barBackShelf(g, x0, x1, zb, depth) {
+    const veneer = walnutWood(),
+        zf = zb - depth,
+        t = 1.8,
+        mid = 46,
+        top = 90,
+        bays = 3,
+        bw = (x1 - x0) / bays;
+    B(g, x0 + 1, x1 - 1, 0, 6, zf + 2, zb, veneer); // socle en retrait
+    B(g, x0, x1, 6, 6 + t, zf, zb, veneer);
+    B(g, x0, x1, mid, mid + t, zf, zb, veneer);
+    B(g, x0, x1, top - 2.2, top, zf, zb, veneer);
+    for (let i = 0; i <= bays; i++) {
+        const x = x0 + i * bw;
+        B(g, Math.max(x0, x - t / 2), Math.min(x1, x + t / 2), 6, top - 2.2, zf, zb, veneer);
+    }
+    B(g, x0 + t, x1 - t, 6 + t, top - 2.2, zb - 0.6, zb, MAT.mirror);
+    const y1 = 6 + t,
+        y2 = mid + t,
+        zc = zb - depth / 2,
+        bx = (i, f) => x0 + i * bw + f * bw;
+    // travée 1 : bouteilles en bas, verres à pied et tumblers en haut
+    [[0.2, 0x1f3a24, 30], [0.42, 0x6b3a14, 26], [0.62, 0xcfe0d8, 28], [0.82, 0x2b1d20, 31]].forEach(([f, c, h]) => bottle(g, bx(0, f), y1, zc, c, h, 3.4));
+    for (const f of [0.18, 0.38, 0.58]) stemGlass(g, bx(0, f), y2, zc);
+    for (const f of [0.78, 0.88]) Cyl(g, 3.2, 2.8, 9, bx(0, f), y2 + 4.5, zc - 2 + (f > 0.8 ? 4 : 0), MAT.glass);
+    // travée 2 : théière et boîtes à thé en haut, pile de tasses et soucoupes en bas
+    teapot(g, bx(1, 0.32), y2, zc);
+    [[0.62, 0x7c8f6b], [0.74, 0xb5563a], [0.86, 0xd9a43a]].forEach(([f, c]) => Cyl(g, 3.5, 3.5, 12, bx(1, f), y2 + 6, zc, std(c, {roughness: 0.35, metalness: 0.4})));
+    for (let i = 0; i < 3; i++) Cyl(g, 7, 6, 1, bx(1, 0.25), y1 + 0.5 + i * 1.1, zc, std(0xf1eee8, {roughness: 0.3}));
+    for (let i = 0; i < 2; i++) mug(g, bx(1, 0.25), y1 + 3.3 + i * 7.2, zc, 0xf1eee8, 3.8, 7);
+    mug(g, bx(1, 0.55), y1, zc, 0x3a3d41);
+    mug(g, bx(1, 0.78), y1, zc, 0xb5563a);
+    // travée 3 : shaker, carafe et bouteilles en bas, mugs et bocal de thé en haut
+    Cyl(g, 4, 3.2, 18, bx(2, 0.2), y1 + 9, zc, MAT.chrome);
+    Cyl(g, 2.2, 3.5, 5, bx(2, 0.2), y1 + 20.5, zc, MAT.chrome);
+    bottle(g, bx(2, 0.45), y1, zc, 0xd9e8e4, 24, 4.5);
+    bottle(g, bx(2, 0.68), y1, zc, 0x5f7a3a, 29, 3.4);
+    bottle(g, bx(2, 0.86), y1, zc, 0x2b1d20, 30, 3.6);
+    for (const [f, c] of [[0.2, 0x7c8f6b], [0.42, 0xe8e0cf]]) mug(g, bx(2, f), y2, zc, c);
+    Cyl(g, 5, 5, 15, bx(2, 0.72), y2 + 7.5, zc, MAT.glass);
+    Cyl(g, 4.6, 4.6, 9, bx(2, 0.72), y2 + 4.6, zc, std(0x6b4a2a, {roughness: 0.9}));
+    Cyl(g, 5.2, 5.2, 2, bx(2, 0.72), y2 + 16, zc, MAT.walnut);
+}
+
 // Poubelle à pédale SONGMICS PLUSHIC LTB593E01 (30 L, inox argent, couvercle noir) : ~34 x 28,5 x 54,4 cm
 // (dimensions de la gamme, non confirmées pour cette référence). Origine au sol, centrée en (x, z), pédale côté +z.
 function pedalBin(g, x, z) {
@@ -3416,17 +3563,19 @@ function pedalBin(g, x, z) {
     B(g, x - 5, x + 5, 0.5, 2.2, z + bd / 2, z + bd / 2 + 7, MAT.matteBlack); // pédale
 }
 
-// Bar : trois caissons blancs (60, 40 et 30 cm) (laqué, boutons en bois) sous un plan de travail stratifié gris de
+// Bar : trois caissons blancs (60, 40 et 30 cm), façades blanches sans poignée, sous un plan de travail stratifié gris de
 // 186 x 63,5 x 2,8 cm (gabarit IKEA standard) arrondi en bout, qui couvre aussi l'étagère ouverte. Côté +x : contre la cloison.
 // 1 : congélateur top Thomson THTTFZ5WH ; niche poubelle de 36 cm ; 2 : 5 tiroirs ; 3 : grand tiroir.
-// Façades côté cuisine (-z local) : le meuble est construit puis miroité en x pour que le mur reste côté +x.
+// Façades côté cuisine (+z local) ; côté séjour, étagère fine en noyer à fond miroir de 20 cm sur toute la longueur
+// des caissons. Le meuble est construit puis miroité en x pour que le mur reste côté +x.
 function ikeaBar(w, d) {
     const g = new THREE.Group(),
         m = (v) => v / 100,
         hw = w / 2,
         hd = d / 2,
         cd = 60, // profondeur des caissons
-        z0 = -hd, // dos des caissons contre le plan
+        back = 20, // profondeur de l'étagère côté séjour
+        z0 = -hd + back, // dos des caissons
         z1 = z0 + cd,
         cws = [60, 40, 30], // largeurs des caissons depuis le mur
         gap = 36, // niche de la poubelle entre le congélateur et les tiroirs
@@ -3441,12 +3590,12 @@ function ikeaBar(w, d) {
             const xa = x - CW / 2 + 0.4,
                 xb = x + CW / 2 - 0.4,
                 bv = 2;
-            B(g, xa, xb, y0, y1 - bv, z1 - 1.8, z1, walnutWood());
+            B(g, xa, xb, y0, y1 - bv, z1 - 1.8, z1, paintWhite);
             const sh = new THREE.Shape();
             sh.moveTo(m(z1 - 1.8), m(y1 - bv));
             sh.lineTo(m(z1), m(y1 - bv));
             sh.lineTo(m(z1 - 1.8), m(y1));
-            const bev = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, {depth: m(xb - xa), bevelEnabled: false}), walnutWood());
+            const bev = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, {depth: m(xb - xa), bevelEnabled: false}), paintWhite);
             bev.rotation.y = -Math.PI / 2;
             bev.position.x = m(xb);
             bev.castShadow = true;
@@ -3461,12 +3610,12 @@ function ikeaBar(w, d) {
         B(g, x + CW / 2 - 1.8, x + CW / 2, 6, top, z0 + 1, z1 - 1.8, paintWhite);
         B(g, x - CW / 2, x + CW / 2, 6, 7.8, z0 + 1, z1 - 1.8, paintWhite);
         B(g, x - CW / 2, x + CW / 2, top - 1.8, top, z0 + 1, z1 - 1.8, paintWhite);
-        B(g, x - CW / 2, x + CW / 2, 6, top, z0, z0 + 1, walnutWood());
+        B(g, x - CW / 2, x + CW / 2, 6, top, z0, z0 + 1, paintWhite);
     });
     const CW = cws[0];
-    // niche poubelle : fond en noyer + poubelle SONGMICS, façade alignée sur les tiroirs
+    // niche poubelle : fond blanc + poubelle SONGMICS, façade alignée sur les tiroirs
     const gx = cx[0] - CW / 2 - gap / 2;
-    B(g, gx - gap / 2, gx + gap / 2, 0, top, z0 + 0.05, z0 + 1, walnutWood());
+    B(g, gx - gap / 2, gx + gap / 2, 0, top, z0 + 0.05, z0 + 1, paintWhite);
     pedalBin(g, gx, z1 - 14.5);
     // 1 : congélateur top Thomson (55 x 58 x 85) glissé dans le caisson de 60, porte à fleur des autres façades
     const c1 = cx[0];
@@ -3481,6 +3630,7 @@ function ikeaBar(w, d) {
     // plan de travail 63,5 x 2,8 cm, bords droits, à fleur des trois caissons
     const cw = cws.reduce((a, b) => a + b, 0) + gap;
     B(g, hw - cw, hw, top, 90, z0, z0 + 63.5, worktop);
+    barBackShelf(g, hw - cw, hw, z0, back);
     // étagère en bois collée au dernier caisson, dessus en bois à la même hauteur
     const sw = w - cw;
     const sh = roundedShelf(sw, 63.5, 90);
@@ -3531,6 +3681,7 @@ export const BUILDERS = {
     standingDesk,
     onewheelStand,
     monstera,
+    stackedChairs,
     yucca,
     tvStandEasel,
     teddy,

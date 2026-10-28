@@ -304,14 +304,16 @@ button.primary {
     pointer-events: none;
 }
 
-#p-link {
+#p-link,
+.p-link-extra {
     display: inline-block;
-    margin-top: 6px;
+    margin: 6px 10px 0 0;
     font-size: 12px;
     color: #f59e0b;
     text-decoration: none;
 }
-#p-link:hover {
+#p-link:hover,
+.p-link-extra:hover {
     text-decoration: underline;
 }
 

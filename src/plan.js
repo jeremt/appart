@@ -160,7 +160,7 @@ export const furnitureDefs = [
     {id: 'plaques', type: 'cooker', name: 'Plaques à induction 4 feux + four encastré 60 cm', r: [0, 464, 63, 523], rot: 90},
     {id: 'grille-cuisine', type: 'kitchenGrid', name: 'Grille murale ustensiles, poêle + wok de Buyer Carbone Plus 35 cm (5114.35)', r: [80, SPLIT_Y + INT, 150, SPLIT_Y + INT + 20], rot: 0},
     // bar : 3 caissons blancs (congélateur, 5 tiroirs, grand tiroir) sous un plan de travail, puis étagère en bois arrondie
-    {id: 'bar', type: 'ikeaBar', name: 'Bar : caissons blancs, façades noyer + niche poubelle SONGMICS LTB593E01 + plan de travail 63,5 cm + congélateur top Thomson THTTFZ5WH + étagère en bois arrondie', r: [151, SPLIT_Y + INT, 215, SPLIT_Y + INT + 186], rot: -90, url: 'https://www.darty.com/nav/achat/gros_electromenager/congelateur-armoire/congelateur_sous_plan/thomson_thttfz5wh.html'},
+    {id: 'bar', type: 'ikeaBar', name: 'Bar : caissons et façades blancs + niche poubelle SONGMICS LTB593E01 + plan de travail 63,5 cm + congélateur top Thomson THTTFZ5WH + étagère en bois arrondie + dos en étagère noyer fine (20 cm) à fond miroir, accessoires bar et thé', r: [151, SPLIT_Y + INT, 235, SPLIT_Y + INT + 186], rot: -90, url: 'https://www.darty.com/nav/achat/gros_electromenager/congelateur-armoire/congelateur_sous_plan/thomson_thttfz5wh.html'},
     // au mur au-dessus du bar
     {id: 'barre-couteaux', type: 'knifeBar', name: 'Barre aimantée à couteaux', r: [163, SPLIT_Y + INT, 203, SPLIT_Y + INT + 4], rot: 0, elev: 120},
     {id: 'condiments', type: 'condiments', name: 'Moulin à poivre, pot à sel en bois, huile d\'olive', r: [18, 440, 38, 462], rot: 90, elev: 90},
@@ -177,7 +177,8 @@ export const furnitureDefs = [
     {id: 'radiateur-salon', type: 'panelRadiator', name: 'Radiateur à panneaux 80 x 60', r: [500, 616, 580, 628], rot: 180},
     {id: 'colonne-salon', type: 'storageColumn', name: 'Colonne de rangement', r: [295, 593, 330, 628], rot: 180},
     // à gauche du canapé, contre la cloison (laisse 68 cm de passage devant la porte de la chambre)
-    {id: 'monstera', type: 'monstera', name: 'Monstera', r: [550, 559, 600, 609], rot: 0},
+    // pile de 4 chaises GOPLUS (51 x 44 x 85 l'unité) dans le coin sud-est, tournée à 45° vers le canapé, avec la Monstera sur l'assise
+    {id: 'chaises-empilees', type: 'stackedChairs', name: 'Lot de 4 chaises GOPLUS empilées (métal + assise bois, vintage) + Monstera posée sur l\'assise', c: [576, 592], size: [51, 50], rot: -135, links: [{label: 'Chaises GOPLUS', url: 'https://www.amazon.fr/dp/B094VBZF92'}]},
     {id: 'onewheel', type: 'onewheelStand', name: 'Onewheel sur support', r: [182, 598, 222, 628], rot: 180},
     // étagères au-dessus du Onewheel (dessus à 100 et 150 cm), entre l'étagère en grès et la gaine
     {id: 'etageres-electromenager', type: 'applianceShelves', name: 'Étagères électroménager', r: [181, 578, 227, 628], rot: 180},

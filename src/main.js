@@ -245,7 +245,7 @@ for (const [x1, y1, x2, y2] of dimensions) {
 }
 
 // ---------- Caméras & contrôles ----------
-const persp = new THREE.PerspectiveCamera(50, 1, 0.05, 300);
+const persp = new THREE.PerspectiveCamera(50, 1, 0.12, 300);
 persp.position.set(7, 10, 11);
 const ortho = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 200);
 ortho.position.set(0, 40, 0.001);
@@ -389,10 +389,27 @@ function updateSelection() {
     $('#p-dims').textContent = `${Math.round(selected.w)} × ${Math.round(selected.d)} × ${selected.h} cm`;
     // lien vers la fiche produit quand la référence est connue
     const variant = variantOf(selected);
-    const url = variant?.url ?? selected.def.url;
+    // `links` : plusieurs fiches quand l'objet combine plusieurs produits ({label, url})
+    const links = selected.def.links ?? [{label: 'Voir le produit', url: variant?.url ?? selected.def.url}];
+    const shown = links.filter((l) => l.url);
     const link = $('#p-link');
-    link.hidden = !url;
-    if (url) link.href = url;
+    link.hidden = !shown.length;
+    if (shown.length) {
+        link.href = shown[0].url;
+        link.textContent = `${shown[0].label} ↗`;
+    }
+    link.parentElement.querySelectorAll('.p-link-extra').forEach((a) => a.remove());
+    let prev = link;
+    for (const l of shown.slice(1)) {
+        const a = link.cloneNode();
+        a.removeAttribute('id');
+        a.hidden = false;
+        a.className = 'p-link-extra';
+        a.href = l.url;
+        a.textContent = `${l.label} ↗`;
+        prev.after(a);
+        prev = a;
+    }
     renderSwatches(variant);
     renderHeight();
     renderModes();
