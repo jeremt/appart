@@ -3445,30 +3445,34 @@ function bottle(g, x, y, z, color, h = 30, r = 3.7) {
     g.add(m);
 }
 
-// Étagère ouverte en contreplaqué bouleau, collée au caisson voisin (côté +x) et arrondie à son bout libre (-x) :
-// dessus en bois à hauteur `top`, verres sur le plateau du milieu, bouteilles sur celui du bas.
+// Étagère ouverte en noyer, en bout de bar, sur toute la profondeur (dos compris) : elle prolonge l'étagère du dos
+// à la même hauteur de planches, est collée au caisson voisin (côté +x) et arrondie à son bout libre (-x).
+// Dessus en bois à hauteur `top`, verres sur le plateau du milieu, bouteilles sur celui du bas.
 // Origine au centre de l'emprise.
 function roundedShelf(w, d, top = 90) {
     const g = new THREE.Group(),
         hw = w / 2,
         hd = d / 2,
         R = 14,
+        t = 1.8,
         m = (v) => v / 100;
     const veneer = walnutWood();
     const board = (y0, y1) => prism(g, barShape(m(w), m(d), m(R)), y0, y1, veneer);
-    board(top - 3, top);
-    board(46, 47.8);
-    board(12, 13.8);
-    B(g, hw - 1.8, hw, 0, top - 3, -hd, hd, veneer);
-    // bouteilles (plateau du bas, dessus à 13,8)
-    bottle(g, -4, 13.8, -18, 0x1f3a24);
-    bottle(g, 5, 13.8, -18, 0x2b1d20);
-    bottle(g, 13, 13.8, -18, 0x5f7a3a, 29, 3.4);
-    bottle(g, 0, 13.8, 0, 0x6b3a14, 24, 3.3);
-    bottle(g, 10, 13.8, 6, 0xcfe0d8, 26, 3.2);
+    // mêmes hauteurs de planches que l'étagère du dos (socle en retrait, 6, 46, dessus) : l'ensemble se prolonge sans rupture
+    B(g, -hw + 1, hw - 1, 0, 6, -hd + 2, hd - 14, veneer);
+    board(6, 6 + t);
+    board(46, 46 + t);
+    board(top - 2.2, top);
+    B(g, hw - t, hw, 6, top - 2.2, -hd, hd, veneer); // paroi côté caissons
+    // bouteilles (plateau du bas, dessus à 7,8), rangées dans la profondeur
+    bottle(g, 0, 7.8, -33, 0x1f3a24);
+    bottle(g, 0, 7.8, -21, 0x2b1d20);
+    bottle(g, 0, 7.8, -9, 0x5f7a3a, 29, 3.4);
+    bottle(g, 0, 7.8, 4, 0x6b3a14, 24, 3.3);
+    bottle(g, 0, 7.8, 16, 0xcfe0d8, 26, 3.2);
     // verres (plateau du milieu, dessus à 47,8)
-    for (const [x, z] of [[-3, -18], [5, -18], [13, -18], [0, 0]]) stemGlass(g, x, 47.8, z);
-    for (const [x, z] of [[10, 6], [14, 14], [2, 12]]) Cyl(g, 3.3, 2.8, 9, x, 52.3, z, MAT.glass);
+    for (const z of [-30, -18, -6]) stemGlass(g, 0, 47.8, z);
+    for (const z of [8, 20, 32]) Cyl(g, 3.3, 2.8, 9, 0, 52.3, z, MAT.glass);
     return g;
 }
 
@@ -3633,8 +3637,8 @@ function ikeaBar(w, d) {
     barBackShelf(g, hw - cw, hw, z0, back);
     // étagère en bois collée au dernier caisson, dessus en bois à la même hauteur
     const sw = w - cw;
-    const sh = roundedShelf(sw, 63.5, 90);
-    sh.position.set(m(-hw + sw / 2), 0, m(z0 + 31.75));
+    const sh = roundedShelf(sw, back + 63.5, 90); // pleine profondeur : elle ferme le coin avec l'étagère du dos
+    sh.position.set(m(-hw + sw / 2), 0, m(z0 - back / 2 + 31.75));
     g.add(sh);
     g.scale.x = -1; // avec rot -90 : façades vers la cuisine, mur côté y petit
     return g;
