@@ -703,20 +703,6 @@ const plantSmall = (w, d) =>
         [5, -4, 8, 16],
     ]);
 
-function shoeRack(w, d) {
-    const g = new THREE.Group(),
-        hw = w / 2,
-        hd = d / 2,
-        h = 95;
-    B(g, -hw, hw, 0, h, -hd, hd - 1, MAT.dark);
-    B(g, -hw - 0.5, hw + 0.5, h, h + 2, -hd, hd + 0.5, MAT.walnut);
-    for (let i = 0; i < 3; i++) {
-        const y = 4 + i * 30;
-        B(g, -hw + 2, hw - 2, y, y + 28, hd - 1, hd + 0.5, MAT.black);
-        B(g, -6, 6, y + 24, y + 25.5, hd + 0.5, hd + 2, MAT.metal);
-    }
-    return g;
-}
 
 function poster(w, d) {
     const g = new THREE.Group(),
@@ -1778,54 +1764,121 @@ function knifeBar(w, d) {
 // ---------- Porte-manteau mural ----------
 
 // Planche en chêne à 5 patères noires (dos -z), deux manteaux, une écharpe et une casquette accrochés.
-function coatRack(w, d) {
+// Manteau suspendu par sa bride : trapèze épaules arrondies, extrudé avec un biseau doux.
+// (x, yb) = position de la patère, z0 = profondeur du dos de la patère, len = longueur du manteau.
+function hungCoat(g, x, yb, len, color, z0) {
+    const sh = new THREE.Shape(),
+        top = 17,
+        bot = 24;
+    sh.moveTo(-bot, -len);
+    sh.lineTo(bot, -len);
+    sh.lineTo(top, -8);
+    sh.quadraticCurveTo(top - 2, 0, 4, 0);
+    sh.lineTo(-4, 0);
+    sh.quadraticCurveTo(-top + 2, 0, -top, -8);
+    sh.lineTo(-bot, -len);
+    const geo = new THREE.ExtrudeGeometry(sh, {depth: 6, bevelEnabled: true, bevelThickness: 2, bevelSize: 1.5, bevelSegments: 3, curveSegments: 8});
+    geo.scale(0.01, 0.01, 0.01);
+    const m = new THREE.Mesh(geo, std(color, {roughness: 0.95}));
+    m.position.set(x / 100, (yb + 2.5) / 100, (z0 + 2) / 100);
+    m.castShadow = m.receiveShadow = true;
+    g.add(m);
+    B(g, x - 5, x + 5, yb - 1.5, yb + 3.5, z0 + 1.5, z0 + 11, std(color, {roughness: 0.95})); // col
+}
+
+// ---------- Meuble d'entrée Amig Lukïen ----------
+
+// Porte-manteau + banc + étagères à chaussures, métal noir et MDF bois foncé (Amazon B0DK8WDHZN) :
+// 66 x 32,5 x 183 cm. Comme sur la photo : un petit banc à 4 pieds carrés (assise 66 x 30 à 47 cm,
+// deux grilles à chaussures à 15 et 31 cm), dont les deux pieds arrière montent en tubes ronds jusqu'à
+// 183 cm, reliés en haut par une barre qui part en avant côté gauche. Deux planches de bois vieilli à
+// crochets (4 + 3 = 7 crochets doubles) entre les tubes. Dos contre le mur (-z).
+function entryCoatBench(w, d) {
     const g = new THREE.Group(),
         hw = w / 2,
         hd = d / 2,
-        yb = 165, // bas de la planche
-        n = 5,
-        hx = (i) => -hw + 7 + (i * (w - 14)) / (n - 1);
-    B(g, -hw, hw, yb, yb + 10, -hd, -hd + 2, MAT.oak);
-    for (let i = 0; i < n; i++) {
-        const x = hx(i);
-        B(g, x - 0.6, x + 0.6, yb + 3, yb + 4.2, -hd + 2, -hd + 7, MAT.matteBlack);
-        B(g, x - 0.6, x + 0.6, yb + 4.2, yb + 6.5, -hd + 5.8, -hd + 7, MAT.matteBlack);
-    }
-    // manteau suspendu par sa bride : trapèze épaules arrondies, extrudé avec un biseau doux
-    const coat = (x, len, color, z0) => {
-        const sh = new THREE.Shape(),
-            top = 17,
-            bot = 24;
-        sh.moveTo(-bot, -len);
-        sh.lineTo(bot, -len);
-        sh.lineTo(top, -8);
-        sh.quadraticCurveTo(top - 2, 0, 4, 0);
-        sh.lineTo(-4, 0);
-        sh.quadraticCurveTo(-top + 2, 0, -top, -8);
-        sh.lineTo(-bot, -len);
-        const geo = new THREE.ExtrudeGeometry(sh, {depth: 6, bevelEnabled: true, bevelThickness: 2, bevelSize: 1.5, bevelSegments: 3, curveSegments: 8});
-        geo.scale(0.01, 0.01, 0.01);
-        const m = new THREE.Mesh(geo, std(color, {roughness: 0.95}));
-        m.position.set(x / 100, (yb + 2.5) / 100, (z0 + 2) / 100);
-        m.castShadow = m.receiveShadow = true;
-        g.add(m);
-        B(g, x - 5, x + 5, yb - 1.5, yb + 3.5, z0 + 1.5, z0 + 11, std(color, {roughness: 0.95})); // col
+        h = 183;
+    const blk = MAT.blackMetal,
+        seatWood = std(0x7b5b3c, {roughness: 0.7}),
+        boardWood = std(0x5a4632, {roughness: 0.75});
+    const xp = hw - 1.6, // axe des pieds / tubes
+        zb = -hd + 1.6,
+        zf = hd - 1.6,
+        top = h - 1.5;
+    const ball = (x, y, z, r, mat) => {
+        const b = new THREE.Mesh(new THREE.SphereGeometry(r / 100, 14, 10), mat);
+        b.position.set(x / 100, y / 100, z / 100);
+        b.castShadow = true;
+        g.add(b);
     };
-    coat(hx(0) + 10, 92, 0x23283a, -hd + 2);
-    coat(hx(2), 80, 0xa8865e, -hd + 6);
-    // écharpe pliée en deux sur la 4e patère
-    const scarf = std(0x8c3b33, {roughness: 1});
-    for (const dx of [-2.5, 2.5]) RB(g, hx(3) + dx - 2.5, hx(3) + dx + 2.5, yb - 40, yb + 4.5, -hd + 6.5, -hd + 8.5, 0.8, scarf);
-    // casquette sur la dernière patère
-    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.09, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2), std(0x2e2f31, {roughness: 0.9}));
-    cap.rotation.x = Math.PI / 2;
-    cap.scale.z = 0.7;
-    cap.position.set(hx(4) / 100, (yb + 2) / 100, (-hd + 3) / 100);
-    cap.castShadow = true;
-    g.add(cap);
-    B(g, hx(4) - 6, hx(4) + 6, yb - 8.5, yb - 7.5, -hd + 3, -hd + 10, std(0x2e2f31, {roughness: 0.9})); // visière
+    // pieds avant (carrés) + patins réglables
+    for (const sx of [-1, 1]) {
+        B(g, sx * xp - 1, sx * xp + 1, 1.5, 45, zf - 1, zf + 1, blk);
+        Cyl(g, 1.3, 1.3, 1.5, sx * xp, 0.75, zf, MAT.black);
+        Cyl(g, 1.3, 1.3, 1.5, sx * xp, 0.75, zb, MAT.black);
+    }
+    // tubes arrière ronds, du sol à 183 cm, avec une bague à 72 cm ; barre du haut + retour avant à gauche
+    for (const sx of [-1, 1]) {
+        rod(g, [sx * xp, 1.5, zb], [sx * xp, top, zb], 1, blk);
+        Cyl(g, 1.5, 1.5, 4, sx * xp, 72, zb, blk);
+        ball(sx * xp, top, zb, 1.05, blk);
+    }
+    rod(g, [-xp, top, zb], [xp, top, zb], 1, blk);
+    rod(g, [-xp, top, zb], [-xp, top, zf - 4], 1, blk);
+    ball(-xp, top, zf - 4, 1.05, blk);
+    // cadre sous l'assise
+    for (const sx of [-1, 1]) B(g, sx * xp - 1, sx * xp + 1, 42.5, 45, zb, zf, blk);
+    B(g, -xp, xp, 42.5, 45, zf - 1, zf + 1, blk);
+    B(g, -xp, xp, 42.5, 45, zb - 1, zb + 1, blk);
+    // banc 66 x 30
+    B(g, -hw, hw, 45, 47, -hd + 1.25, hd - 1.25, seatWood);
+    // deux grilles à chaussures : cadre + barres
+    for (const y of [15, 31]) {
+        B(g, -xp, xp, y, y + 1, -hd + 2.6, -hd + 3.8, blk);
+        B(g, -xp, xp, y, y + 1, hd - 3.8, hd - 2.6, blk);
+        for (const sx of [-1, 1]) B(g, sx * xp - 0.6, sx * xp + 0.6, y, y + 1, -hd + 2.6, hd - 2.6, blk);
+        for (let i = 0; i < 12; i++) {
+            const z = -hd + 4.5 + (i * (d - 9)) / 11;
+            B(g, -xp, xp, y, y + 0.6, z - 0.3, z + 0.3, blk);
+        }
+    }
+    // chaussures, orientées pointe vers l'avant
+    const shoe = (x, y, color, sole) => {
+        RB(g, x - 4.2, x + 4.2, y, y + 2, -hd + 4, hd - 4.5, 1, std(sole, {roughness: 0.8}));
+        RB(g, x - 4, x + 4, y + 2, y + 6.5, -hd + 5, hd - 5.5, 2.4, std(color, {roughness: 0.6}));
+        RB(g, x - 3.8, x + 3.8, y + 5, y + 10, -hd + 5, -hd + 12, 2, std(color, {roughness: 0.6}));
+    };
+    const xs = [-26, -16, -6, 4, 14, 24];
+    xs.forEach((x, i) => shoe(x, 16, [0xb08050, 0xb08050, 0x1c1c1c, 0x1c1c1c, 0xcfdbe8, 0xcfdbe8][i], 0xd8d0c0));
+    xs.forEach((x, i) => shoe(x, 32, [0x3a2a20, 0x3a2a20, 0x2a2420, 0x2a2420, 0x74869b, 0x74869b][i], 0x1a1a1a));
+    // vêtements pliés sur le banc (moitié gauche ; le sac à chaussons occupe l'autre)
+    [[-30, -17, [0x8d97a6, 0x5f6f8c, 0x7c8590]], [-15, -3, [0x6e7a8c, 0x8d97a6, 0x5f6f8c]]].forEach(([x0, x1, cols]) =>
+        cols.forEach((c, i) => RB(g, x0, x1, 47 + i * 3, 50 + i * 3, -9, 9, 0.8, std(c, {roughness: 1}))),
+    );
+    // deux planches de bois vieilli sur les tubes : 4 crochets en haut, 3 en bas (côté droit)
+    const zp = zb + 1,
+        zr = zp + 1.8;
+    B(g, -xp + 1, xp - 1, 150, 161, zp, zr, boardWood);
+    B(g, -xp + 1, xp - 1, 112, 123, zp, zr, boardWood);
+    // crochet double en fer forgé : un long crochet qui retombe et une petite pointe au-dessus
+    const hook = (x, yc) => {
+        B(g, x - 0.5, x + 0.5, yc - 0.5, yc + 0.5, zr, zr + 5, blk);
+        B(g, x - 0.5, x + 0.5, yc - 6, yc + 0.5, zr + 4, zr + 5, blk);
+        ball(x, yc - 6.2, zr + 4.5, 0.9, blk);
+        B(g, x - 0.5, x + 0.5, yc + 2.2, yc + 3, zr, zr + 3.2, blk);
+        ball(x, yc + 3.2, zr + 3.2, 0.7, blk);
+    };
+    [-22.5, -7.5, 7.5, 22.5].forEach((x) => hook(x, 156));
+    [6, 17, 28].forEach((x) => hook(x, 118));
+    // manteau camel sur cintre au premier crochet (déborde à gauche du meuble), chapeau bleu sur le dernier
+    hungCoat(g, -22.5, 153, 75, 0xb08d62, zr);
+    const felt = std(0x27406f, {roughness: 0.9});
+    Cyl(g, 10, 10, 0.8, 22.5, 150, zr + 9, felt, true);
+    Cyl(g, 5.8, 5.8, 6.5, 22.5, 150, zr + 12.4, felt, true);
+    Cyl(g, 5.9, 5.9, 1.2, 22.5, 150, zr + 10.2, MAT.black, true);
     return g;
 }
+
 
 // ---------- Sac à chaussons ----------
 
@@ -1861,20 +1914,6 @@ function slipperBag(w, d) {
 // ---------- Étagères électroménager (au-dessus du Onewheel) ----------
 
 // Deux tablettes chêne sur équerres noires, dessus à 100 et 150 cm, fixées au mur (dos -z).
-function applianceShelves(w, d) {
-    const g = new THREE.Group(),
-        hw = w / 2,
-        hd = d / 2;
-    for (const y of [100, 150]) {
-        floatingShelf(g, w, d, y);
-        for (const x of [-hw + 5, hw - 5]) {
-            B(g, x - 1, x + 1, y - 3.4, y - 3, -hd, hd - 6, MAT.matteBlack);
-            B(g, x - 1, x + 1, y - 25, y - 3, -hd, -hd + 0.4, MAT.matteBlack);
-            beam(g, [x, y - 22, -hd + 0.4], [x, y - 3.4, -hd + 22], 0.8, 0.8, MAT.matteBlack);
-        }
-    }
-    return g;
-}
 
 // ---------- Rice cooker ----------
 
@@ -2416,6 +2455,46 @@ function rod(g, a, b, r, mat) {
     return m;
 }
 
+// Barbecue à charbon type Weber Original Kettle 57 cm : cuve et couvercle émaillés, 3 pieds, 2 roues.
+function kettleBbq(w, d) {
+    const g = new THREE.Group(),
+        r = 28.5;
+    const enamel = std(0x161718, {roughness: 0.3, metalness: 0.2});
+    const steel = std(0x2b2c2e, {roughness: 0.45, metalness: 0.8, envMap: MAT.chrome.envMap});
+    const wood = std(0x8a5a35, {roughness: 0.7});
+    const dome = (rad, hgt, y, lower) => {
+        const m = new THREE.Mesh(
+            new THREE.SphereGeometry(rad / 100, 40, 16, 0, Math.PI * 2, lower ? Math.PI / 2 : 0, Math.PI / 2),
+            enamel,
+        );
+        m.scale.y = hgt / rad;
+        m.position.set(0, y / 100, 0);
+        m.castShadow = m.receiveShadow = true;
+        enamel.side = THREE.DoubleSide;
+        g.add(m);
+    };
+    const bowlTop = 73;
+    dome(r, 26, bowlTop, true); // cuve (demi-sphère aplatie, ouverte vers le haut)
+    dome(r, 24, bowlTop, false); // couvercle
+    Cyl(g, r + 0.3, r + 0.3, 2, 0, bowlTop + 0.5, 0, enamel); // rebord
+    Cyl(g, r - 1, r - 1, 0.6, 0, bowlTop - 8, 0, steel); // grille
+    // cendrier + tige
+    Cyl(g, 1, 1, 22, 0, 36, 0, steel);
+    Cyl(g, r - 4, r - 4, 1.4, 0, 28, 0, steel);
+    // trois pieds (deux devant, un derrière) et deux roues
+    const legs = [[-r * 0.8, r * 0.45], [r * 0.8, r * 0.45], [0, -r * 0.9]];
+    for (const [x, z] of legs) rod(g, [x * 0.5, bowlTop - 14, z * 0.5], [x, 2, z], 1.1, steel);
+    for (const x of [-r * 0.8, r * 0.8]) Cyl(g, 5, 5, 3, x + (x < 0 ? -2 : 2), 5, r * 0.45, MAT.matteBlack, false).rotation.z = Math.PI / 2;
+    // poignée de couvercle (bois) côté avant
+    rod(g, [-7, bowlTop + 20, r - 6], [-7, bowlTop + 24, r + 5], 0.7, steel);
+    rod(g, [7, bowlTop + 20, r - 6], [7, bowlTop + 24, r + 5], 0.7, steel);
+    rod(g, [-9, bowlTop + 24, r + 5], [9, bowlTop + 24, r + 5], 1.6, wood);
+    Cyl(g, 1.8, 1.8, 3, 0, bowlTop + 24.5, 0, steel); // pommeau du couvercle
+    // aérations
+    Cyl(g, 2.2, 2.2, 1.2, 0, bowlTop - 14, -r + 2, steel, true);
+    return g;
+}
+
 // Table bistrot pliante : plateau rond en tôle laquée à rebord, pieds tubulaires en croix.
 function bistroTableRound(w, d) {
     const g = new THREE.Group(),
@@ -2717,25 +2796,6 @@ function plates(g, x, y, z, r, n, mat) {
 }
 
 // Étagère murale de l'entrée : grès beige et noir (assiettes, bols, tasses).
-function stonewareShelf(w, d) {
-    const g = new THREE.Group(),
-        hw = w / 2;
-    const y = 150;
-    floatingShelf(g, w, d, y);
-    const beige = stoneware('beige'),
-        black = stoneware('black');
-    plates(g, -hw + 13, y, -1, 11, 5, beige);
-    plates(g, -hw + 13, y + 8, -1, 9, 3, black);
-    bowl(g, -hw + 36, y, 0, 7, 6, black);
-    bowl(g, -hw + 36, y + 3.2, 0, 7, 6, beige);
-    bowl(g, -hw + 36, y + 6.4, 0, 7, 6, black);
-    bowl(g, hw - 30, y, -1, 8, 7, beige);
-    bowl(g, hw - 30, y + 3.6, -1, 8, 7, beige);
-    for (const [x, mat] of [[hw - 13, black], [hw - 7, beige]]) {
-        Cyl(g, 3.6, 3.2, 8.5, x, y + 4.25, 3, mat);
-    }
-    return g;
-}
 
 // ---------- Colonnes de rangement ----------
 
@@ -2773,28 +2833,63 @@ function storageBox(g, x0, x1, y, z0, z1, h, color) {
     B(g, (x0 + x1) / 2 - 4, (x0 + x1) / 2 + 4, y + h - 7, y + h - 4.5, z1, z1 + 0.2, MAT.dark);
 }
 
-// Colonne ouverte chêne / métal noir : boîtes en bas, plante au milieu, lampe en papier en haut.
-function storageColumn(w, d) {
+// Ossature commune des colonnes ouvertes : 4 montants métal noir, tablettes chêne (`levels` = dessous
+// de chaque tablette, la dernière étant le plateau du haut) et fond chêne.
+function columnFrame(g, w, d, h, levels) {
+    const hw = w / 2,
+        hd = d / 2;
+    for (const sx of [-1, 1])
+        for (const sz of [-1, 1]) B(g, sx * hw - (sx > 0 ? 2 : 0), sx * hw + (sx < 0 ? 2 : 0), 0, h - 0.2, sz * hd - (sz > 0 ? 2 : 0), sz * hd + (sz < 0 ? 2 : 0), MAT.blackMetal);
+    for (const y of levels) B(g, -hw + 0.5, hw - 0.5, y, y + 2, -hd + 0.5, hd - 0.5, MAT.oak);
+    B(g, -hw + 2, hw - 2, levels[0] + 2, h - 2, -hd, -hd + 0.6, MAT.oak); // fond
+}
+
+// Colonne ouverte chêne / métal noir qui abrite le Onewheel (tablette du bas, dessus à 6 cm) :
+// boîtes de rangement, plante, lampe en papier en haut.
+function onewheelColumn(w, d) {
     const g = new THREE.Group(),
         hw = w / 2,
         hd = d / 2,
         h = 180;
-    for (const sx of [-1, 1])
-        for (const sz of [-1, 1]) B(g, sx * hw - (sx > 0 ? 2 : 0), sx * hw + (sx < 0 ? 2 : 0), 0, h - 0.2, sz * hd - (sz > 0 ? 2 : 0), sz * hd + (sz < 0 ? 2 : 0), MAT.blackMetal);
-    const levels = [4, 40, 76, 112, 148, h - 2];
-    for (const y of levels) B(g, -hw + 0.5, hw - 0.5, y, y + 2, -hd + 0.5, hd - 0.5, MAT.oak);
-    B(g, -hw + 2, hw - 2, levels[0] + 2, h - 2, -hd, -hd + 0.6, MAT.oak); // fond
-    // boîtes de rangement (lin beige et kraft)
-    storageBox(g, -hw + 2.5, hw - 2.5, 6, -hd + 2, hd - 3, 27, 0xcdbfa6);
-    storageBox(g, -hw + 2.5, hw - 2.5, 42, -hd + 2, hd - 3, 27, 0xa37a50);
-    // plante au milieu
-    const rnd = seeded(57);
-    herbPot(g, 0, 78, 0, 8, 0x3f7f3a, rnd);
-    // lampe en papier
-    paperLamp(g, 0, 114, 0, 10, 26);
-    // dessus : deux livres et une petite boîte
+    columnFrame(g, w, d, h, [4, 86, 118, 150, h - 2]);
+    // boîtes de rangement (lin beige et kraft) côte à côte
+    storageBox(g, -hw + 2.5, -0.5, 88, -hd + 2, hd - 3, 27, 0xcdbfa6);
+    storageBox(g, 0.5, hw - 2.5, 88, -hd + 2, hd - 3, 27, 0xa37a50);
+    herbPot(g, 0, 120, 0, 8, 0x3f7f3a, seeded(57));
+    paperLamp(g, 0, 152, 0, 10, 22);
+    // dessus : deux livres
     B(g, -hw + 3, -hw + 20, h, h + 3, -hd + 4, hd - 6, std(0x2f3e5c, {roughness: 0.8}));
     B(g, -hw + 4, -hw + 19, h + 3, h + 5.5, -hd + 5, hd - 7, std(0xe8e0cf, {roughness: 0.8}));
+    return g;
+}
+
+// Bocal de conservation en verre : corps transparent rempli à 75 % (`fill` = couleur du contenu),
+// couvercle bois avec joint noir. `y` = dessus de la tablette.
+function glassJar(g, x, y, z, r, h, fill) {
+    const lidH = 2.5,
+        bodyH = h - lidH;
+    Cyl(g, r, r, 0.6, x, y + 0.3, z, MAT.glass);
+    Cyl(g, r, r, bodyH, x, y + bodyH / 2, z, MAT.glass);
+    Cyl(g, r - 0.5, r - 0.5, bodyH * 0.75, x, y + 0.6 + (bodyH * 0.75) / 2, z, std(fill, {roughness: 1}));
+    Cyl(g, r - 0.3, r - 0.3, 0.6, x, y + bodyH + 0.3, z, MAT.black);
+    Cyl(g, r + 0.2, r + 0.2, lidH - 0.6, x, y + bodyH + 0.6 + (lidH - 0.6) / 2, z, MAT.walnut);
+}
+
+// Colonne ouverte chêne / métal noir pour l'airfryer (dessus de tablette à 100 cm) et le rice cooker
+// (150 cm), avec des boîtes de rangement dessous.
+function applianceColumn(w, d) {
+    const g = new THREE.Group(),
+        hw = w / 2,
+        hd = d / 2,
+        h = 180;
+    columnFrame(g, w, d, h, [4, 36, 68, 98, 148, h - 2]);
+    // bocaux en verre (2 x 2 par tablette) : riz, pâtes, lentilles, farine / céréales, café, sucre
+    const jars = [[0xf1ece0, 0xd9b45a, 0xa4552f, 0xe8dcc0], [0xc9a35a, 0x6a4a2a, 0xe9e2d0, 0x8a6a3a]];
+    [6, 38].forEach((y, row) =>
+        [-10.5, 10.5].forEach((x, i) =>
+            [-hd + 11, hd - 14].forEach((z, j) => glassJar(g, x, y, z, 9.2, 26, jars[row][i * 2 + j])),
+        ),
+    );
     return g;
 }
 
@@ -3445,34 +3540,65 @@ function bottle(g, x, y, z, color, h = 30, r = 3.7) {
     g.add(m);
 }
 
-// Étagère ouverte en noyer, en bout de bar, sur toute la profondeur (dos compris) : elle prolonge l'étagère du dos
-// à la même hauteur de planches, est collée au caisson voisin (côté +x) et arrondie à son bout libre (-x).
-// Dessus en bois à hauteur `top`, verres sur le plateau du milieu, bouteilles sur celui du bas.
-// Origine au centre de l'emprise.
+// Étagère ouverte en noyer, en bout de bar : elle enveloppe tout le bar en profondeur (dos compris) et prolonge l'étagère
+// du dos, avec la même épaisseur (w = 15 cm). Collée au caisson voisin (côté +x), arrondie à son bout libre (-x).
+// Casiers irréguliers, ouverts côté bout libre : trois colonnes de largeurs différentes, planches à des hauteurs
+// différentes, un petit casier cloisonné. Dessus en bois à hauteur `top`. Origine au centre de l'emprise ; séjour = -z.
 function roundedShelf(w, d, top = 90) {
     const g = new THREE.Group(),
         hw = w / 2,
         hd = d / 2,
-        R = 14,
+        R = 7,
         t = 1.8,
         m = (v) => v / 100;
     const veneer = walnutWood();
     const board = (y0, y1) => prism(g, barShape(m(w), m(d), m(R)), y0, y1, veneer);
-    // mêmes hauteurs de planches que l'étagère du dos (socle en retrait, 6, 46, dessus) : l'ensemble se prolonge sans rupture
-    B(g, -hw + 1, hw - 1, 0, 6, -hd + 2, hd - 14, veneer);
+    B(g, -hw + 1, hw - 1, 0, 6, -hd + 2, hd - 14, veneer); // socle en retrait
     board(6, 6 + t);
-    board(46, 46 + t);
     board(top - 2.2, top);
-    B(g, hw - t, hw, 6, top - 2.2, -hd, hd, veneer); // paroi côté caissons
-    // bouteilles (plateau du bas, dessus à 7,8), rangées dans la profondeur
-    bottle(g, 0, 7.8, -33, 0x1f3a24);
-    bottle(g, 0, 7.8, -21, 0x2b1d20);
-    bottle(g, 0, 7.8, -9, 0x5f7a3a, 29, 3.4);
-    bottle(g, 0, 7.8, 4, 0x6b3a14, 24, 3.3);
-    bottle(g, 0, 7.8, 16, 0xcfe0d8, 26, 3.2);
-    // verres (plateau du milieu, dessus à 47,8)
-    for (const z of [-30, -18, -6]) stemGlass(g, 0, 47.8, z);
-    for (const z of [8, 20, 32]) Cyl(g, 3.3, 2.8, 9, 0, 52.3, z, MAT.glass);
+    for (const s of [-1, 1]) B(g, -hw + R, hw, 6 + t, top - 2.2, s < 0 ? -hd : hd - t, s < 0 ? -hd + t : hd, veneer); // joues
+    B(g, hw - t, hw, 6, top - 2.2, -hd, hd, veneer); // fond côté caissons
+    const x0 = -hw + 1.2,
+        x1 = hw - t,
+        zi0 = -hd + t,
+        zi1 = hd - t,
+        L = zi1 - zi0,
+        c1 = zi0 + L * 0.26,
+        c2 = zi0 + L * 0.56;
+    for (const c of [c1, c2]) B(g, x0, x1, 6 + t, top - 2.2, c - t / 2, c + t / 2, veneer);
+    const cols = [
+        [zi0, c1 - t / 2],
+        [c1 + t / 2, c2 - t / 2],
+        [c2 + t / 2, zi1],
+    ];
+    const at = (k, f) => cols[k][0] + (cols[k][1] - cols[k][0]) * f;
+    const shelves = [[30, 60], [22, 46, 68], [38, 64]];
+    shelves.forEach((ys, k) => ys.forEach((y) => B(g, x0, x1, y, y + t, cols[k][0], cols[k][1], veneer)));
+    B(g, x0, x1, 64 + t, top - 2.2, at(2, 0.45) - t / 2, at(2, 0.45) + t / 2, veneer); // petit casier cloisonné en haut
+    const cx = -0.5,
+        y0 = 6 + t;
+    // colonne 1 (étroite)
+    bottle(g, cx, y0, at(0, 0.3), 0x1f3a24, 24, 3.2);
+    bottle(g, cx, y0, at(0, 0.72), 0x2b1d20, 20, 3.0);
+    stemGlass(g, cx, 30 + t, at(0, 0.28));
+    stemGlass(g, cx, 30 + t, at(0, 0.72));
+    bottle(g, cx, 60 + t, at(0, 0.3), 0x6b3a14, 25, 3.3);
+    mug(g, cx, 60 + t, at(0, 0.75), 0xe8e0cf, 3.2, 8);
+    // colonne 2
+    mug(g, cx, y0, at(1, 0.28), 0xb5563a, 3.6, 8);
+    mug(g, cx, y0, at(1, 0.72), 0x3a3d41, 3.6, 8);
+    [[0.25, 0x7c8f6b], [0.75, 0xd9a43a]].forEach(([f, c]) => Cyl(g, 3.5, 3.5, 12, cx, 22 + t + 6, at(1, f), std(c, {roughness: 0.35, metalness: 0.4})));
+    for (const f of [0.28, 0.72]) Cyl(g, 3.2, 2.8, 9, cx, 46 + t + 4.5, at(1, f), MAT.glass);
+    mug(g, cx, 68 + t, at(1, 0.5), 0x7c8f6b, 3.6, 8);
+    // colonne 3 (large)
+    [[0.1, 0x5f7a3a, 29, 3.4], [0.24, 0xcfe0d8, 26, 3.2], [0.38, 0x1f3a24, 27, 3.3], [0.52, 0x6b3a14, 24, 3.3], [0.66, 0x2b1d20, 29, 3.4], [0.88, 0xd9e8e4, 22, 3.8]].forEach(([f, c, h, r]) => bottle(g, cx, y0, at(2, f), c, h, r));
+    Cyl(g, 3.6, 3, 17, cx, 38 + t + 8.5, at(2, 0.2), MAT.chrome);
+    Cyl(g, 2.2, 3.2, 5, cx, 38 + t + 19.5, at(2, 0.2), MAT.chrome);
+    bottle(g, cx, 38 + t, at(2, 0.5), 0xd9e8e4, 22, 4);
+    mug(g, cx, 38 + t, at(2, 0.78), 0xb5563a, 3.6, 8);
+    mug(g, cx, 64 + t, at(2, 0.22), 0xe8e0cf, 3.6, 8);
+    bottle(g, cx, 64 + t, at(2, 0.72), 0x6b3a14, 14, 3);
+    mug(g, cx, 64 + t, at(2, 0.93), 0x3a3d41, 3, 7);
     return g;
 }
 
@@ -3578,8 +3704,8 @@ function ikeaBar(w, d) {
         hw = w / 2,
         hd = d / 2,
         cd = 60, // profondeur des caissons
-        back = 20, // profondeur de l'étagère côté séjour
-        z0 = -hd + back, // dos des caissons
+        back = 15, // profondeur de l'étagère côté séjour (150 mm)
+        z0 = -hd + back, // dos des caissons : emprise = 15 + 63,5 (plan de travail) = 78,5 cm
         z1 = z0 + cd,
         cws = [60, 40, 30], // largeurs des caissons depuis le mur
         gap = 36, // niche de la poubelle entre le congélateur et les tiroirs
@@ -3635,10 +3761,10 @@ function ikeaBar(w, d) {
     const cw = cws.reduce((a, b) => a + b, 0) + gap;
     B(g, hw - cw, hw, top, 90, z0, z0 + 63.5, worktop);
     barBackShelf(g, hw - cw, hw, z0, back);
-    // étagère en bois collée au dernier caisson, dessus en bois à la même hauteur
-    const sw = w - cw;
-    const sh = roundedShelf(sw, back + 63.5, 90); // pleine profondeur : elle ferme le coin avec l'étagère du dos
-    sh.position.set(m(-hw + sw / 2), 0, m(z0 - back / 2 + 31.75));
+    // étagère en bois collée au dernier caisson, même profondeur que celle du dos, sur toute la profondeur du bar
+    const sd = back + 63.5;
+    const sh = roundedShelf(back, sd, 90);
+    sh.position.set(m(hw - cw - back / 2), 0, m(z0 - back + sd / 2));
     g.add(sh);
     g.scale.x = -1; // avec rot -90 : façades vers la cuisine, mur côté y petit
     return g;
@@ -3653,14 +3779,15 @@ export const BUILDERS = {
     monitorArm,
     kyrreStack,
     convertibleTable,
-    storageColumn,
+    onewheelColumn,
+    applianceColumn,
     bathColumn,
     towelRadiator,
     panelRadiator,
     tallPanelRadiator,
     sofaArt,
-    stonewareShelf,
     herbShelf,
+    kettleBbq,
     bistroTableRound,
     bistroChair,
     gardenSofa,
@@ -3674,9 +3801,7 @@ export const BUILDERS = {
     paperPendant,
     kitchenGrid,
     knifeBar,
-    coatRack,
     slipperBag,
-    applianceShelves,
     riceCooker,
     ninjaDoubleStack,
     rug,
@@ -3694,7 +3819,7 @@ export const BUILDERS = {
     shelfIndustrial,
     plantTall,
     plantSmall,
-    shoeRack,
+    entryCoatBench,
     poster,
     bed,
     wardrobeGrid,

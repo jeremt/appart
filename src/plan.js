@@ -160,7 +160,7 @@ export const furnitureDefs = [
     {id: 'plaques', type: 'cooker', name: 'Plaques à induction 4 feux + four encastré 60 cm', r: [0, 464, 63, 523], rot: 90},
     {id: 'grille-cuisine', type: 'kitchenGrid', name: 'Grille murale ustensiles, poêle + wok de Buyer Carbone Plus 35 cm (5114.35)', r: [80, SPLIT_Y + INT, 150, SPLIT_Y + INT + 20], rot: 0},
     // bar : 3 caissons blancs (congélateur, 5 tiroirs, grand tiroir) sous un plan de travail, puis étagère en bois arrondie
-    {id: 'bar', type: 'ikeaBar', name: 'Bar : caissons et façades blancs + niche poubelle SONGMICS LTB593E01 + plan de travail 63,5 cm + congélateur top Thomson THTTFZ5WH + étagère en bois arrondie + dos en étagère noyer fine (20 cm) à fond miroir, accessoires bar et thé', r: [151, SPLIT_Y + INT, 235, SPLIT_Y + INT + 186], rot: -90, url: 'https://www.darty.com/nav/achat/gros_electromenager/congelateur-armoire/congelateur_sous_plan/thomson_thttfz5wh.html'},
+    {id: 'bar', type: 'ikeaBar', name: 'Bar : caissons et façades blancs + niche poubelle SONGMICS LTB593E01 + plan de travail 63,5 cm + congélateur top Thomson THTTFZ5WH + étagère en bois arrondie de 15 cm + dos en étagère noyer fine (15 cm) à fond miroir, accessoires bar et thé', r: [151.5, SPLIT_Y + INT, 230, SPLIT_Y + INT + 181], rot: -90, url: 'https://www.darty.com/nav/achat/gros_electromenager/congelateur-armoire/congelateur_sous_plan/thomson_thttfz5wh.html'},
     // au mur au-dessus du bar
     {id: 'barre-couteaux', type: 'knifeBar', name: 'Barre aimantée à couteaux', r: [163, SPLIT_Y + INT, 203, SPLIT_Y + INT + 4], rot: 0, elev: 120},
     {id: 'condiments', type: 'condiments', name: 'Moulin à poivre, pot à sel en bois, huile d\'olive', r: [18, 440, 38, 462], rot: 90, elev: 90},
@@ -175,20 +175,19 @@ export const furnitureDefs = [
     {id: 'meuble-tv', type: 'tvStandEasel', name: 'Support TV à roulettes CNTSLNB inox + plateau bois (86 x 50,5 x 126,5) + TCL 65" (65P89L) + Nintendo Switch et 2 manettes', r: [382, 577.5, 468, 628], rot: 180, url: 'https://www.amazon.fr/dp/B0FRXT8XT2'},
     // à gauche du meuble TV, contre le mur sud (photo IMG_6673)
     {id: 'radiateur-salon', type: 'panelRadiator', name: 'Radiateur à panneaux 80 x 60', r: [500, 616, 580, 628], rot: 180},
-    {id: 'colonne-salon', type: 'storageColumn', name: 'Colonne de rangement', r: [295, 593, 330, 628], rot: 180},
+    // colonne du Onewheel : tablette du bas à 6 cm, plus large que l'ancienne colonne (48 x 40) pour accueillir son support
+    {id: 'colonne-salon', type: 'onewheelColumn', name: 'Colonne de rangement + Onewheel', r: [295, 588, 343, 628], rot: 180},
+    {id: 'onewheel', type: 'onewheelStand', name: 'Onewheel sur support', c: [319, 612], size: [40, 30], rot: 180, elev: 6},
     // à gauche du canapé, contre la cloison (laisse 68 cm de passage devant la porte de la chambre)
     // pile de 4 chaises GOPLUS (51 x 44 x 85 l'unité) dans le coin sud-est, tournée à 45° vers le canapé, avec la Monstera sur l'assise
     {id: 'chaises-empilees', type: 'stackedChairs', name: 'Lot de 4 chaises GOPLUS empilées (métal + assise bois, vintage) + Monstera posée sur l\'assise', c: [576, 592], size: [51, 50], rot: -135, links: [{label: 'Chaises GOPLUS', url: 'https://www.amazon.fr/dp/B094VBZF92'}]},
-    {id: 'onewheel', type: 'onewheelStand', name: 'Onewheel sur support', r: [182, 598, 222, 628], rot: 180},
-    // étagères au-dessus du Onewheel (dessus à 100 et 150 cm), entre l'étagère en grès et la gaine
-    {id: 'etageres-electromenager', type: 'applianceShelves', name: 'Étagères électroménager', r: [181, 578, 227, 628], rot: 180},
+    // colonne ouverte à droite de la porte d'entrée : airfryer (dessus de tablette à 100 cm) et rice cooker (150 cm)
+    {id: 'colonne-electromenager', type: 'applianceColumn', name: 'Colonne ouverte électroménager', r: [181, 578, 227, 628], rot: 180},
     {id: 'airfryer', type: 'ninjaDoubleStack', name: 'Friteuse sans huile Ninja Double Stack XL (SL400EU)', c: [204, 604.5], size: [28, 47], rot: 180, elev: 100, url: 'https://www.darty.com/nav/achat/petit_electromenager/cuisson_quotidienne/friteuse/ninja_sl400eu.html'},
     {id: 'rice-cooker', type: 'riceCooker', name: 'Rice cooker', c: [204, 610], size: [26, 34], rot: 180, elev: 150},
-    {id: 'etagere-gres', type: 'stonewareShelf', name: 'Étagère vaisselle en grès', r: [90, 606, 180, 628], rot: 180},
-    {id: 'meuble-chaussures', type: 'shoeRack', name: 'Meuble à chaussures', r: [95, 598, 175, 628], rot: 180},
-    // derrière la porte d'entrée, à droite du meuble à chaussures
-    {id: 'porte-manteau', type: 'coatRack', name: 'Porte-manteau mural', r: [15, 613, 85, 628], rot: 180},
-    {id: 'sac-chaussons', type: 'slipperBag', name: 'Sac à chaussons', r: [62, 610, 92, 628], rot: 180},
+    // juste après le vantail de la porte d'entrée ouverte (80 cm) : porte-manteau + banc + étagères à chaussures
+    {id: 'meuble-entree', type: 'entryCoatBench', name: 'Amig Lukïen : porte-manteau avec banc et étagères à chaussures (183 x 66 x 32,5)', r: [95, 595.5, 161, 628], rot: 180, url: 'https://www.amazon.fr/dp/B0DK8WDHZN'},
+    {id: 'sac-chaussons', type: 'slipperBag', name: 'Sac à chaussons', r: [100, 607, 130, 625], rot: 180, elev: 47},
     // Chambre
     {id: 'lit', type: 'bed', name: 'Lit 160 x 200', r: [389, 2, 594, 164], rot: -90},
     {id: 'tete-de-lit', type: 'walnutHeadboard', name: 'Tête de lit-tablette en noyer', r: [594, 2, 612, 150], rot: -90},
@@ -208,6 +207,7 @@ export const furnitureDefs = [
     {id: 'jardiniere-1', type: 'railPlanter', name: 'Jardinière de lavande', r: [758, 190, 778, 260], rot: -90, elev: 70},
     {id: 'jardiniere-2', type: 'railPlanter', name: 'Jardinière de lavande', r: [758, 300, 778, 370], rot: -90, elev: 70},
     {id: 'etagere-aromatiques', type: 'herbShelf', name: 'Étagère d\'aromatiques', r: [722, 130, 778, 165], rot: 0},
+    {id: 'barbecue', type: 'kettleBbq', name: 'Barbecue à charbon type Weber Original Kettle 57 cm', c: [722, 285], size: [58, 66], rot: -90},
     // salon de jardin bas (canapé au sud face au nord, pouf en biais, table basse au milieu)
     {id: 'salon-canape', type: 'gardenSofa', name: 'Canapé de jardin bas 2 places', r: [640, 553, 770, 623], rot: 180},
     {id: 'salon-pouf', type: 'gardenPouf', name: 'Pouf de jardin bas', c: [731, 424], size: [40, 40], rot: -12},
