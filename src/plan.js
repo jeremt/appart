@@ -191,19 +191,17 @@ export const furnitureDefs = [
     {id: 'meuble-entree', type: 'entryCoatBench', name: 'Amig Lukïen : porte-manteau avec banc et étagères à chaussures (183 x 66 x 32,5)', r: [95, 595.5, 161, 628], rot: 180, url: 'https://www.amazon.fr/dp/B0DK8WDHZN'},
     {id: 'sac-chaussons', type: 'slipperBag', name: 'Sac à chaussons', r: [100, 607, 130, 625], rot: 180, elev: 47},
     // Chambre
-    {id: 'lit', type: 'bed', name: 'Lit 160 x 200', r: [389, 2, 594, 164], rot: -90},
-    {id: 'tete-de-lit', type: 'walnutHeadboard', name: 'Tête de lit-tablette en noyer', r: [594, 2, 612, 150], rot: -90},
+    // lit tête au mur nord, centré sur ce mur (x 225 -> 612)
+    {id: 'lit', type: 'bed', name: 'Lit 160 x 200', c: [418.5, 120.5], size: [162, 205], rot: 0},
+    {id: 'tete-de-lit', type: 'walnutHeadboard', name: 'Tête de lit-tablette en noyer', c: [418.5, 9], size: [148, 18], rot: 0},
     {id: 'armoire', type: 'wardrobeGrid', name: 'Armoire', r: [BATH_X + INT, 30, 285, 140], rot: 90},
-    {id: 'bureau', type: 'standingDesk', name: 'Bureau assis-debout 160 x 60', r: [370, SPLIT_Y - 60, 530, SPLIT_Y], rot: 180},
-    // à gauche du bureau, contre la cloison (photo IMG_6672)
+    // à droite du lit, contre le mur nord
+    {id: 'kallax-chambre', type: 'kallax', name: 'Étagère IKEA KALLAX blanc 77x147 (802.758.87)', r: [510, 0, 586.5, 39], rot: 0, url: 'https://www.ikea.com/fr/fr/p/kallax-etagere-blanc-80275887/'},
+    // contre la cloison (photo IMG_6672)
     {id: 'radiateur-chambre', wall: true, type: 'tallPanelRadiator', name: 'Radiateur à panneaux 60 x 70', r: [542, SPLIT_Y - 12, 602, SPLIT_Y], rot: 180},
-    // panneaux perforés au-dessus du bureau (bas à 128 cm)
+    // panneaux perforés (bas à 128 cm)
     {id: 'skadis-1', wall: true, type: 'skadisCamera', name: 'Panneau perforé IKEA SKÅDIS 76x56 (505.343.78) + Sony α6500', r: [374, SPLIT_Y - 20, 450, SPLIT_Y], rot: 180, elev: 128, url: 'https://www.ikea.com/fr/fr/p/skadis-panneau-perfore-noir-50534378/'},
     {id: 'skadis-2', wall: true, type: 'skadisDrone', name: 'Panneau perforé IKEA SKÅDIS 76x56 (505.343.78) + DJI Mavic Air', r: [454, SPLIT_Y - 20, 530, SPLIT_Y], rot: 180, elev: 128, url: 'https://www.ikea.com/fr/fr/p/skadis-panneau-perfore-noir-50534378/'},
-    // posés sur le bureau (plateau à 74 cm)
-    {id: 'ecran', type: 'monitorArm', name: 'Écran 27" sur bras', r: [419, SPLIT_Y - 25, 481, SPLIT_Y - 5], rot: 180, elev: 74},
-    {id: 'macbook', type: 'macbookPro', name: 'MacBook Pro 14"', c: [501, 272], size: [31.3, 22.1], rot: -165, elev: 74},
-    {id: 'tabourets', type: 'kyrreStack', name: 'Tabourets IKEA KYRRE ×4 (604.169.25)', c: [330, 279], size: [42, 48], rot: 0, url: 'https://www.ikea.com/fr/fr/p/kyrre-tabouret-bouleau-60416925/'},
     // Balcon
     {id: 'guirlande', type: 'stringLights', name: 'Guirlande guinguette', r: [771, 132, 777, 612], rot: 90},
     {id: 'jardiniere-1', type: 'railPlanter', name: 'Jardinière de lavande', r: [758, 190, 778, 260], rot: -90, elev: 70},

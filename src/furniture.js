@@ -83,42 +83,6 @@ function Cyl(g, rTop, rBot, h, x, y, z, mat, alongZ = false) {
     return m;
 }
 
-function wardrobe(w, d) {
-    const g = new THREE.Group(),
-        hw = w / 2,
-        hd = d / 2,
-        h = 220;
-    B(g, -hw, hw, 0, h, -hd, hd - 2, MAT.white);
-    const n = w > 130 ? 3 : 2,
-        dw = (w - 2) / n;
-    for (let i = 0; i < n; i++) {
-        const a = -hw + 1 + i * dw,
-            b = a + dw - 0.6;
-        B(g, a, b, 3, h - 2, hd - 2, hd, MAT.front);
-        const hx = i % 2 === 0 ? b - 5 : a + 5;
-        B(g, hx - 0.7, hx + 0.7, 95, 135, hd, hd + 2.5, MAT.metal);
-    }
-    return g;
-}
-
-function tvStand(w, d) {
-    const g = new THREE.Group(),
-        hw = w / 2,
-        hd = d / 2,
-        h = 45;
-    B(g, -hw, hw, 6, h, -hd, hd, MAT.oak);
-    B(g, -hw + 3, hw - 3, 0, 6, -hd + 3, hd - 3, MAT.dark);
-    B(g, -hw + 3, -0.5, 10, h - 4, hd, hd + 0.8, MAT.wood);
-    B(g, 0.5, hw - 3, 10, h - 4, hd, hd + 0.8, MAT.wood);
-    const tw = Math.min(w * 0.85, 125),
-        th = tw * 0.58;
-    B(g, -15, 15, h, h + 1.5, -hd + 5, -hd + 21, MAT.dark);
-    B(g, -3, 3, h + 1.5, h + 12, -hd + 8, -hd + 11, MAT.dark);
-    B(g, -tw / 2, tw / 2, h + 8, h + 8 + th, -hd + 11, -hd + 14, MAT.dark);
-    B(g, -tw / 2 + 1, tw / 2 - 1, h + 9, h + 7 + th, -hd + 14, -hd + 14.3, MAT.screen);
-    return g;
-}
-
 function table(w, d) {
     const g = new THREE.Group(),
         hw = w / 2,
@@ -131,52 +95,6 @@ function table(w, d) {
                 z = sz * (hd - 6);
             B(g, x - 2.5, x + 2.5, 0, h - 4, z - 2.5, z + 2.5, MAT.wood);
         }
-    return g;
-}
-
-function chair(w, d) {
-    const g = new THREE.Group(),
-        hw = w / 2,
-        hd = d / 2,
-        sh = 45;
-    B(g, -hw + 1, hw - 1, sh - 4, sh, -hd + 2, hd - 1, MAT.oak);
-    for (const sx of [-1, 1])
-        for (const sz of [-1, 1]) {
-            const x = sx * (hw - 4),
-                z = sz * (hd - 5);
-            B(g, x - 1.5, x + 1.5, 0, sh - 4, z - 1.5, z + 1.5, MAT.wood);
-        }
-    for (const sx of [-1, 1]) B(g, sx * (hw - 4) - 1.5, sx * (hw - 4) + 1.5, sh, 90, -hd + 2, -hd + 5, MAT.wood);
-    B(g, -hw + 2, hw - 2, 68, 88, -hd + 2, -hd + 4.5, MAT.oak);
-    return g;
-}
-
-// Canapé d'angle : assise principale le long du bord gauche (face vers +x), méridienne en bas à droite.
-function sofaL(w, d) {
-    const g = new THREE.Group(),
-        hw = w / 2,
-        hd = d / 2;
-    const sd = 93, // profondeur assise principale (dossier compris)
-        bt = 18, // épaisseur dossier
-        cw = 100, // profondeur méridienne
-        bh = 82,
-        sh = 42,
-        ah = 60;
-    const X0 = -hw,
-        Z0 = -hd,
-        zA = Z0 + 18,
-        zB = hd - cw;
-    B(g, X0, X0 + bt, 0, bh, Z0, hd, MAT.fabric); // dossier
-    B(g, X0 + bt, X0 + sd, 0, ah, Z0, zA, MAT.fabric); // accoudoir
-    B(g, X0 + bt, X0 + sd, 0, 28, zA, hd, MAT.fabric); // socle
-    B(g, X0 + sd, hw, 0, 28, zB, hd, MAT.fabric); // socle méridienne
-    const n = 2,
-        seg = (zB - zA) / n;
-    for (let i = 0; i < n; i++) B(g, X0 + bt, X0 + sd, 28, sh, zA + i * seg + 0.5, zA + (i + 1) * seg - 0.5, MAT.cushion);
-    B(g, X0 + bt, hw, 28, sh, zB + 0.5, hd, MAT.cushion);
-    const backs = 3,
-        bseg = (hd - zA) / backs;
-    for (let i = 0; i < backs; i++) B(g, X0 + bt, X0 + bt + 14, sh, bh - 4, zA + i * bseg + 1, zA + (i + 1) * bseg - 1, MAT.cushion);
     return g;
 }
 
@@ -441,18 +359,6 @@ function fridge(w, d) {
     return g;
 }
 
-function washer(w, d) {
-    const g = new THREE.Group(),
-        hw = w / 2,
-        hd = d / 2;
-    B(g, -hw, hw, 0, 85, -hd, hd, MAT.gloss);
-    B(g, -hw + 2, hw - 2, 74, 82, hd, hd + 0.4, MAT.front);
-    Cyl(g, 3, 3, 2, hw - 12, 78, hd + 1, MAT.metal, true);
-    Cyl(g, 16, 16, 3, 0, 42, hd + 1.5, MAT.steel, true);
-    Cyl(g, 12, 12, 3.4, 0, 42, hd + 1.7, MAT.black, true);
-    return g;
-}
-
 function toilet(w, d) {
     const g = new THREE.Group(),
         hd = d / 2;
@@ -511,77 +417,6 @@ function bathtub(w, d) {
     return g;
 }
 
-function vanity(w, d) {
-    const g = new THREE.Group(),
-        hw = w / 2,
-        hd = d / 2;
-    B(g, -hw, hw, 20, 80, -hd, hd - 1, MAT.wood);
-    B(g, -hw + 1, hw - 1, 22, 78, hd - 1, hd, MAT.oak);
-    B(g, -15, 15, 70, 71.5, hd, hd + 2, MAT.metal);
-    B(g, -hw, hw, 80, 83, -hd, hd, MAT.ceramic);
-    Cyl(g, 18, 15, 12, 0, 89, 3, MAT.ceramic);
-    Cyl(g, 15.5, 15.5, 0.4, 0, 95.1, 3, MAT.steel);
-    Cyl(g, 1.3, 1.3, 18, 0, 92, -hd + 6, MAT.metal);
-    B(g, -1, 1, 99, 101, -hd + 6, -hd + 15, MAT.metal);
-    B(g, -hw + 5, hw - 5, 105, 170, -hd, -hd + 1.5, MAT.mirror);
-    return g;
-}
-
-function shower(w, d) {
-    const g = new THREE.Group(),
-        hw = w / 2,
-        hd = d / 2;
-    B(g, -hw, hw, 0, 6, -hd, hd, MAT.ceramic);
-    Cyl(g, 5, 5, 0.4, 0, 6.2, 0, MAT.steel);
-    B(g, hw - 1, hw, 6, 200, -hd, hd - 30, MAT.glass);
-    B(g, hw - 1.5, hw + 0.5, 198, 200, -hd, hd - 30, MAT.metal);
-    Cyl(g, 1.5, 1.5, 110, 0, 150, -hd + 3, MAT.metal);
-    B(g, -1, 1, 203, 205, -hd + 3, -hd + 28, MAT.metal);
-    Cyl(g, 11, 11, 1.5, 0, 202, -hd + 28, MAT.metal);
-    B(g, -8, 8, 100, 106, -hd, -hd + 5, MAT.metal);
-    return g;
-}
-
-function radiator(w, d) {
-    const g = new THREE.Group(),
-        hw = w / 2,
-        hd = d / 2;
-    const n = Math.max(3, Math.round(w / 5)),
-        step = w / n;
-    for (let i = 0; i < n; i++) {
-        const x = -hw + step * (i + 0.5);
-        B(g, x - step * 0.35, x + step * 0.35, 12, 72, -hd + 2, hd, MAT.gloss);
-    }
-    B(g, -hw, hw, 16, 19, -hd + 3, hd - 3, MAT.gloss);
-    B(g, -hw, hw, 65, 68, -hd + 3, hd - 3, MAT.gloss);
-    return g;
-}
-
-function buffet(w, d) {
-    const g = new THREE.Group(),
-        hw = w / 2,
-        hd = d / 2;
-    for (const sx of [-1, 1])
-        for (const sz of [-1, 1]) {
-            const x = sx * (hw - 5),
-                z = sz * (hd - 5);
-            B(g, x - 1.5, x + 1.5, 0, 15, z - 1.5, z + 1.5, MAT.dark);
-        }
-    B(g, -hw, hw, 15, 80, -hd, hd - 1, MAT.wood);
-    const n = 3,
-        dw = (w - 2) / n;
-    for (let i = 0; i < n; i++) {
-        const a = -hw + 1 + i * dw,
-            b = a + dw - 0.6;
-        B(g, a, b, 17, 78, hd - 1, hd, MAT.oak);
-        B(g, (a + b) / 2 - 6, (a + b) / 2 + 6, 70, 71.5, hd, hd + 2, MAT.dark);
-    }
-    Cyl(g, 5, 7, 22, -hw + 25, 91, 0, MAT.ceramic);
-    B(g, hw - 45, hw - 20, 80, 84, -8, 8, MAT.dark);
-    B(g, hw - 43, hw - 22, 84, 87, -7, 7, MAT.oak);
-    return g;
-}
-
 function plant(w, d) {
     const g = new THREE.Group(),
         rr = Math.min(w, d) / 2;
@@ -599,110 +434,7 @@ function plant(w, d) {
     return g;
 }
 
-
 // ---------- Meubles relevés sur les photos ----------
-
-function sofa(w, d) {
-    const g = new THREE.Group(),
-        hw = w / 2,
-        hd = d / 2,
-        arm = 16;
-    for (const sx of [-1, 1])
-        for (const sz of [-1, 1]) Cyl(g, 1.6, 1.6, 10, sx * (hw - 8), 5, sz * (hd - 8), MAT.metal);
-    B(g, -hw, hw, 10, 38, -hd, hd, MAT.leather);
-    B(g, -hw, -hw + arm, 38, 62, -hd, hd, MAT.leather);
-    B(g, hw - arm, hw, 38, 62, -hd, hd, MAT.leather);
-    B(g, -hw + arm, hw - arm, 38, 78, -hd, -hd + 20, MAT.leather);
-    const sw = (w - 2 * arm) / 2;
-    for (let i = 0; i < 2; i++) {
-        const a = -hw + arm + i * sw;
-        B(g, a + 0.5, a + sw - 0.5, 38, 47, -hd + 20, hd - 1, MAT.leatherSeat);
-        B(g, a + 0.5, a + sw - 0.5, 47, 76, -hd + 20, -hd + 30, MAT.leatherSeat);
-        // têtières réglables
-        B(g, a + 4, a + sw - 4, 78, 92, -hd + 4, -hd + 22, MAT.leather);
-    }
-    const c = B(g, hw - arm - 48, hw - arm - 6, 47, 85, -hd + 30, -hd + 42, MAT.beige);
-    c.rotation.x = -0.25;
-    return g;
-}
-
-function coffeeTable(w, d) {
-    const g = new THREE.Group(),
-        hw = w / 2,
-        hd = d / 2,
-        h = 45;
-    B(g, -hw, hw, h - 3, h, -hd, hd, MAT.walnut);
-    for (const sx of [-1, 1])
-        for (const sz of [-1, 1]) {
-            const x = sx * (hw - 2),
-                z = sz * (hd - 2);
-            B(g, x - 1.5, x + 1.5, 0, h - 3, z - 1.5, z + 1.5, MAT.blackMetal);
-        }
-    B(g, -hw + 2, hw - 2, 12, 13, -hd + 2, hd - 2, MAT.blackMetal);
-    B(g, -hw + 2, hw - 2, h - 6, h - 3, -hd + 1, -hd + 3, MAT.blackMetal);
-    B(g, -hw + 2, hw - 2, h - 6, h - 3, hd - 3, hd - 1, MAT.blackMetal);
-    Cyl(g, 4, 4, 9, -8, h + 4.5, 4, MAT.linen);
-    return g;
-}
-
-function shelfIndustrial(w, d) {
-    const g = new THREE.Group(),
-        hw = w / 2,
-        hd = d / 2,
-        h = 155;
-    for (const sx of [-1, 1])
-        for (const sz of [-1, 1]) {
-            const x = sx * (hw - 1.5),
-                z = sz * (hd - 1.5);
-            B(g, x - 1.5, x + 1.5, 0, h, z - 1.5, z + 1.5, MAT.blackMetal);
-        }
-    const levels = [8, 42, 76, 110, h - 2];
-    for (const y of levels) B(g, -hw + 1, hw - 1, y, y + 2, -hd + 1, hd - 1, MAT.oak);
-    // contenu : boîtes à chaussures, livres, enceinte
-    B(g, -hw + 6, -hw + 40, 10, 24, -hd + 4, hd - 4, MAT.dark);
-    B(g, -hw + 6, -hw + 40, 24, 36, -hd + 4, hd - 4, MAT.cardboard);
-    B(g, 0, hw - 6, 44, 62, -hd + 3, hd - 3, MAT.dark);
-    B(g, -hw + 6, -10, 44, 54, -hd + 6, hd - 6, MAT.gloss);
-    B(g, -5, hw - 4, 78, 104, -hd + 2, hd - 2, MAT.dark);
-    B(g, -hw + 5, -hw + 30, 78, 98, -hd + 6, hd - 10, MAT.screen);
-    B(g, -hw + 6, -hw + 36, 112, 128, -hd + 4, hd - 4, MAT.dark);
-    for (let i = 0; i < 5; i++) B(g, 5 + i * 3, 7.5 + i * 3, h, h + 22 - (i % 2) * 4, -8, 8, i % 2 ? MAT.linen : MAT.fabric);
-    // lampe à bras posée sur le dessus
-    Cyl(g, 7, 8, 2, hw - 18, h + 1, 0, MAT.blackMetal);
-    Cyl(g, 1, 1, 70, hw - 18, h + 36, 0, MAT.blackMetal);
-    Cyl(g, 10, 6, 14, hw - 18, h + 74, 8, MAT.blackMetal).rotation.x = 1.1;
-    return g;
-}
-
-function plantGeneric(w, d, potMat, potH, stems) {
-    const g = new THREE.Group(),
-        rr = Math.min(w, d) / 2;
-    Cyl(g, rr * 0.8, rr * 0.62, potH, 0, potH / 2, 0, potMat);
-    Cyl(g, rr * 0.74, rr * 0.74, 1, 0, potH - 1, 0, MAT.dark);
-    for (const [x, z, h, s] of stems) {
-        Cyl(g, 1.3, 1.8, h, x, potH + h / 2, z, MAT.wood);
-        const f = new THREE.Mesh(new THREE.IcosahedronGeometry(s / 100, 0), MAT.leaf);
-        f.position.set(x / 100, (potH + h + s * 0.5) / 100, z / 100);
-        f.scale.set(1.3, 0.8, 1.3);
-        f.rotation.y = x;
-        f.castShadow = f.receiveShadow = true;
-        g.add(f);
-    }
-    return g;
-}
-
-const plantTall = (w, d) =>
-    plantGeneric(w, d, MAT.pink, 32, [
-        [0, 0, 105, 26],
-        [6, 4, 75, 22],
-        [-6, -3, 50, 20],
-    ]);
-const plantSmall = (w, d) =>
-    plantGeneric(w, d, MAT.dark, 36, [
-        [0, 0, 18, 22],
-        [5, -4, 8, 16],
-    ]);
-
 
 function poster(w, d) {
     const g = new THREE.Group(),
@@ -812,35 +544,6 @@ function wardrobeGrid(w, d) {
     line(-hw / 2 - 0.4, -hw / 2 + 0.4, 40, 100);
     line(0, hw - 1, 40 - 0.4, 40 + 0.4);
     B(g, -hw + 8, hw - 20, h, h + 25, -hd + 8, hd - 8, MAT.cardboard);
-    return g;
-}
-
-// Chaise scandinave : coque blanche, pieds bois.
-function chairScandi(w, d) {
-    const g = new THREE.Group(),
-        hw = w / 2,
-        hd = d / 2;
-    for (const sx of [-1, 1])
-        for (const sz of [-1, 1]) {
-            const leg = Cyl(g, 1.6, 1.2, 46, sx * (hw - 9), 22, sz * (hd - 12), MAT.oak);
-            leg.rotation.z = sx * 0.12;
-            leg.rotation.x = -sz * 0.12;
-        }
-    B(g, -hw + 7, hw - 7, 32, 35, -hd + 10, hd - 10, MAT.oak);
-    B(g, -hw + 3, hw - 3, 44, 48, -hd + 5, hd - 3, MAT.plastic);
-    const back = B(g, -hw + 3, hw - 3, 48, 84, -hd + 3, -hd + 6, MAT.plastic);
-    back.rotation.x = -0.12;
-    B(g, -hw + 3, -hw + 6, 48, 62, -hd + 5, hd - 10, MAT.plastic);
-    B(g, hw - 6, hw - 3, 48, 62, -hd + 5, hd - 10, MAT.plastic);
-    return g;
-}
-
-function bistroTable(w, d) {
-    const g = new THREE.Group(),
-        r = Math.min(w, d) / 2;
-    Cyl(g, r, r, 2, 0, 72, 0, MAT.steel);
-    Cyl(g, 2, 2, 70, 0, 36, 0, MAT.steel);
-    Cyl(g, 22, 24, 2, 0, 1, 0, MAT.steel);
     return g;
 }
 
@@ -1411,106 +1114,6 @@ function stackedChairs(w, d) {
     return g;
 }
 
-// ---------- Yucca ----------
-
-// Feuille de yucca : lame étroite et pointue, pliée en V le long de la nervure, qui s'arque.
-// Repère local : base en (0, 0), pointe en (0, L) sur l'axe y, face vers +z.
-function yuccaLeaf(L, W, droop) {
-    const s = new THREE.Shape();
-    const half = [
-        [0.25, 0],
-        [0.5, 0.15],
-        [0.5, 0.6],
-        [0.3, 0.88],
-        [0, 1],
-    ];
-    s.moveTo(-0.25 * W, 0);
-    half.forEach(([x, y]) => s.lineTo(x * W, y * L));
-    half.slice(0, -1).reverse().forEach(([x, y]) => s.lineTo(-x * W, y * L));
-    const geo = new THREE.ShapeGeometry(s, 8);
-    const p = geo.attributes.position;
-    for (let i = 0; i < p.count; i++) {
-        const x = p.getX(i) / W,
-            y = p.getY(i) / L;
-        p.setZ(i, Math.abs(x) * 0.25 * W - y * y * droop * L);
-    }
-    geo.computeVertexNormals();
-    return geo;
-}
-
-// Yucca elephantipes ≈ 199 cm : pot Ø 32 cm, trois troncs de hauteurs différentes,
-// chacun coiffé d'une rosette de feuilles en lame (les jeunes dressées, les vieilles retombantes).
-function yucca(w, d) {
-    const g = new THREE.Group();
-    let seed = 1990;
-    const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-    const r = Math.min(w, d) / 2,
-        potH = 30;
-    const potMat = std(0xe9e6df, {roughness: 0.85});
-    Cyl(g, r, r * 0.82, potH, 0, potH / 2, 0, potMat);
-    Cyl(g, r - 1.2, r - 1.2, 1, 0, potH - 2, 0, std(0x3a2a1e, {roughness: 1}));
-    const bark = std(0x7a6450, {roughness: 0.95});
-    const scar = std(0x5e4b3b, {roughness: 1});
-    const leafMat = new THREE.MeshStandardMaterial({color: 0x3f7d36, roughness: 0.6, side: THREE.DoubleSide});
-    const oldMat = new THREE.MeshStandardMaterial({color: 0x5d8a3c, roughness: 0.7, side: THREE.DoubleSide});
-
-    const up = new THREE.Vector3(0, 1, 0);
-    // [angle, écart au centre en tête (cm), hauteur du sommet du tronc (cm), rayon du tronc]
-    // troncs penchés vers l'avant (+z), loin du mur
-    const trunks = [
-        [1.3, 8, 152, 4.2],
-        [0.2, 14, 112, 3.6],
-        [2.5, 15, 78, 3.2],
-    ];
-    for (const [phi, spread, top, tr] of trunks) {
-        const c = Math.cos(phi),
-            s = Math.sin(phi);
-        const base = new THREE.Vector3((c * 4) / 100, (potH - 2) / 100, (s * 4) / 100);
-        const mid = new THREE.Vector3((c * spread * 0.45) / 100, (potH + (top - potH) * 0.5) / 100, (s * spread * 0.45) / 100);
-        const head = new THREE.Vector3((c * spread) / 100, top / 100, (s * spread) / 100);
-        const curve = new THREE.CatmullRomCurve3([base, mid, head]);
-        const trunk = new THREE.Mesh(new THREE.TubeGeometry(curve, 16, tr / 100, 10), bark);
-        trunk.castShadow = trunk.receiveShadow = true;
-        g.add(trunk);
-        // pied renflé (patte d'éléphant) et cicatrices de feuilles annelées
-        const foot = Cyl(g, tr, tr * 1.5, 8, base.x * 100, potH + 2, base.z * 100, bark);
-        foot.castShadow = true;
-        for (let t = 0.15; t < 0.97; t += 0.06 + rnd() * 0.05) {
-            const pt = curve.getPoint(t),
-                tg = curve.getTangent(t);
-            const ring = new THREE.Mesh(new THREE.TorusGeometry(tr / 100, 0.0035, 4, 14), scar);
-            ring.position.copy(pt);
-            ring.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), tg);
-            g.add(ring);
-        }
-        // coupe du tronc sous la rosette
-        const cap = Cyl(g, tr * 0.9, tr, 3, head.x * 100, top + 1, head.z * 100, scar);
-        cap.castShadow = true;
-
-        // rosette : du plus vieux (bas, retombant) au plus jeune (haut, dressé)
-        const n = 34;
-        for (let i = 0; i < n; i++) {
-            const k = i / (n - 1);
-            const a = i * 2.39996 + rnd() * 0.3;
-            const elev = -0.55 + k * 1.95 + (rnd() - 0.5) * 0.25; // -30° → +80°
-            const L = 50 - k * 18 + rnd() * 10,
-                W = 4.2 + rnd() * 0.8;
-            const dir = new THREE.Vector3(Math.cos(a) * Math.cos(elev), Math.sin(elev), Math.sin(a) * Math.cos(elev)).normalize();
-            const xAxis = new THREE.Vector3().crossVectors(up, dir).normalize();
-            const zAxis = new THREE.Vector3().crossVectors(xAxis, dir).normalize();
-            if (zAxis.y < 0) zAxis.negate(), xAxis.negate();
-            const droop = 0.08 + (1 - k) * 0.22;
-            const leaf = new THREE.Mesh(yuccaLeaf(L / 100, W / 100, droop), k < 0.25 ? oldMat : leafMat);
-            const at = head.clone().add(new THREE.Vector3(0, (-6 + k * 7) / 100, 0));
-            leaf.matrixAutoUpdate = false;
-            leaf.matrix.makeBasis(xAxis, dir, zAxis).setPosition(at);
-            leaf.castShadow = leaf.receiveShadow = true;
-            g.add(leaf);
-        }
-    }
-    return g;
-}
-
 // ---------- Onewheel sur son support ----------
 
 // Onewheel rangé debout (nez en haut) dans un support métal noir.
@@ -1558,69 +1161,6 @@ function onewheelStand(w, d) {
     fender.position.y = yc / 100;
     fender.castShadow = true;
     g.add(fender);
-    return g;
-}
-
-// ---------- Bureau assis-debout ----------
-
-// Plateau w x d (160 x 80), piètement noir à deux colonnes télescopiques, pieds en T.
-// Réglé en position assise (plateau à 74 cm) ; `h` permet de le monter.
-function standingDesk(w, d, h = 74) {
-    const g = new THREE.Group(),
-        hw = w / 2,
-        hd = d / 2,
-        t = 2.5;
-    const frame = std(0x1b1c1e, {roughness: 0.45, metalness: 0.4});
-    B(g, -hw, hw, h - t, h, -hd, hd, MAT.oak); // plateau
-    const lx = hw - 18; // colonnes en retrait des bords
-    for (const sx of [-1, 1]) {
-        const x = sx * lx;
-        B(g, x - 3.5, x + 3.5, 0, 3, -hd + 6, hd - 6, frame); // pied
-        for (const z of [-hd + 6, hd - 6]) B(g, x - 3.5, x + 3.5, -0.5, 0, z - 2, z + 2, frame); // patins
-        B(g, x - 3.5, x + 3.5, 3, 45, -2.5, 2.5, frame); // colonne basse
-        B(g, x - 3, x + 3, 45, h - t - 3, -2, 2, frame); // colonne haute
-        B(g, x - 3.5, x + 3.5, h - t - 3, h - t, -hd + 10, hd - 10, frame); // bras sous plateau
-    }
-    B(g, -lx, lx, h - t - 6, h - t - 1, -3, 3, frame); // traverse moteur
-    B(g, hw - 30, hw - 18, h - t - 2.5, h - t, hd - 6, hd - 1, frame); // boîtier de commande
-    return g;
-}
-
-// ---------- Bureau : MacBook Pro + écran ----------
-
-const screenOn = () =>
-    std(0x16223a, {roughness: 0.15, emissive: 0x2c4778, emissiveIntensity: 0.55});
-
-// MacBook Pro 14" (31,3 x 22,1 x 1,55 cm), ouvert, écran vers l'arrière, clavier côté +z.
-function macbookPro(w, d) {
-    const g = new THREE.Group(),
-        hw = w / 2,
-        hd = d / 2,
-        t = 1.55;
-    const alu = std(0x3a3b3f, {roughness: 0.35, metalness: 0.7, envMap: MAT.chrome.envMap});
-    B(g, -hw, hw, 0, t, -hd, hd, alu);
-    B(g, -hw + 2, hw - 2, t, t + 0.05, -hd + 2.5, -hd + 12, MAT.black); // clavier
-    B(g, -6.5, 6.5, t, t + 0.05, hd - 9.5, hd - 1.5, std(0x47484c, {roughness: 0.25})); // trackpad
-    const lid = new THREE.Group();
-    lid.position.set(0, t / 100, -hd / 100);
-    lid.rotation.x = -0.3; // ouvert à ~105°
-    B(lid, -hw, hw, 0, d - 0.5, -0.6, 0, alu);
-    B(lid, -hw + 0.6, hw - 0.6, 0.6, d - 1.1, 0, 0.05, MAT.black);
-    B(lid, -hw + 1.2, hw - 1.2, 1.4, d - 1.6, 0.05, 0.1, screenOn());
-    g.add(lid);
-    return g;
-}
-
-// Écran 27" (panneau 61,4 x 36,3 cm) sur pied aluminium, dalle vers +z.
-function monitor27(w, d) {
-    const g = new THREE.Group(),
-        hw = w / 2,
-        hd = d / 2;
-    const alu = std(0xb9bcc0, {roughness: 0.3, metalness: 0.8, envMap: MAT.chrome.envMap});
-    B(g, -11, 11, 0, 1, -hd, -hd + 18, alu); // pied
-    B(g, -3.5, 3.5, 1, 30, -hd + 2, -hd + 4.5, alu); // bras
-    B(g, -hw, hw, 9, 9 + 36.3, -hd + 4.5, -hd + 7, MAT.dark); // dos + cadre
-    B(g, -hw + 0.8, hw - 0.8, 9.8, 8.2 + 36.3, -hd + 7, -hd + 7.1, screenOn());
     return g;
 }
 
@@ -1879,7 +1419,6 @@ function entryCoatBench(w, d) {
     return g;
 }
 
-
 // ---------- Sac à chaussons ----------
 
 // Panier souple en feutre gris, ouvert, deux anses, une paire de chaussons qui dépasse.
@@ -1910,10 +1449,6 @@ function slipperBag(w, d) {
     }
     return g;
 }
-
-// ---------- Étagères électroménager (au-dessus du Onewheel) ----------
-
-// Deux tablettes chêne sur équerres noires, dessus à 100 et 150 cm, fixées au mur (dos -z).
 
 // ---------- Rice cooker ----------
 
@@ -1996,26 +1531,6 @@ function vessel(r, depth, flare) {
     m.rotation.x = Math.PI / 2; // axe de révolution vers +z : intérieur face à la pièce
     m.castShadow = m.receiveShadow = true;
     return m;
-}
-
-// Casserole suspendue par son manche : origine à l'œillet du crochet, manche dans le plan z = 0,
-// fond vers -z et ouverture vers +z (à tourner vers le support).
-function hangingPot(r, depth, len = 15) {
-    const {inox, brass} = cookwareMat();
-    const p = new THREE.Group();
-    const zh = depth * 0.7; // hauteur du manche sur la paroi, depuis le fond
-    const body = vessel(r, depth, 0.3);
-    body.position.set(0, -(len + r) / 100, -zh / 100);
-    p.add(body);
-    Cyl(p, 0.75, 1.15, len, 0, -len / 2, 0, brass);
-    const eye = new THREE.Mesh(new THREE.TorusGeometry(0.012, 0.004, 8, 16), brass);
-    p.add(eye);
-    for (const sx of [-1, 1]) {
-        const rv = new THREE.Mesh(new THREE.SphereGeometry(0.005, 8, 6), inox);
-        rv.position.set((sx * 1.4) / 100, -(len + 0.5) / 100, 0);
-        p.add(rv);
-    }
-    return p;
 }
 
 // ---------- Grille murale de cuisine ----------
@@ -2196,45 +1711,7 @@ function kitchenGrid(w, d) {
     return g;
 }
 
-// ---------- Lampadaire arc ----------
-
-// Lampadaire arc : socle rond en marbre noir (centré sur l'emprise), mât inox brossé
-// qui monte puis décrit un arc vers l'avant (+z) jusqu'à un abat-jour demi-sphère.
-function arcLamp(w, d, reach = 140) {
-    const g = new THREE.Group();
-    const inox = std(0xb5b8bb, {metalness: 0.9, roughness: 0.38, envMap: MAT.chrome.envMap});
-    const marble = std(0x161718, {roughness: 0.2});
-    const r = Math.min(w, d) / 2;
-    Cyl(g, r, r, 4, 0, 2, 0, marble);
-    // mât : vertical jusqu'à 110 cm puis arc (courbe de Bézier) culminant vers 205 cm
-    const m = (x, y, z) => new THREE.Vector3(x / 100, y / 100, z / 100);
-    const curve = new THREE.CurvePath();
-    curve.add(new THREE.LineCurve3(m(0, 4, 0), m(0, 110, 0)));
-    curve.add(new THREE.CubicBezierCurve3(m(0, 110, 0), m(0, 205, 5), m(0, 225, reach * 0.45), m(0, 185, reach)));
-    const pole = new THREE.Mesh(new THREE.TubeGeometry(curve, 80, 0.011, 10), inox);
-    pole.castShadow = true;
-    g.add(pole);
-    Cyl(g, 1.6, 1.6, 4, 0, 108, 0, inox); // bague de réglage
-    // abat-jour : demi-sphère ouverte vers le bas, intérieur blanc lumineux
-    const shadeR = 0.19;
-    const shade = new THREE.Mesh(new THREE.SphereGeometry(shadeR, 32, 12, 0, Math.PI * 2, 0, Math.PI / 2), inox);
-    shade.position.set(0, 1.6, reach / 100);
-    shade.castShadow = true;
-    g.add(shade);
-    const inner = new THREE.Mesh(
-        new THREE.SphereGeometry(shadeR - 0.004, 32, 12, 0, Math.PI * 2, 0, Math.PI / 2),
-        new THREE.MeshStandardMaterial({color: 0xffffff, emissive: 0xfff1d6, emissiveIntensity: 0.6, side: THREE.BackSide}),
-    );
-    inner.position.copy(shade.position);
-    g.add(inner);
-    Cyl(g, 1.2, 1.2, 25, 0, 172, reach, inox); // tige entre arc et abat-jour
-    // lumière chaude vers le bas
-    const light = new THREE.SpotLight(0xffd9a0, 6, 4, Math.PI / 3.2, 0.7, 1.5);
-    light.position.set(0, 1.58, reach / 100);
-    light.target.position.set(0, 0, reach / 100);
-    g.add(light, light.target);
-    return g;
-}
+// ---------- Suspension papier ----------
 
 // Suspension IKEA GULLSUDARE Ø70 : boule de papier de riz tendue sur un fil d'acier en spirale
 // (nervures horizontales), ouverte en haut et en bas, cordon noir jusqu'au plafond.
@@ -2341,28 +1818,6 @@ function stringLights(w, d) {
     return g;
 }
 
-// Olivier en pot béton.
-function oliveTree(w, d) {
-    const g = new THREE.Group(),
-        r = Math.min(w, d) / 2;
-    const rnd = seeded(31);
-    const concrete = std(0xa9a8a3, {roughness: 0.95});
-    const bark = std(0x6b5a48, {roughness: 1});
-    const leaves = new THREE.MeshStandardMaterial({color: 0x75876a, roughness: 0.8, flatShading: true});
-    Cyl(g, r * 0.95, r * 0.75, 45, 0, 22.5, 0, concrete);
-    Cyl(g, r * 0.85, r * 0.85, 1, 0, 44, 0, std(0x3a2a1e, {roughness: 1}));
-    const m = (x, y, z) => new THREE.Vector3(x / 100, y / 100, z / 100);
-    const trunk = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([m(0, 44, 0), m(3, 80, 1), m(-2, 110, 2), m(1, 125, 0)]), 20, 0.022, 8), bark);
-    trunk.castShadow = true;
-    g.add(trunk);
-    for (let i = 0; i < 11; i++) {
-        const a = rnd() * Math.PI * 2,
-            rr = 8 + rnd() * 18;
-        foliage(g, Math.cos(a) * rr, 115 + rnd() * 50, Math.sin(a) * rr, 11 + rnd() * 7, leaves, 0.7);
-    }
-    return g;
-}
-
 // Jardinière accrochée au garde-corps (face avant +z vers le balcon) avec lavande.
 function railPlanter(w, d) {
     const g = new THREE.Group(),
@@ -2439,9 +1894,6 @@ function herbShelf(w, d) {
     return g;
 }
 
-// Couleur de la collection bistrot (vert sauge laqué).
-const bistroColor = () => std(0x6f9483, {roughness: 0.45, metalness: 0.3});
-
 // Tube droit entre deux points (cm), rayon r.
 function rod(g, a, b, r, mat) {
     const A = new THREE.Vector3(...a).divideScalar(100),
@@ -2455,111 +1907,7 @@ function rod(g, a, b, r, mat) {
     return m;
 }
 
-// Table bistrot pliante : plateau rond en tôle laquée à rebord, pieds tubulaires en croix.
-function bistroTableRound(w, d) {
-    const g = new THREE.Group(),
-        r = Math.min(w, d) / 2,
-        h = 74;
-    const lac = bistroColor();
-    Cyl(g, r, r, 1, 0, h - 0.5, 0, lac);
-    const rim = new THREE.Mesh(new THREE.TorusGeometry(r / 100, 0.01, 8, 48), lac);
-    rim.rotation.x = Math.PI / 2;
-    rim.position.y = (h - 1.2) / 100;
-    g.add(rim);
-    // 4 pieds : partent sous le plateau près du centre et s'écartent jusqu'au sol
-    const top = r * 0.3,
-        foot = r * 0.62;
-    for (let k = 0; k < 4; k++) {
-        const a = (k * Math.PI) / 2 + Math.PI / 4;
-        const c = Math.cos(a),
-            sn = Math.sin(a);
-        rod(g, [c * top, h - 1, sn * top], [c * foot, 0, sn * foot], 0.9, lac);
-    }
-    // anneau de rigidité à mi-hauteur
-    const ringY = 28,
-        ringR = top + (foot - top) * (1 - ringY / (h - 1));
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(ringR / 100, 0.006, 6, 32), lac);
-    ring.rotation.x = Math.PI / 2;
-    ring.position.y = ringY / 100;
-    g.add(ring);
-    // déco : bougie et petit pot
-    Cyl(g, 3.5, 3.5, 7, -8, h + 3.5, 4, std(0xf3efe6, {roughness: 0.9}));
-    Cyl(g, 4.5, 3.5, 8, 9, h + 4, -6, std(0xb8613a, {roughness: 0.8}));
-    foliage(g, 9, h + 11, -6, 5, new THREE.MeshStandardMaterial({color: 0x4f8f3a, roughness: 0.8, flatShading: true}));
-    return g;
-}
-
-// Chaise bistrot pliante (face avant +z) : deux cadres latéraux tubulaires, assise à lattes
-// transversales, dossier à deux lattes cintrées fixées sur les montants arrière inclinés.
-function bistroChair(w, d) {
-    const g = new THREE.Group(),
-        hw = w / 2,
-        hd = d / 2,
-        sh = 45, // hauteur d'assise
-        top = 88; // haut du dossier
-    const lac = bistroColor();
-    const lacDS = new THREE.MeshStandardMaterial({color: 0x6f9483, roughness: 0.45, metalness: 0.3, side: THREE.DoubleSide});
-    const xs = hw - 2.5; // écartement des cadres
-    // montant arrière incliné vers l'arrière : z(y) = zRear0 - lean * y / top
-    const zRear0 = -hd + 9,
-        lean = 8;
-    const zRear = (y) => zRear0 - (lean * y) / top;
-    const zFront = hd - 3;
-    for (const sx of [-1, 1]) {
-        const x = sx * xs;
-        rod(g, [x, 0, zRear0], [x, top, zRear(top)], 0.9, lac); // pied arrière + montant de dossier
-        rod(g, [x, 0, zFront], [x, sh - 1, zFront - 1], 0.9, lac); // pied avant
-        rod(g, [x, sh - 1.5, zFront - 1], [x, sh - 1.5, zRear(sh)], 0.8, lac); // longeron d'assise
-    }
-    // entretoises basses avant / arrière
-    rod(g, [-xs, 14, zFront - 0.3], [xs, 14, zFront - 0.3], 0.6, lac);
-    rod(g, [-xs, 14, zRear(14)], [xs, 14, zRear(14)], 0.6, lac);
-    // assise : lattes transversales (selon x), légèrement bombées
-    const n = 6,
-        z0 = zRear(sh) + 1.5,
-        z1 = zFront + 0.5;
-    for (let i = 0; i < n; i++) {
-        const zc = z0 + ((i + 0.5) * (z1 - z0)) / n;
-        const bump = Math.sin(((i + 0.5) / n) * Math.PI) * 0.6;
-        B(g, -xs - 0.8, xs + 0.8, sh - 1 + bump, sh + 0.2 + bump, zc - 2.4, zc + 2.4, lac);
-    }
-    // dossier : deux lattes cintrées (creuses vers l'avant) passant par les montants
-    const R = 32,
-        half = Math.asin((xs + 0.6) / R);
-    for (const y of [69, 81]) {
-        const zp = zRear(y);
-        const slat = new THREE.Mesh(new THREE.CylinderGeometry(R / 100, R / 100, 0.075, 28, 1, true, Math.PI - half, 2 * half), lacDS);
-        // le centre de l'arc est devant : les extrémités tombent sur les montants (x = ±xs, z = zp)
-        slat.position.set(0, y / 100, (zp + Math.sqrt(R * R - (xs + 0.6) ** 2)) / 100);
-        slat.castShadow = true;
-        g.add(slat);
-    }
-    return g;
-}
-
-// Trois pots d'aromatiques en terre cuite (basilic, romarin, thym).
-function herbPots(w, d) {
-    const g = new THREE.Group(),
-        hw = w / 2;
-    const rnd = seeded(11);
-    const terracotta = std(0xb8613a, {roughness: 0.8});
-    const greens = [0x4f8f3a, 0x50663f, 0x6c7d4e].map((c) => new THREE.MeshStandardMaterial({color: c, roughness: 0.8, flatShading: true}));
-    greens.forEach((mat, i) => {
-        const x = -hw + 10 + i * ((w - 20) / 2),
-            r = 9 - i;
-        Cyl(g, r, r * 0.75, 16, x, 8, 0, terracotta);
-        Cyl(g, r + 0.6, r + 0.6, 2.5, x, 15.5, 0, terracotta);
-        for (let k = 0; k < 6; k++) foliage(g, x + (rnd() - 0.5) * r, 20 + rnd() * 8, (rnd() - 0.5) * r, 4 + rnd() * 3, mat, 0.9);
-    });
-    return g;
-}
-
 // ---------- Étagères murales ----------
-
-// Tablette flottante en chêne fixée au mur (dos en -z), à la hauteur y (cm).
-function floatingShelf(g, w, d, y, mat = MAT.oak) {
-    B(g, -w / 2, w / 2, y - 3, y, -d / 2, d / 2, mat);
-}
 
 // Affiche abstraite peinte sur canvas, palette chaude (rouille, ocre, brun, crème, touches de bleu).
 function artMaterial(kind, w, h) {
@@ -2743,19 +2091,6 @@ function bowl(g, x, y, z, r, h, mat) {
     m.castShadow = m.receiveShadow = true;
     g.add(m);
 }
-
-// Pile d'assiettes à bord relevé.
-function plates(g, x, y, z, r, n, mat) {
-    for (let i = 0; i < n; i++) {
-        const pts = [new THREE.Vector2(0, 0), new THREE.Vector2((r * 0.7) / 100, 0), new THREE.Vector2(r / 100, 0.012), new THREE.Vector2(r / 100, 0.016)];
-        const m = new THREE.Mesh(new THREE.LatheGeometry(pts, 32), mat);
-        m.position.set(x / 100, (y + i * 1.6) / 100, z / 100);
-        m.castShadow = m.receiveShadow = true;
-        g.add(m);
-    }
-}
-
-// Étagère murale de l'entrée : grès beige et noir (assiettes, bols, tasses).
 
 // ---------- Colonnes de rangement ----------
 
@@ -3078,112 +2413,31 @@ function convertibleTable(w, d) {
     return g;
 }
 
-// ---------- Tabourets empilables IKEA KYRRE (604.169.25) ----------
+// ---------- Étagère IKEA KALLAX ----------
 
-// KYRRE : assise triangulaire arrondie en contreplaqué bouleau (34 x 35 cm), 3 pieds en bois
-// cintré qui partent des angles ; 42 x 48 x 45 cm au sol (fiche IKEA). Empilés en tournant
-// chaque tabouret de 60° : les pieds du tabouret du dessus passent au droit des côtés de celui du dessous.
-const KYRRE_R0 = 17.5; // rayon moyen de l'assise (cm)
-const kyrreRadius = (theta) => KYRRE_R0 * (1 + 0.18 * Math.cos(3 * theta));
-
-function kyrreStool(rotation) {
-    const g = new THREE.Group();
-    const {veneer, edge} = plywood();
-    // assise : contour triangulaire arrondi, chant à plis visible
-    const s = new THREE.Shape();
-    const N = 72;
-    for (let i = 0; i <= N; i++) {
-        const t = (i / N) * Math.PI * 2;
-        const r = kyrreRadius(t) / 100;
-        // repère de la forme : x = x monde, y = -z monde
-        const x = Math.sin(t) * r,
-            y = -Math.cos(t) * r;
-        i ? s.lineTo(x, y) : s.moveTo(x, y);
-    }
-    const band = edge.clone();
-    band.map = edge.map.clone();
-    band.map.wrapS = band.map.wrapT = THREE.RepeatWrapping;
-    band.map.repeat.set(6, 1 / 0.02);
-    band.map.needsUpdate = true;
-    const seatGeo = new THREE.ExtrudeGeometry(s, {depth: 0.02, bevelEnabled: false, curveSegments: 1});
-    seatGeo.rotateX(-Math.PI / 2);
-    const seat = new THREE.Mesh(seatGeo, [veneer, band]);
-    seat.position.y = 0.43;
-    seat.castShadow = seat.receiveShadow = true;
-    g.add(seat);
-
-    // pieds : lame de contreplaqué 4,5 x 1,8 cm, horizontale sous l'assise puis cintrée vers le sol
-    const strip = new THREE.Shape();
-    strip.moveTo(-0.009, -0.0225);
-    strip.lineTo(0.009, -0.0225);
-    strip.lineTo(0.009, 0.0225);
-    strip.lineTo(-0.009, 0.0225);
-    strip.closePath();
-    for (let k = 0; k < 3; k++) {
-        const t = (k * Math.PI * 2) / 3; // angles de l'assise
-        const dir = (r, y) => new THREE.Vector3((Math.sin(t) * r) / 100, y / 100, (Math.cos(t) * r) / 100);
-        const path = new THREE.CatmullRomCurve3([dir(9, 42.1), dir(15, 42.1), dir(19.2, 40.8), dir(20.6, 37), dir(22.6, 18), dir(24.2, 0.5)]);
-        const leg = new THREE.Mesh(new THREE.ExtrudeGeometry(strip, {steps: 40, bevelEnabled: false, extrudePath: path}), veneer);
-        leg.castShadow = leg.receiveShadow = true;
-        g.add(leg);
-    }
-    g.rotation.y = rotation;
-    return g;
-}
-
-// Pile de n tabourets KYRRE (5 cm de décalage vertical par tabouret, rotation alternée de 60°).
-function kyrreStack(w, d, n = 4) {
-    const g = new THREE.Group();
-    for (let i = 0; i < n; i++) {
-        const st = kyrreStool(i % 2 ? Math.PI / 3 : 0);
-        st.position.y = (i * 5) / 100;
-        g.add(st);
-    }
-    return g;
-}
-
-// ---------- Écran 27" sur bras articulé ----------
-
-// Écran 27" (dalle 61,4 x 36,3 cm) tenu par un bras à ressort fixé par une pince au bord arrière
-// du bureau (côté -z). Origine : dessus du plateau ; la dalle flotte à ~12 cm au-dessus.
-function monitorArm(w, d) {
+// Étagère IKEA KALLAX (2 cases de large, n de haut) : cadre extérieur épais (~3,9 cm),
+// tablettes et montant intérieurs fins (~1,7 cm), cases d'environ 33,5 cm.
+function kallax(w, d, h = 146.5, cols = 2, rows = 4) {
     const g = new THREE.Group(),
         hw = w / 2,
-        hd = d / 2;
-    const arm = std(0x2a2b2e, {roughness: 0.4, metalness: 0.6});
-    const joint = std(0xb9bcc0, {roughness: 0.3, metalness: 0.8, envMap: MAT.chrome.envMap});
-    // pince en C sur le chant arrière du plateau (plateau de 2,5 cm)
-    const px = -hw + 14,
-        pz = -hd - 0.5; // mât derrière l'écran ; la mâchoire arrive pile au bord arrière du plateau
-    B(g, px - 4, px + 4, 0, 1.2, pz - 3, pz + 5, arm);
-    B(g, px - 4, px + 4, -9, 0, pz - 4.5, pz - 3, arm);
-    B(g, px - 4, px + 4, -9, -7.5, pz - 3, pz + 4, arm);
-    Cyl(g, 1, 1, 4, px, -5.5, pz + 1, joint); // vis de serrage
-    // mât vertical
-    Cyl(g, 1.6, 1.6, 42, px, 21, pz + 1, arm);
-    Cyl(g, 2, 2, 3, px, 41, pz + 1, joint); // collier
-    // bras : deux segments articulés qui restent derrière la dalle jusqu'à la tête VESA
-    const yA = 40,
-        yHead = 30,
-        zHead = 2, // pivot de la tête, avancé pour que l'écran tourné ne touche pas le mur
-        swivel = 0.6; // écran orienté en diagonale (~35°)
-    const elbow = [px + 24, yA, pz + 2.5];
-    rod(g, [px, yA, pz + 1], elbow, 1.5, arm);
-    rod(g, [px, yA - 3, pz + 1], [elbow[0], yA - 3, elbow[2]], 0.6, joint); // vérin à gaz
-    Cyl(g, 2.2, 2.2, 5, ...elbow, joint);
-    rod(g, elbow, [0, yHead, zHead], 1.4, arm);
-    Cyl(g, 1.8, 1.8, 4, 0, yHead, zHead, joint);
-    // tête pivotante : plaque VESA + écran, tournés autour de l'axe vertical du pivot
-    const head = new THREE.Group();
-    head.position.set(0, yHead / 100, zHead / 100);
-    head.rotation.y = swivel;
-    g.add(head);
-    B(head, -5, 5, -5, 5, 1.5, 3, arm); // plaque VESA
-    const y0 = -36.3 / 2;
-    B(head, -30.7, 30.7, y0, y0 + 36.3, 3, 4.6, MAT.dark);
-    B(head, -12, 12, y0 + 8, y0 + 28, 2, 3, MAT.dark); // bosse arrière
-    const screen = std(0x16223a, {roughness: 0.15, emissive: 0x2c4778, emissiveIntensity: 0.55});
-    B(head, -30, 30, y0 + 1.6, y0 + 36.3 - 0.6, 4.6, 4.7, screen);
+        hd = d / 2,
+        t = 3.9,
+        ti = 1.7,
+        mat = MAT.white;
+    B(g, -hw, -hw + t, 0, h, -hd, hd, mat); // joues
+    B(g, hw - t, hw, 0, h, -hd, hd, mat);
+    B(g, -hw + t, hw - t, 0, t, -hd, hd, mat); // socle
+    B(g, -hw + t, hw - t, h - t, h, -hd, hd, mat); // dessus
+    const cw = (w - 2 * t - (cols - 1) * ti) / cols,
+        ch = (h - 2 * t - (rows - 1) * ti) / rows;
+    for (let i = 1; i < cols; i++) {
+        const x = -hw + t + i * cw + (i - 1) * ti;
+        B(g, x, x + ti, t, h - t, -hd, hd, mat);
+    }
+    for (let j = 1; j < rows; j++) {
+        const y = t + j * ch + (j - 1) * ti;
+        B(g, -hw + t, hw - t, y, y + ti, -hd, hd, mat);
+    }
     return g;
 }
 
@@ -3740,13 +2994,12 @@ function ikeaBar(w, d) {
 }
 
 export const BUILDERS = {
+    kallax,
     walnutHeadboard,
     ikeaBar,
     condiments,
     skadisCamera,
     skadisDrone,
-    monitorArm,
-    kyrreStack,
     convertibleTable,
     onewheelColumn,
     applianceColumn,
@@ -3756,15 +3009,10 @@ export const BUILDERS = {
     tallPanelRadiator,
     sofaArt,
     herbShelf,
-    bistroTableRound,
-    bistroChair,
     gardenSofa,
     gladomTable,
     stringLights,
-    oliveTree,
     railPlanter,
-    herbPots,
-    arcLamp,
     paperPendant,
     kitchenGrid,
     knifeBar,
@@ -3772,42 +3020,22 @@ export const BUILDERS = {
     riceCooker,
     ninjaDoubleStack,
     rug,
-    macbookPro,
-    monitor27,
-    standingDesk,
     onewheelStand,
     monstera,
     stackedChairs,
-    yucca,
     tvStandEasel,
     teddy,
-    sofa,
-    coffeeTable,
-    shelfIndustrial,
-    plantTall,
-    plantSmall,
     entryCoatBench,
     poster,
     bed,
     wardrobeGrid,
-    chairScandi,
-    bistroTable,
     vanityWasher,
-    wardrobe,
-    tvStand,
     table,
-    chair,
-    sofaL,
     counter,
     sink,
     cooker,
     fridge,
-    washer,
     toilet,
-    vanity,
     bathtub,
-    shower,
-    radiator,
-    buffet,
     plant,
 };
