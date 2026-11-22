@@ -802,13 +802,13 @@ function prism(g, shape, y0, y1, mat) {
     return m;
 }
 
-// ---------- Support TV à roulettes + TCL 65P89L + Switch ----------
+// ---------- Support TV à roulettes + TV 55" + Switch ----------
 
 // Support TV Duiliuu à roulettes (Amazon B0D2MCVY3W), cotes de la fiche : base 89 x 69,5 cm, hauteur
 // réglable 105,5 -> 129,5 cm (modélisé en position haute), cadre VESA de 91 cm de large. De profil :
 // montant vertical sous le cadre, qui se plie à ~80 cm et descend en pente vers les roulettes avant ;
 // jambe de force arrière entre l'angle de la base et le montant. Deux étagères en bois sombre.
-// TCL QD-Mini LED 65" (dalle 144,4 x 83,5 cm) vissée devant le cadre, centrée sur le support.
+// TV 55" (dalle 122,8 x 71,4 cm) vissée devant le cadre, centrée sur le support.
 const tvGlowMat = std(0xffcf8a, {roughness: 0.5, emissive: 0xffb45a, emissiveIntensity: 0.05});
 tvGlowMat.userData.night = 2.5;
 
@@ -853,7 +853,7 @@ function bentTube(g, pts, r, rad, mat) {
 // Support TV à roulettes CNTSLNB (86 x 50,5 x 110-126,5, réglé en position haute) : cadre en
 // tube inox poli Ø 2,2, chaque colonne se dédoublant en Y vers une roulette avant et une arrière,
 // plateau en bois 80 x 24 à rebords de 10 cm (dessus à 43,4 cm), crochets VESA de 42,9 cm.
-// Porte la TCL 65", la Switch sur son stand et deux manettes Pro posées sur le plateau.
+// Porte la TV 55", la Switch sur son stand et deux manettes Pro posées sur le plateau.
 function tvStandEasel(w, d) {
     const g = new THREE.Group(),
         steel = MAT.chrome,
@@ -864,8 +864,8 @@ function tvStandEasel(w, d) {
         xb = w / 2 - 2, // roulettes légèrement écartées vers l'extérieur
         zc0 = d / 2 - 2.5, // roulettes avant/arrière
         sy = 43.4, // dessus du plateau
-        TW = 144.4,
-        TH = 83.5,
+        TW = 122.8,
+        TH = 71.4,
         tvY = yTop - 19 - TH / 2, // TV centrée sur les crochets
         zc = 6.1; // milieu de la dalle, devant les crochets
     bentTube(g, [[-ux, yNode, 0], [-ux, yTop, 0], [ux, yTop, 0], [ux, yNode, 0]], R, 6, steel);
@@ -1164,82 +1164,24 @@ function onewheelStand(w, d) {
     return g;
 }
 
-// ---------- Tapis tissé en laine ----------
+// ---------- Tapis imprimé ----------
 
-// Tissage plat à grosses mailles : rangs de boucles crème chinées de gris, liseré uni sur les bords.
-let rugMaps = null;
-function rugWeave() {
-    if (rugMaps) return rugMaps;
-    const S = 512; // 512 px = 40 cm
-    const color = document.createElement('canvas'),
-        bump = document.createElement('canvas');
-    color.width = color.height = bump.width = bump.height = S;
-    const g = color.getContext('2d'),
-        b = bump.getContext('2d');
-    g.fillStyle = '#c9c1b2';
-    g.fillRect(0, 0, S, S);
-    b.fillStyle = '#202020';
-    b.fillRect(0, 0, S, S);
-    let seed = 77;
-    const r = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-    const rowH = 8,
-        loopW = 6.4;
-    for (let y = 0; y < S; y += rowH) {
-        const shift = (y / rowH) % 2 ? loopW / 2 : 0;
-        for (let x = -loopW; x < S + loopW; x += loopW) {
-            const t = r();
-            // crème dominant, chiné de gris clair et de rares fils foncés
-            const l = t < 0.03 ? 52 + r() * 10 : t < 0.17 ? 74 + r() * 8 : 87 + r() * 5;
-            g.fillStyle = `hsl(${38 + r() * 6}, ${t < 0.17 ? 5 : 22}%, ${l}%)`;
-            g.beginPath();
-            g.ellipse(x + shift, y + rowH / 2, loopW * 0.48, rowH * 0.5, 0, 0, Math.PI * 2);
-            g.fill();
-            const v = 170 + r() * 85;
-            b.fillStyle = `rgb(${v},${v},${v})`;
-            b.beginPath();
-            b.ellipse(x + shift, y + rowH / 2, loopW * 0.42, rowH * 0.42, 0, 0, Math.PI * 2);
-            b.fill();
-        }
-    }
-    const mk = (c, srgb) => {
-        const t = new THREE.CanvasTexture(c);
-        t.wrapS = t.wrapT = THREE.RepeatWrapping;
-        t.anisotropy = 8;
-        if (srgb) t.colorSpace = THREE.SRGBColorSpace;
-        return t;
-    };
-    rugMaps = {map: mk(color, true), bumpMap: mk(bump, false)};
-    return rugMaps;
-}
-
-function rug(w, d) {
+// Tapis Homcomodar Beige Vintage (160 x 230, poil ras 0,5 cm, dos antidérapant) : motif persan
+// délavé crème / sable / olive, médaillon central et bordure. Texture = photo produit redressée en
+// vue de dessus puis symétrisée (public/textures). L'image couvre le tapis : largeur locale w = 160.
+let rugTex = null;
+function printedRug(w, d) {
     const g = new THREE.Group(),
-        hw = w / 2,
-        hd = d / 2,
-        h = 1.2,
-        border = 4;
-    const {map, bumpMap} = rugWeave();
-    const tile = 40; // cm couverts par la texture
-    const weave = (rw, rd) => {
-        const m = map.clone(),
-            bm = bumpMap.clone();
-        for (const t of [m, bm]) {
-            t.needsUpdate = true;
-            t.repeat.set(rw / tile, rd / tile);
-        }
-        return new THREE.MeshStandardMaterial({map: m, bumpMap: bm, bumpScale: 3, roughness: 1});
-    };
-    const body = B(g, -hw + border, hw - border, 0, h, -hd + border, hd - border, weave(w - 2 * border, d - 2 * border));
-    body.castShadow = false;
-    // liseré tressé un ton plus clair
-    const edge = std(0xe2dccf, {roughness: 1});
-    for (const [x1, x2, z1, z2] of [
-        [-hw, hw, -hd, -hd + border],
-        [-hw, hw, hd - border, hd],
-        [-hw, -hw + border, -hd + border, hd - border],
-        [hw - border, hw, -hd + border, hd - border],
-    ])
-        B(g, x1, x2, 0, h * 0.9, z1, z2, edge).castShadow = false;
+        h = 0.6;
+    if (!rugTex) {
+        rugTex = new THREE.TextureLoader().load('/textures/tapis-homcomodar-beige.jpg');
+        rugTex.colorSpace = THREE.SRGBColorSpace;
+        rugTex.anisotropy = 8;
+    }
+    const side = std(0xe6e0d4, {roughness: 1}),
+        top = new THREE.MeshStandardMaterial({map: rugTex, roughness: 1});
+    const m = B(g, -w / 2, w / 2, 0, h, -d / 2, d / 2, [side, side, top, side, side, side]);
+    m.castShadow = false;
     return g;
 }
 
@@ -3019,7 +2961,7 @@ export const BUILDERS = {
     slipperBag,
     riceCooker,
     ninjaDoubleStack,
-    rug,
+    printedRug,
     onewheelStand,
     monstera,
     stackedChairs,
