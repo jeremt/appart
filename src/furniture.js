@@ -2455,46 +2455,6 @@ function rod(g, a, b, r, mat) {
     return m;
 }
 
-// Barbecue à charbon type Weber Original Kettle 57 cm : cuve et couvercle émaillés, 3 pieds, 2 roues.
-function kettleBbq(w, d) {
-    const g = new THREE.Group(),
-        r = 28.5;
-    const enamel = std(0x161718, {roughness: 0.3, metalness: 0.2});
-    const steel = std(0x2b2c2e, {roughness: 0.45, metalness: 0.8, envMap: MAT.chrome.envMap});
-    const wood = std(0x8a5a35, {roughness: 0.7});
-    const dome = (rad, hgt, y, lower) => {
-        const m = new THREE.Mesh(
-            new THREE.SphereGeometry(rad / 100, 40, 16, 0, Math.PI * 2, lower ? Math.PI / 2 : 0, Math.PI / 2),
-            enamel,
-        );
-        m.scale.y = hgt / rad;
-        m.position.set(0, y / 100, 0);
-        m.castShadow = m.receiveShadow = true;
-        enamel.side = THREE.DoubleSide;
-        g.add(m);
-    };
-    const bowlTop = 73;
-    dome(r, 26, bowlTop, true); // cuve (demi-sphère aplatie, ouverte vers le haut)
-    dome(r, 24, bowlTop, false); // couvercle
-    Cyl(g, r + 0.3, r + 0.3, 2, 0, bowlTop + 0.5, 0, enamel); // rebord
-    Cyl(g, r - 1, r - 1, 0.6, 0, bowlTop - 8, 0, steel); // grille
-    // cendrier + tige
-    Cyl(g, 1, 1, 22, 0, 36, 0, steel);
-    Cyl(g, r - 4, r - 4, 1.4, 0, 28, 0, steel);
-    // trois pieds (deux devant, un derrière) et deux roues
-    const legs = [[-r * 0.8, r * 0.45], [r * 0.8, r * 0.45], [0, -r * 0.9]];
-    for (const [x, z] of legs) rod(g, [x * 0.5, bowlTop - 14, z * 0.5], [x, 2, z], 1.1, steel);
-    for (const x of [-r * 0.8, r * 0.8]) Cyl(g, 5, 5, 3, x + (x < 0 ? -2 : 2), 5, r * 0.45, MAT.matteBlack, false).rotation.z = Math.PI / 2;
-    // poignée de couvercle (bois) côté avant
-    rod(g, [-7, bowlTop + 20, r - 6], [-7, bowlTop + 24, r + 5], 0.7, steel);
-    rod(g, [7, bowlTop + 20, r - 6], [7, bowlTop + 24, r + 5], 0.7, steel);
-    rod(g, [-9, bowlTop + 24, r + 5], [9, bowlTop + 24, r + 5], 1.6, wood);
-    Cyl(g, 1.8, 1.8, 3, 0, bowlTop + 24.5, 0, steel); // pommeau du couvercle
-    // aérations
-    Cyl(g, 2.2, 2.2, 1.2, 0, bowlTop - 14, -r + 2, steel, true);
-    return g;
-}
-
 // Table bistrot pliante : plateau rond en tôle laquée à rebord, pieds tubulaires en croix.
 function bistroTableRound(w, d) {
     const g = new THREE.Group(),
@@ -3473,28 +3433,37 @@ function gardenSeat(w, d, seats) {
 }
 const gardenSofa = (w, d) => gardenSeat(w, d, 2);
 
-// Pouf de jardin bas 40 x 40 x 35 cm : cadre aluminium et coussin écru.
-function gardenPouf(w, d) {
+// IKEA GLADOM (504.119.90) : table/plateau Ø45 x 53 cm en acier laqué noir, plateau amovible à bord relevé,
+// 4 pieds tubulaires légèrement évasés reliés par un croisillon.
+function gladomTable(w, d) {
     const g = new THREE.Group(),
-        hw = w / 2,
-        hd = d / 2;
-    B(g, -hw, hw, 3, 15, -hd, hd, gardenFrame);
-    for (const sx of [-1, 1])
-        for (const sz of [-1, 1]) B(g, sx * (hw - 2.5) - 1.5, sx * (hw - 2.5) + 1.5, 0, 3, sz * (hd - 2.5) - 1.5, sz * (hd - 2.5) + 1.5, gardenFrame);
-    RB(g, -hw + 0.5, hw - 0.5, 15, 35, -hd + 0.5, hd - 0.5, 5, gardenCushion);
-    return g;
-}
-
-// Table basse de salon de jardin : plateau en teck, piétement aluminium, h 35 cm.
-function gardenTable(w, d) {
-    const g = new THREE.Group(),
-        hw = w / 2,
-        hd = d / 2,
-        teak = std(0x9a6a43, {roughness: 0.7});
-    B(g, -hw, hw, 31, 35, -hd, hd, teak);
-    B(g, -hw + 2, hw - 2, 27, 31, -hd + 2, hd - 2, gardenFrame);
-    for (const sx of [-1, 1])
-        for (const sz of [-1, 1]) B(g, sx * (hw - 4) - 1.5, sx * (hw - 4) + 1.5, 0, 31, sz * (hd - 4) - 1.5, sz * (hd - 4) + 1.5, gardenFrame);
+        r = Math.min(w, d) / 2,
+        black = std(0x151515, {roughness: 0.45, metalness: 0.5, envMap: MAT.chrome.envMap});
+    // plateau : fond + bord relevé (cylindre ouvert, double face)
+    Cyl(g, r - 0.3, r - 0.3, 0.8, 0, 49.9, 0, black);
+    const rim = new THREE.Mesh(new THREE.CylinderGeometry(r / 100, (r - 0.4) / 100, 0.035, 48, 1, true), std(0x151515, {roughness: 0.45, metalness: 0.5, envMap: MAT.chrome.envMap, side: THREE.DoubleSide}));
+    rim.position.y = 0.5125;
+    rim.castShadow = rim.receiveShadow = true;
+    g.add(rim);
+    // anneau support sous le plateau
+    const ring = new THREE.Mesh(new THREE.TorusGeometry((r - 4) / 100, 0.006, 8, 48), black);
+    ring.rotation.x = Math.PI / 2;
+    ring.position.y = 0.489;
+    g.add(ring);
+    // pieds : de l'anneau vers le sol, légèrement évasés
+    const feet = [];
+    for (let i = 0; i < 4; i++) {
+        const a = Math.PI / 4 + (i * Math.PI) / 2,
+            c = Math.cos(a),
+            s = Math.sin(a);
+        rod(g, [c * (r - 4), 48.9, s * (r - 4)], [c * (r - 1), 0.6, s * (r - 1)], 0.7, black);
+        Cyl(g, 0.9, 0.9, 0.6, c * (r - 1), 0.3, s * (r - 1), std(0x222222, {roughness: 0.9}));
+        feet.push([c, s]);
+    }
+    // croisillon à mi-hauteur entre les pieds opposés
+    const k = (r - 4) + ((r - 1) - (r - 4)) * (48.9 - 18) / 48.3;
+    rod(g, [feet[0][0] * k, 18, feet[0][1] * k], [feet[2][0] * k, 18, feet[2][1] * k], 0.5, black);
+    rod(g, [feet[1][0] * k, 18.6, feet[1][1] * k], [feet[3][0] * k, 18.6, feet[3][1] * k], 0.5, black);
     return g;
 }
 
@@ -3787,12 +3756,10 @@ export const BUILDERS = {
     tallPanelRadiator,
     sofaArt,
     herbShelf,
-    kettleBbq,
     bistroTableRound,
     bistroChair,
     gardenSofa,
-    gardenPouf,
-    gardenTable,
+    gladomTable,
     stringLights,
     oliveTree,
     railPlanter,

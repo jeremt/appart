@@ -209,9 +209,7 @@ export const furnitureDefs = [
     {id: 'jardiniere-1', type: 'railPlanter', name: 'Jardinière de lavande', r: [758, 190, 778, 260], rot: -90, elev: 70},
     {id: 'jardiniere-2', type: 'railPlanter', name: 'Jardinière de lavande', r: [758, 300, 778, 370], rot: -90, elev: 70},
     {id: 'etagere-aromatiques', type: 'herbShelf', name: 'Étagère d\'aromatiques', r: [722, 130, 778, 165], rot: 0},
-    {id: 'barbecue', type: 'kettleBbq', name: 'Barbecue à charbon type Weber Original Kettle 57 cm', c: [722, 285], size: [58, 66], rot: -90},
-    // salon de jardin bas (canapé au sud face au nord, pouf en biais, table basse au milieu)
+    // salon de jardin bas (canapé au sud face au nord, table d'appoint devant)
     {id: 'salon-canape', type: 'gardenSofa', name: 'Canapé de jardin bas 2 places', r: [640, 553, 770, 623], rot: 180},
-    {id: 'salon-pouf', type: 'gardenPouf', name: 'Pouf de jardin bas', c: [731, 424], size: [40, 40], rot: -12},
-    {id: 'salon-table', type: 'gardenTable', name: 'Table basse de jardin', r: [675, 475, 735, 520], rot: 0},
+    {id: 'salon-table', type: 'gladomTable', name: 'Table/plateau IKEA GLADOM noir Ø45 x 53 (504.119.90)', c: [705, 500], size: [45, 45], rot: 0, url: 'https://www.ikea.com/fr/fr/p/gladom-table-plateau-noir-50411990/'},
 ];
