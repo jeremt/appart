@@ -195,7 +195,6 @@ export const furnitureDefs = [
     {id: 'rice-cooker', type: 'riceCooker', name: 'Rice cooker', c: [204, 610], size: [26, 34], rot: 180, elev: 150},
     // juste après le vantail de la porte d'entrée ouverte (80 cm) : porte-manteau + banc + étagères à chaussures
     {id: 'meuble-entree', type: 'entryCoatBench', name: 'Amig Lukïen : porte-manteau avec banc et étagères à chaussures (183 x 66 x 32,5)', r: [95, 595.5, 161, 628], rot: 180, url: 'https://www.amazon.fr/dp/B0DK8WDHZN'},
-    {id: 'sac-chaussons', type: 'slipperBag', name: 'Sac à chaussons', r: [100, 607, 130, 625], rot: 180, elev: 47},
     // Chambre
     // lit tête au mur nord, centré sur ce mur (x 225 -> 612)
     {id: 'lit', type: 'bed', name: 'Lit 160 x 200', c: [418.5, 120.5], size: [162, 205], rot: 0},

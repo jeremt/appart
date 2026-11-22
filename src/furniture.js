@@ -1364,37 +1364,6 @@ function entryCoatBench(w, d) {
     return g;
 }
 
-// ---------- Sac à chaussons ----------
-
-// Panier souple en feutre gris, ouvert, deux anses, une paire de chaussons qui dépasse.
-function slipperBag(w, d) {
-    const g = new THREE.Group(),
-        hw = w / 2,
-        hd = d / 2,
-        h = 26,
-        t = 0.6;
-    const felt = std(0x8b8781, {roughness: 1});
-    B(g, -hw, hw, 0, 1, -hd, hd, felt);
-    B(g, -hw, hw, 0, h, -hd, -hd + t, felt);
-    B(g, -hw, hw, 0, h, hd - t, hd, felt);
-    B(g, -hw, -hw + t, 0, h, -hd + t, hd - t, felt);
-    B(g, hw - t, hw, 0, h, -hd + t, hd - t, felt);
-    B(g, -hw - 0.2, hw + 0.2, h - 2.5, h + 0.1, hd - t - 0.1, hd + 0.2, std(0x6f6b66, {roughness: 1})); // ourlet
-    for (const z of [-hd + t / 2, hd - t / 2]) {
-        const a = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.008, 6, 20, Math.PI), felt);
-        a.position.set(0, h / 100, z / 100);
-        a.castShadow = true;
-        g.add(a);
-    }
-    // chaussons rangés debout, talon en l'air
-    const slipper = std(0xd9cdb8, {roughness: 1});
-    for (const x of [-hw / 2.4, hw / 2.4]) {
-        RB(g, x - 4.5, x + 4.5, 8, h + 6, -2.5, 2.5, 2.2, slipper);
-        RB(g, x - 4, x + 4, h + 1, h + 6.5, -3, 3, 2, std(0x6e4b3a, {roughness: 1}));
-    }
-    return g;
-}
-
 // ---------- Rice cooker ----------
 
 // Cuiseur à riz 1 L : corps blanc arrondi, couvercle bombé à charnière, bouton d'ouverture,
@@ -2883,7 +2852,6 @@ export const BUILDERS = {
     paperPendant,
     kitchenGrid,
     knifeBar,
-    slipperBag,
     riceCooker,
     ninjaDoubleStack,
     printedRug,
