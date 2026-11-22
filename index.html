@@ -70,7 +70,12 @@
             <div class="card">
                 <h2>Visite de l'appartement</h2>
                 <p>Vous démarrez sur le palier, devant la porte d'entrée.</p>
-                <ul>
+                <ul class="touch-only">
+                    <li>Joystick (à gauche) : se déplacer — poussé à fond, vous courez</li>
+                    <li>Glisser sur la droite de l'écran : regarder autour de soi</li>
+                    <li>Toucher une porte : l'ouvrir / la fermer</li>
+                </ul>
+                <ul class="kb-only">
                     <li><kbd>ZQSD</kbd> / <kbd>WASD</kbd> ou flèches : se déplacer</li>
                     <li><kbd>Maj</kbd> : courir · souris : regarder</li>
                     <li><kbd>E</kbd> ou clic : ouvrir / fermer la porte visée</li>
@@ -82,6 +87,10 @@
                     <button id="fps-respawn">Revenir à l'entrée</button>
                 </div>
             </div>
+        </div>
+        <div id="touch-ui" hidden>
+            <div id="joy"><div id="joy-knob"></div></div>
+            <button id="touch-exit" aria-label="Quitter la visite">✕</button>
         </div>
         <div id="crosshair" hidden></div>
         <div id="hint" hidden></div>

@@ -10,6 +10,7 @@ import {RectAreaLightUniformsLib} from 'three/addons/lights/RectAreaLightUniform
 
 RectAreaLightUniformsLib.init(); // requis pour les rubans LED (RectAreaLight)
 import {buildStructure, buildEnvironment, applyDoor} from './structure.js';
+import {createCutaway} from './cutaway.js';
 import {makeTextures} from './textures.js';
 import {FloorReflection, HQPipeline, halton} from './render.js';
 
@@ -267,6 +268,13 @@ planCtl.maxZoom = 10;
 
 const fps = new PointerLockControls(fpsCam, document.body);
 let fpsSpawned = false;
+// Écran tactile : pas de verrouillage du pointeur, on pilote la visite avec un joystick virtuel.
+// Même seuil que le menu burger : écran tactile OU petite fenêtre (max 720 px).
+const touchMq = matchMedia('(pointer: coarse), (max-width: 720px)');
+const isTouch = () => touchMq.matches;
+document.body.classList.toggle('touch', isTouch());
+let touchActive = false;
+const visiting = () => fps.isLocked || touchActive;
 function spawn() {
     fpsCam.position.copy(toWorld(spawnPoint.x, spawnPoint.y, 165));
     fpsCam.rotation.set(0, -Math.PI / 2, 0);
@@ -281,7 +289,12 @@ const MODES_HELP = 'Changer de vue à tout moment : <kbd>1</kbd> Plan · <kbd>2<
 const HELP = {
     plan: `<b>Plan 2D</b> — glisser : déplacer la vue · <kbd>Espace</kbd> + glisser : déplacer la vue même sur un meuble · molette : zoom<br>Clic sur un meuble : sélection · avec « Déplacer les meubles » : glisser pour déplacer · <kbd>R</kbd> pivoter 90° (<kbd>⇧R</kbd> 15°) · <kbd>Suppr</kbd> supprimer · flèches : ajuster<br>Double-clic sur une porte : ouvrir / fermer<br>${MODES_HELP}`,
     orbit: `<b>3D libre</b> — clic gauche : tourner · <kbd>Espace</kbd> + glisser ou clic droit : déplacer la vue · molette : zoom<br>Avec « Déplacer les meubles » : glisser un meuble pour le déplacer · <kbd>R</kbd> pivoter · <kbd>Suppr</kbd> supprimer<br>Double-clic sur une porte : ouvrir / fermer<br>${MODES_HELP}`,
-    fps: `<b>Visite</b> — <kbd>ZQSD</kbd>/<kbd>WASD</kbd> se déplacer · <kbd>Maj</kbd> courir · <kbd>E</kbd> ou clic : porte · <kbd>Échap</kbd> libérer la souris<br>${MODES_HELP}`,
+    get fps() {
+        return isTouch()
+            ? `<b>Visite</b> — joystick : se déplacer (à fond : courir) · glisser à droite : regarder · toucher une porte : l'ouvrir / fermer · ✕ : quitter`
+            : this.fpsDesktop;
+    },
+    fpsDesktop: `<b>Visite</b> — <kbd>ZQSD</kbd>/<kbd>WASD</kbd> se déplacer · <kbd>Maj</kbd> courir · <kbd>E</kbd> ou clic : porte · <kbd>Échap</kbd> libérer la souris<br>${MODES_HELP}`,
 };
 
 function setMode(m) {
@@ -302,6 +315,7 @@ function setMode(m) {
         $('#fps-overlay').hidden = false;
     } else {
         if (fps.isLocked) fps.unlock();
+        stopTouchVisit();
         $('#fps-overlay').hidden = true;
         $('#crosshair').hidden = $('#hint').hidden = true;
     }
@@ -836,13 +850,19 @@ const fwd = new THREE.Vector3(),
     move = new THREE.Vector3();
 
 function updateFps(dt) {
-    if (!fps.isLocked) return;
+    if (!visiting()) return;
     if (collidersDirty) rebuildFurnColliders();
     const has = (...c) => c.some((k) => keys.has(k));
-    const f = (has('KeyW', 'ArrowUp') ? 1 : 0) - (has('KeyS', 'ArrowDown') ? 1 : 0);
-    const s = (has('KeyD', 'ArrowRight') ? 1 : 0) - (has('KeyA', 'ArrowLeft') ? 1 : 0);
-    if (!f && !s) return;
-    const speed = has('ShiftLeft', 'ShiftRight') ? 3.2 : 1.6;
+    let f = (has('KeyW', 'ArrowUp') ? 1 : 0) - (has('KeyS', 'ArrowDown') ? 1 : 0);
+    let s = (has('KeyD', 'ArrowRight') ? 1 : 0) - (has('KeyA', 'ArrowLeft') ? 1 : 0);
+    let speed = has('ShiftLeft', 'ShiftRight') ? 3.2 : 1.6;
+    if (joy.mag > 0) {
+        // joystick analogique : intensité = vitesse, poussé à fond = course
+        f += -joy.y;
+        s += joy.x;
+        speed = joy.mag > 0.92 ? 3.2 : 0.4 + 1.2 * joy.mag;
+    }
+    if (Math.abs(f) < 0.01 && Math.abs(s) < 0.01) return;
     fpsCam.getWorldDirection(fwd);
     fwd.y = 0;
     fwd.normalize();
@@ -854,28 +874,28 @@ function updateFps(dt) {
     if (stuck || !blocked(p.x, p.z + move.z)) p.z += move.z;
 }
 
-function aimedDoor() {
-    raycaster.setFromCamera(ndc.set(0, 0), fpsCam);
+function aimedDoor(at = {x: 0, y: 0}) {
+    raycaster.setFromCamera(ndc.set(at.x, at.y), fpsCam);
     const {door, distance} = pickRay();
     return door && distance < 2.5 ? door : null;
 }
 
-function interact() {
-    if (!fps.isLocked) return;
-    const d = aimedDoor();
+function interact(at) {
+    if (!visiting()) return;
+    const d = aimedDoor(at);
     if (d) toggleDoor(d);
 }
 
 let hintTick = 0;
 function updateHint() {
     if (++hintTick % 6) return;
-    const d = fps.isLocked && aimedDoor();
+    const d = visiting() && aimedDoor();
     const hint = $('#hint');
     hint.hidden = !d;
-    if (d) hint.innerHTML = `<kbd>E</kbd> ${d.target > 0.5 ? 'Fermer' : 'Ouvrir'} — ${d.def.name}`;
+    if (d) hint.innerHTML = `${isTouch() ? '' : '<kbd>E</kbd> '}${d.target > 0.5 ? 'Fermer' : 'Ouvrir'} — ${d.def.name}`;
 }
 
-$('#fps-start').addEventListener('click', () => fps.lock());
+$('#fps-start').addEventListener('click', () => (isTouch() ? startTouchVisit() : fps.lock()));
 $('#fps-respawn').addEventListener('click', (e) => {
     e.stopPropagation();
     spawn();
@@ -889,6 +909,95 @@ fps.addEventListener('unlock', () => {
     $('#crosshair').hidden = $('#hint').hidden = true;
     if (mode === 'fps') $('#fps-overlay').hidden = false;
 });
+// --- joystick virtuel + regard au doigt (écran tactile) ---
+const joy = {x: 0, y: 0, mag: 0};
+const JOY_R = 52; // rayon de débattement du pommeau (px)
+const touchUi = $('#touch-ui');
+const joyEl = $('#joy');
+const joyKnob = $('#joy-knob');
+const euler = new THREE.Euler(0, 0, 0, 'YXZ');
+let joyId = null;
+let look = null; // {id, x, y, x0, y0, t0, moved}
+
+function setJoy(e) {
+    const r = joyEl.getBoundingClientRect();
+    let dx = e.clientX - (r.left + r.width / 2);
+    let dy = e.clientY - (r.top + r.height / 2);
+    const d = Math.hypot(dx, dy);
+    if (d > JOY_R) (dx = (dx / d) * JOY_R), (dy = (dy / d) * JOY_R);
+    joy.mag = Math.min(1, d / JOY_R);
+    if (joy.mag < 0.12) joy.mag = 0; // zone morte
+    joy.x = dx / JOY_R;
+    joy.y = dy / JOY_R;
+    joyKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+}
+function resetJoy() {
+    joyId = null;
+    joy.x = joy.y = joy.mag = 0;
+    joyKnob.style.transform = '';
+}
+
+joyEl.addEventListener('pointerdown', (e) => {
+    if (joyId !== null) return;
+    joyId = e.pointerId;
+    joyEl.setPointerCapture(e.pointerId);
+    setJoy(e);
+    e.stopPropagation();
+});
+joyEl.addEventListener('pointermove', (e) => e.pointerId === joyId && setJoy(e));
+for (const t of ['pointerup', 'pointercancel']) joyEl.addEventListener(t, (e) => e.pointerId === joyId && resetJoy());
+
+// le reste de l'écran : glisser = regarder, toucher = interagir avec la porte touchée
+touchUi.addEventListener('pointerdown', (e) => {
+    if (e.target !== touchUi || look) return;
+    touchUi.setPointerCapture(e.pointerId);
+    look = {id: e.pointerId, x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY, t0: performance.now(), moved: false};
+});
+touchUi.addEventListener('pointermove', (e) => {
+    if (!look || e.pointerId !== look.id) return;
+    if (Math.hypot(e.clientX - look.x0, e.clientY - look.y0) > 8) look.moved = true;
+    const k = 0.005; // radians par pixel
+    euler.setFromQuaternion(fpsCam.quaternion);
+    euler.y -= (e.clientX - look.x) * k;
+    euler.x = THREE.MathUtils.clamp(euler.x - (e.clientY - look.y) * k, -Math.PI / 2 + 0.05, Math.PI / 2 - 0.05);
+    fpsCam.quaternion.setFromEuler(euler);
+    look.x = e.clientX;
+    look.y = e.clientY;
+});
+touchUi.addEventListener('pointerup', (e) => {
+    if (!look || e.pointerId !== look.id) return;
+    if (!look.moved && performance.now() - look.t0 < 400) {
+        const r = renderer.domElement.getBoundingClientRect();
+        interact({x: ((e.clientX - r.left) / r.width) * 2 - 1, y: -((e.clientY - r.top) / r.height) * 2 + 1});
+    }
+    look = null;
+});
+touchUi.addEventListener('pointercancel', () => (look = null));
+
+touchMq.addEventListener('change', () => {
+    document.body.classList.toggle('touch', isTouch());
+    if (fps.isLocked) fps.unlock();
+    stopTouchVisit();
+    $('#help').innerHTML = HELP[mode];
+});
+
+function startTouchVisit() {
+    touchActive = true;
+    $('#fps-overlay').hidden = true;
+    touchUi.hidden = false;
+    $('#crosshair').hidden = false;
+}
+function stopTouchVisit() {
+    if (!touchActive) return;
+    touchActive = false;
+    resetJoy();
+    look = null;
+    touchUi.hidden = true;
+    $('#crosshair').hidden = $('#hint').hidden = true;
+    if (mode === 'fps') $('#fps-overlay').hidden = false;
+}
+$('#touch-exit').addEventListener('click', stopTouchVisit);
+
 document.addEventListener('mousedown', (e) => {
     if (mode === 'fps' && fps.isLocked && e.button === 0) interact();
 });
@@ -906,6 +1015,7 @@ const probes = [
 
 function captureReflections() {
     const saved = [selBox.visible, dimLines.visible, structure.ceiling.visible, env.soffit.visible];
+    cutaway.update(null); // sondes prises murs debout (la coupe revient à l'image suivante)
     floorRefl.setEnabled(false); // pas de reflet planaire dans les sondes
     selBox.visible = dimLines.visible = false;
     structure.ceiling.visible = env.soffit.visible = true;
@@ -1087,6 +1197,9 @@ resize();
 renderTrash();
 setMode('plan');
 
+// murs coupés en 3D libre (créé après toutes les lumières : leurs ombres voient les murs masqués)
+const cutaway = createCutaway({structure, items, scene});
+
 const clock = new THREE.Clock();
 let lastCamSig = '';
 renderer.setAnimationLoop(() => {
@@ -1112,6 +1225,7 @@ renderer.setAnimationLoop(() => {
         updateFps(dt);
         updateHint();
     } else if (mode === 'orbit') orbit.update();
+    if (cutaway.update(mode === 'orbit' ? persp : null, orbit.target)) markDirty();
     const cam = activeCam();
     renderer.shadowMap.needsUpdate = true;
     if (hq) {

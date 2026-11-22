@@ -194,15 +194,17 @@ export function buildStructure(tex) {
         for (const [x1, y1, x2, y2] of room.rects)
             group.add(texturedPlane(x1, y1, x2, y2, tex[room.floor], 0.3));
 
-    for (const w of walls) {
+    walls.forEach((w, wi) => {
         const mats = Array(6).fill(M.wall);
         mats[2] = M.wallTop;
         if (w.out != null) mats[w.out] = M.wallOut;
         for (const [x1, y1, x2, y2, h0, h1] of wallPieces(w)) {
-            group.add(planBox(x1, y1, x2, y2, h0, h1, mats));
+            const piece = planBox(x1, y1, x2, y2, h0, h1, mats);
+            piece.userData.wall = wi; // murs coupés en 3D libre (cutaway.js)
+            group.add(piece);
             if (h0 === 0) colliders.push(rectWorld(x1, y1, x2, y2));
         }
-    }
+    });
 
     // faïence murale (UV recalées sur la taille de chaque plaque)
     for (const [x1, y1, x2, y2, h0, h1, kind = 'wallTile'] of wallTiles) {

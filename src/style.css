@@ -428,3 +428,57 @@ button.primary {
         max-width: calc(100% - 24px);
     }
 }
+
+/* ---------- Visite tactile : joystick virtuel ---------- */
+.touch-only {
+    display: none;
+}
+body.touch .touch-only {
+    display: block;
+}
+body.touch .kb-only {
+    display: none;
+}
+#touch-ui {
+    position: fixed;
+    inset: 0;
+    z-index: 4;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+}
+#joy {
+    position: absolute;
+    left: max(28px, env(safe-area-inset-left));
+    bottom: max(28px, env(safe-area-inset-bottom));
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.14);
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    touch-action: none;
+}
+#joy-knob {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 56px;
+    height: 56px;
+    margin: -28px 0 0 -28px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.55);
+    box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.35);
+    pointer-events: none;
+}
+#touch-exit {
+    position: absolute;
+    right: 12px;
+    bottom: max(20px, env(safe-area-inset-bottom));
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 50%;
+    background: rgba(17, 22, 30, 0.7);
+}
+

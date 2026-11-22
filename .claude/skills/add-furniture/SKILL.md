@@ -69,6 +69,7 @@ Fichiers : `src/plan.js` (données : murs, ouvertures, `furnitureDefs`), `src/fu
     rot: 0,                        // face avant : 0 → bas du plan (+y), 90 → droite (+x),
                                    //             -90 → gauche (-x), 180 → haut (-y)
     elev: 0,                       // optionnel : posé à cette hauteur (cm), ex. 74 sur le bureau
+    wall: true,                    // optionnel : fixé au mur (cadre, étagère, radiateur…), masqué quand le mur est coupé en 3D libre
     url: 'https://…',              // OBLIGATOIRE si le produit s'achète et que le lien est vérifié
 },
 ```

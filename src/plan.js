@@ -139,6 +139,7 @@ const teddyColors = [
 // `c` + `size` = centre + [largeur, profondeur] locales.
 // `heightRange` = [min, max] cm pour un meuble à hauteur réglable (curseur du panneau).
 // `modes` = configurations au choix ({code, name}, la première par défaut), boutons du panneau.
+// `wall` = fixé au mur (ou posé sur une étagère murale) : masqué quand ce mur est coupé en 3D libre.
 // `variants` = coloris au choix ({code, name, color, url}), `variant` = code par défaut.
 export const furnitureDefs = [
     // Bain + WC
@@ -147,6 +148,7 @@ export const furnitureDefs = [
     {id: 'wc', type: 'toilet', name: 'WC', r: [56, 257, 121, 296], rot: 90},
     {
         id: 'seche-serviettes',
+        wall: true,
         type: 'towelRadiator',
         name: 'Sèche-serviettes électrique 400 W (Castorama FIO1140-400E1B)',
         r: [BATH_X - 10, 102, BATH_X, 142],
@@ -158,23 +160,23 @@ export const furnitureDefs = [
     {id: 'evier', type: 'sink', name: 'Évier', r: [0, SPLIT_Y + INT, 63, 402], rot: 90},
     {id: 'plan-travail', type: 'counter', name: 'Plan de travail + frigo top inox + micro-ondes GoldStar encastré', r: [0, 402, 63, 464], rot: 90},
     {id: 'plaques', type: 'cooker', name: 'Plaques à induction 4 feux + four encastré 60 cm', r: [0, 464, 63, 523], rot: 90},
-    {id: 'grille-cuisine', type: 'kitchenGrid', name: 'Grille murale ustensiles, poêle + wok de Buyer Carbone Plus 35 cm (5114.35)', r: [80, SPLIT_Y + INT, 150, SPLIT_Y + INT + 20], rot: 0},
+    {id: 'grille-cuisine', wall: true, type: 'kitchenGrid', name: 'Grille murale ustensiles, poêle + wok de Buyer Carbone Plus 35 cm (5114.35)', r: [80, SPLIT_Y + INT, 150, SPLIT_Y + INT + 20], rot: 0},
     // bar : 3 caissons blancs (congélateur, 5 tiroirs, grand tiroir) sous un plan de travail, puis étagère en bois arrondie
     {id: 'bar', type: 'ikeaBar', name: 'Bar : caissons et façades blancs + niche poubelle SONGMICS LTB593E01 + plan de travail 63,5 cm + congélateur top Thomson THTTFZ5WH + étagère en bois arrondie de 15 cm + dos en étagère noyer fine (15 cm) à fond miroir, accessoires bar et thé', r: [151.5, SPLIT_Y + INT, 230, SPLIT_Y + INT + 181], rot: -90, url: 'https://www.darty.com/nav/achat/gros_electromenager/congelateur-armoire/congelateur_sous_plan/thomson_thttfz5wh.html'},
     // au mur au-dessus du bar
-    {id: 'barre-couteaux', type: 'knifeBar', name: 'Barre aimantée à couteaux', r: [163, SPLIT_Y + INT, 203, SPLIT_Y + INT + 4], rot: 0, elev: 120},
+    {id: 'barre-couteaux', wall: true, type: 'knifeBar', name: 'Barre aimantée à couteaux', r: [163, SPLIT_Y + INT, 203, SPLIT_Y + INT + 4], rot: 0, elev: 120},
     {id: 'condiments', type: 'condiments', name: 'Moulin à poivre, pot à sel en bois, huile d\'olive', r: [18, 440, 38, 462], rot: 90, elev: 90},
     // Séjour
     {id: 'canape', type: 'teddy', name: 'Canapé OMHU Teddy', r: [325, SPLIT_Y + INT, 525, SPLIT_Y + INT + 100], rot: 0, variants: teddyColors, variant: '5782'},
     // suspension papier au-dessus de la table basse, dans l'axe du canapé (bas de la boule à 145 cm, plafond à 250)
     {id: 'suspension-salon', type: 'paperPendant', name: 'Suspension IKEA GULLSUDARE Ø70, papier de riz fait main (805.836.16)', c: [425, 475], size: [70, 70], rot: 0, elev: 145, url: 'https://www.ikea.com/fr/fr/p/gullsudare-abat-jour-suspension-blanc-fait-main-80583616/'},
-    {id: 'tableaux-canape', type: 'sofaArt', name: 'Mur de cadres au-dessus du canapé : 5 affiches, cadres dépareillés', r: [330, SPLIT_Y + INT, 520, SPLIT_Y + INT + 3], rot: 0},
+    {id: 'tableaux-canape', wall: true, type: 'sofaArt', name: 'Mur de cadres au-dessus du canapé : 5 affiches, cadres dépareillés', r: [330, SPLIT_Y + INT, 520, SPLIT_Y + INT + 3], rot: 0},
     {id: 'tapis', type: 'rug', name: 'Tapis laine 200 x 140', r: [320, 395, 520, 535], rot: 0},
     // inspirée du projet Family Handyman (lien = le tuto), adaptée à l'emprise 120 x 80 de l'ancienne table
     {id: 'table-basse', type: 'convertibleTable', name: 'Table basse / table à manger convertible en noyer (120 x 80, 45 ou 75 cm)', r: [360, 435, 480, 515], rot: 0, modes: [{code: 'coffee', name: 'Table basse'}, {code: 'dining', name: 'Table à manger'}], url: 'https://www.familyhandyman.com/project/coffee-dining-table/'},
     {id: 'meuble-tv', type: 'tvStandEasel', name: 'Support TV à roulettes CNTSLNB inox + plateau bois (86 x 50,5 x 126,5) + TCL 65" (65P89L) + Nintendo Switch et 2 manettes', r: [382, 577.5, 468, 628], rot: 180, url: 'https://www.amazon.fr/dp/B0FRXT8XT2'},
     // à gauche du meuble TV, contre le mur sud (photo IMG_6673)
-    {id: 'radiateur-salon', type: 'panelRadiator', name: 'Radiateur à panneaux 80 x 60', r: [500, 616, 580, 628], rot: 180},
+    {id: 'radiateur-salon', wall: true, type: 'panelRadiator', name: 'Radiateur à panneaux 80 x 60', r: [500, 616, 580, 628], rot: 180},
     // colonne du Onewheel : tablette du bas à 6 cm, plus large que l'ancienne colonne (48 x 40) pour accueillir son support
     {id: 'colonne-salon', type: 'onewheelColumn', name: 'Colonne de rangement + Onewheel', r: [295, 588, 343, 628], rot: 180},
     {id: 'onewheel', type: 'onewheelStand', name: 'Onewheel sur support', c: [319, 612], size: [40, 30], rot: 180, elev: 6},
@@ -194,10 +196,10 @@ export const furnitureDefs = [
     {id: 'armoire', type: 'wardrobeGrid', name: 'Armoire', r: [BATH_X + INT, 30, 285, 140], rot: 90},
     {id: 'bureau', type: 'standingDesk', name: 'Bureau assis-debout 160 x 60', r: [370, SPLIT_Y - 60, 530, SPLIT_Y], rot: 180},
     // à gauche du bureau, contre la cloison (photo IMG_6672)
-    {id: 'radiateur-chambre', type: 'tallPanelRadiator', name: 'Radiateur à panneaux 60 x 70', r: [542, SPLIT_Y - 12, 602, SPLIT_Y], rot: 180},
+    {id: 'radiateur-chambre', wall: true, type: 'tallPanelRadiator', name: 'Radiateur à panneaux 60 x 70', r: [542, SPLIT_Y - 12, 602, SPLIT_Y], rot: 180},
     // panneaux perforés au-dessus du bureau (bas à 128 cm)
-    {id: 'skadis-1', type: 'skadisCamera', name: 'Panneau perforé IKEA SKÅDIS 76x56 (505.343.78) + Sony α6500', r: [374, SPLIT_Y - 20, 450, SPLIT_Y], rot: 180, elev: 128, url: 'https://www.ikea.com/fr/fr/p/skadis-panneau-perfore-noir-50534378/'},
-    {id: 'skadis-2', type: 'skadisDrone', name: 'Panneau perforé IKEA SKÅDIS 76x56 (505.343.78) + DJI Mavic Air', r: [454, SPLIT_Y - 20, 530, SPLIT_Y], rot: 180, elev: 128, url: 'https://www.ikea.com/fr/fr/p/skadis-panneau-perfore-noir-50534378/'},
+    {id: 'skadis-1', wall: true, type: 'skadisCamera', name: 'Panneau perforé IKEA SKÅDIS 76x56 (505.343.78) + Sony α6500', r: [374, SPLIT_Y - 20, 450, SPLIT_Y], rot: 180, elev: 128, url: 'https://www.ikea.com/fr/fr/p/skadis-panneau-perfore-noir-50534378/'},
+    {id: 'skadis-2', wall: true, type: 'skadisDrone', name: 'Panneau perforé IKEA SKÅDIS 76x56 (505.343.78) + DJI Mavic Air', r: [454, SPLIT_Y - 20, 530, SPLIT_Y], rot: 180, elev: 128, url: 'https://www.ikea.com/fr/fr/p/skadis-panneau-perfore-noir-50534378/'},
     // posés sur le bureau (plateau à 74 cm)
     {id: 'ecran', type: 'monitorArm', name: 'Écran 27" sur bras', r: [419, SPLIT_Y - 25, 481, SPLIT_Y - 5], rot: 180, elev: 74},
     {id: 'macbook', type: 'macbookPro', name: 'MacBook Pro 14"', c: [501, 272], size: [31.3, 22.1], rot: -165, elev: 74},
