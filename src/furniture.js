@@ -113,6 +113,14 @@ function underFridge(g, fw, hd) {
     B(g, -fw / 2 + 2, fw / 2 - 2, 0.5, 2, zf - 5, zf, MAT.dark); // pieds / grille
 }
 
+// Poignée barre ronde de 16 cm (entraxe 128 mm) sur deux pieds, horizontale, centrée en (cx, y),
+// posée sur la façade dont la face avant est en z = zf.
+function barHandle(g, cx, y, zf) {
+    const p = 3.2; // saillie
+    rod(g, [cx - 8, y, zf + p], [cx + 8, y, zf + p], 0.6, MAT.metal);
+    for (const x of [cx - 6.4, cx + 6.4]) rod(g, [x, y, zf], [x, y, zf + p], 0.45, MAT.metal);
+}
+
 function kitchenBase(g, w, d, hole, fridge = false, doorW = 0) {
     const hw = w / 2,
         hd = d / 2;
@@ -128,7 +136,7 @@ function kitchenBase(g, w, d, hole, fridge = false, doorW = 0) {
         if (doorW) {
             // une seule porte de `doorW` cm côté +x, le reste en panneau plein
             B(g, hw - doorW + 0.3, hw - 0.3, 10, 86, hd - 2, hd, kitchenWhite);
-            B(g, hw - doorW + 6, hw - 6, 80, 81.5, hd, hd + 2, MAT.metal);
+            barHandle(g, hw - doorW + 12, 80, hd); // calée à gauche (photo)
             B(g, -hw + 0.3, hw - doorW - 0.3, 10, 86, hd - 2, hd, kitchenWhite);
         } else {
             const n = Math.max(1, Math.round(w / 55)),
@@ -137,7 +145,7 @@ function kitchenBase(g, w, d, hole, fridge = false, doorW = 0) {
                 const a = -hw + i * dw + 0.3,
                     b = a + dw - 0.6;
                 B(g, a, b, 10, 86, hd - 2, hd, kitchenWhite);
-                B(g, a + 6, b - 6, 80, 81.5, hd, hd + 2, MAT.metal);
+                barHandle(g, (a + b) / 2, 80, hd);
             }
         }
     }
@@ -234,23 +242,18 @@ function wallCabinets(g, w, d, mode = 'doors') {
         B(g, -hw + 1.5, hw - 1.5, 151.5, 152, -hd + 1, zf, niche);
         microwaveGoldstar(g, 0, 151.5, -hd + 1.5, zf - 0.5);
         B(g, -hw + 0.3, hw - 0.3, 191.5, 214.5, zf, zf + 2, kitchenWhite);
-        B(g, -hw + 6, hw - 6, 193, 194.5, zf + 2, zf + 4, MAT.metal);
+        barHandle(g, -hw + 12, 194, zf + 2); // calée à gauche (photo)
     } else if (mode === 'hood') {
         hood(g, hw, hd);
         B(g, -hw, hw, 168, 215, -hd, zf, MAT.white);
         B(g, -hw + 0.3, hw - 0.3, 168.5, 214.5, zf, zf + 2, kitchenWhite);
-        B(g, -hw + 6, hw - 6, 170, 171.5, zf + 2, zf + 4, MAT.metal);
+        barHandle(g, hw - 12, 171, zf + 2); // calée à droite (photo)
         return;
     } else {
+        // une seule porte, poignée en bas calée à gauche (photo)
         B(g, -hw, hw, 150, 215, -hd, zf, MAT.white);
-        const n = Math.max(1, Math.round(w / 50)),
-            dw = w / n;
-        for (let i = 0; i < n; i++) {
-            const a = -hw + i * dw + 0.3,
-                b = a + dw - 0.6;
-            B(g, a, b, 151, 214, zf, zf + 2, kitchenWhite);
-            B(g, a + 6, b - 6, 153, 154.5, zf + 2, zf + 4, MAT.metal);
-        }
+        B(g, -hw + 0.3, hw - 0.3, 151, 214, zf, zf + 2, kitchenWhite);
+        barHandle(g, -hw + 12, 154, zf + 2);
     }
     // ruban LED sous les meubles hauts, côté façade, qui éclaire le plan de travail
     ledStrip(g, -hw + 1, hw - 1, 149.4, 150, -hd + 27, -hd + 30);
@@ -331,7 +334,7 @@ function cooker(w, d) {
     B(g, -ow / 2 + 5, ow / 2 - 5, 56.5, 58, zf + 2.5, zf + 4.5, MAT.metal); // poignée
     // tiroir sous le four
     B(g, -hw + 0.3, hw - 0.3, 10, 28, zf, zf + 2, kitchenWhite);
-    B(g, -hw + 8, hw - 8, 24, 25.5, zf + 2, zf + 4, MAT.metal);
+    barHandle(g, 0, 22, zf + 2);
     // table vitrocéramique noire affleurante, 4 foyers
     const pw = w - 4;
     B(g, -hw, hw, 87, 90, -hd, hd + 1, worktop);
@@ -1656,7 +1659,7 @@ function kitchenGrid(w, d) {
 // ---------- Suspension papier ----------
 
 // Suspension IKEA GULLSUDARE Ø70 : boule de papier de riz tendue sur un fil d'acier en spirale
-// (nervures horizontales), ouverte en haut et en bas, cordon noir jusqu'au plafond.
+// (nervures horizontales), ouverte en haut et en bas, cordon blanc jusqu'au plafond.
 // Origine au bas de l'abat-jour : `elev` = hauteur du bas de la boule, plafond à 250 cm.
 function paperPendant(w, d, ceiling = 105) {
     const g = new THREE.Group();
@@ -1678,7 +1681,7 @@ function paperPendant(w, d, ceiling = 105) {
     shade.receiveShadow = true; // ne porte pas d'ombre : la lumière du séjour est à l'intérieur
     g.add(shade);
     // anneau du haut, cordon et cache-piton au plafond
-    const cord = std(0x151515, {roughness: 0.5});
+    const cord = std(0xf2f0ec, {roughness: 0.55});
     const ringY = H - (1 + Math.cos(a1)) * H / 2;
     rod(g, [-6, ringY, 0], [6, ringY, 0], 0.15, MAT.metal);
     rod(g, [0, ringY, -6], [0, ringY, 6], 0.15, MAT.metal);
@@ -2793,9 +2796,9 @@ function pedalBin(g, x, z) {
     B(g, x - 5, x + 5, 0.5, 2.2, z + bd / 2, z + bd / 2 + 7, MAT.matteBlack); // pédale
 }
 
-// Bar : trois caissons blancs (60, 40 et 30 cm), façades blanches sans poignée, sous un plan de travail stratifié gris de
+// Bar : trois caissons blancs (60, 30 et 40 cm), façades blanches à poignées barre de 16 cm, sous un plan de travail stratifié gris de
 // 186 x 63,5 x 2,8 cm (gabarit IKEA standard) arrondi en bout, qui couvre aussi l'étagère ouverte. Côté +x : contre la cloison.
-// 1 : congélateur top Thomson THTTFZ5WH ; niche poubelle de 36 cm ; 2 : 5 tiroirs ; 3 : grand tiroir.
+// 1 : congélateur top Thomson THTTFZ5WH ; niche poubelle de 36 cm ; 2 : grand tiroir ; 3 : 5 tiroirs (en bout).
 // Façades côté cuisine (+z local) ; côté séjour, étagère fine en noyer à fond miroir de 20 cm sur toute la longueur
 // des caissons. Le meuble est construit puis miroité en x pour que le mur reste côté +x.
 function ikeaBar(w, d) {
@@ -2807,7 +2810,7 @@ function ikeaBar(w, d) {
         back = 15, // profondeur de l'étagère côté séjour (150 mm)
         z0 = -hd + back, // dos des caissons : emprise = 15 + 63,5 (plan de travail) = 78,5 cm
         z1 = z0 + cd,
-        cws = [60, 40, 30], // largeurs des caissons depuis le mur
+        cws = [60, 30, 40], // largeurs des caissons depuis le mur
         gap = 36, // niche de la poubelle entre le congélateur et les tiroirs
         top = 87.2; // dessus des caissons (plan : 87,2 -> 90)
     const cx = cws.map((cw, i) => hw - cws.slice(0, i).reduce((a, b) => a + b, 0) - (i > 0 ? gap : 0) - cw / 2);
@@ -2816,20 +2819,8 @@ function ikeaBar(w, d) {
         for (let i = 0; i < n; i++) {
             const y0 = 6.5 + i * fh + 0.2,
                 y1 = 6.5 + (i + 1) * fh - 0.2;
-            // façade sans poignée : le haut est biseauté (45°) pour glisser les doigts
-            const xa = x - CW / 2 + 0.4,
-                xb = x + CW / 2 - 0.4,
-                bv = 2;
-            B(g, xa, xb, y0, y1 - bv, z1 - 1.8, z1, paintWhite);
-            const sh = new THREE.Shape();
-            sh.moveTo(m(z1 - 1.8), m(y1 - bv));
-            sh.lineTo(m(z1), m(y1 - bv));
-            sh.lineTo(m(z1 - 1.8), m(y1));
-            const bev = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, {depth: m(xb - xa), bevelEnabled: false}), paintWhite);
-            bev.rotation.y = -Math.PI / 2;
-            bev.position.x = m(xb);
-            bev.castShadow = true;
-            g.add(bev);
+            B(g, x - CW / 2 + 0.4, x + CW / 2 - 0.4, y0, y1, z1 - 1.8, z1, paintWhite);
+            barHandle(g, x, y1 - Math.min(5, fh / 3), z1);
         }
     };
     // caissons : socle en retrait, joues, fond, dessus
@@ -2854,9 +2845,9 @@ function ikeaBar(w, d) {
     fr.scale.x = -1; // double miroir : porte et poignée gardent leur sens
     fr.position.set(m(c1), 0, m(z1 - 29));
     g.add(fr);
-    // 2 : colonne de 5 tiroirs, 3 : grand tiroir
-    drawers(cx[1], 5, cws[1]);
-    drawers(cx[2], 1, cws[2]);
+    // 2 : grand tiroir, 3 : colonne de 5 tiroirs en bout
+    drawers(cx[1], 1, cws[1]);
+    drawers(cx[2], 5, cws[2]);
     // plan de travail 63,5 x 2,8 cm, bords droits, à fleur des trois caissons
     const cw = cws.reduce((a, b) => a + b, 0) + gap;
     B(g, hw - cw, hw, top, 90, z0, z0 + 63.5, worktop);
