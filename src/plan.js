@@ -38,6 +38,11 @@ export const walls = [
     {x1: 0, y1: BATH_TOP, x2: 35, y2: 94}, // gaine technique (angle baignoire)
     {x1: 0, y1: 228, x2: 56, y2: SPLIT_Y}, // placard + gaine (GCH / PL)
     {x1: 228, y1: 602, x2: 294, y2: IH}, // gaine technique logement (tableau électrique)
+    // couloir de l'immeuble autour du palier (hors appartement)
+    {x1: -260, y1: 420, x2: -EXT, y2: 440, out: 5}, // nord
+    {x1: -260, y1: 700, x2: -EXT, y2: 720, out: 4}, // sud
+    {x1: -260, y1: 440, x2: -240, y2: 700, out: 1}, // ouest, en face de la porte
+    {x1: -40, y1: IH + EXT, x2: -EXT, y2: 700, out: 0}, // retour au sud du mur de façade
 ];
 
 // Ouvertures. Les portes ont `leaves` (charnière côté 'start' ou 'end' de l'ouverture)
@@ -197,12 +202,9 @@ export const furnitureDefs = [
     {id: 'tete-de-lit', type: 'walnutHeadboard', name: 'Tête de lit-tablette en noyer', c: [418.5, 9], size: [148, 18], rot: 0},
     {id: 'armoire', type: 'wardrobeGrid', name: 'Armoire', r: [BATH_X + INT, 30, 285, 140], rot: 90},
     // à droite du lit, contre le mur nord
-    {id: 'kallax-chambre', type: 'kallax', name: 'Étagère IKEA KALLAX blanc 77x147 (802.758.87)', r: [510, 0, 586.5, 39], rot: 0, url: 'https://www.ikea.com/fr/fr/p/kallax-etagere-blanc-80275887/'},
+    {id: 'kallax-chambre', type: 'kallaxDecor', name: 'Étagère IKEA KALLAX blanc 77x147 (802.758.87) : boîtes en tissu, livres, déco, pothos sur le dessus', r: [510, 0, 586.5, 39], rot: 0, url: 'https://www.ikea.com/fr/fr/p/kallax-etagere-blanc-80275887/'},
     // contre la cloison (photo IMG_6672)
     {id: 'radiateur-chambre', wall: true, type: 'tallPanelRadiator', name: 'Radiateur à panneaux 60 x 70', r: [542, SPLIT_Y - 12, 602, SPLIT_Y], rot: 180},
-    // panneaux perforés (bas à 128 cm)
-    {id: 'skadis-1', wall: true, type: 'skadisCamera', name: 'Panneau perforé IKEA SKÅDIS 76x56 (505.343.78) + Sony α6500', r: [374, SPLIT_Y - 20, 450, SPLIT_Y], rot: 180, elev: 128, url: 'https://www.ikea.com/fr/fr/p/skadis-panneau-perfore-noir-50534378/'},
-    {id: 'skadis-2', wall: true, type: 'skadisDrone', name: 'Panneau perforé IKEA SKÅDIS 76x56 (505.343.78) + DJI Mavic Air', r: [454, SPLIT_Y - 20, 530, SPLIT_Y], rot: 180, elev: 128, url: 'https://www.ikea.com/fr/fr/p/skadis-panneau-perfore-noir-50534378/'},
     // Balcon
     {id: 'guirlande', type: 'stringLights', name: 'Guirlande guinguette', r: [771, 132, 777, 612], rot: 90},
     {id: 'jardiniere-1', type: 'railPlanter', name: 'Jardinière de lavande', r: [758, 190, 778, 260], rot: -90, elev: 70},
