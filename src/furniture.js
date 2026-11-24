@@ -449,62 +449,28 @@ function poster(w, d) {
     return g;
 }
 
-// Gaze de coton beige : texture froissée (couleur + relief) partagée par le linge de lit.
-let gauzeMats = null;
-function gauze() {
-    if (gauzeMats) return gauzeMats;
-    const S = 512;
-    const c = document.createElement('canvas');
-    c.width = c.height = S;
-    const g = c.getContext('2d');
-    g.fillStyle = '#808080';
-    g.fillRect(0, 0, S, S);
-    let seed = 5;
-    const r = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-    // plis : longues traînées douces claires / sombres
-    for (let i = 0; i < 900; i++) {
-        const x = r() * S,
-            y = r() * S,
-            len = 20 + r() * 90,
-            a = (r() - 0.5) * 1.2 + (r() < 0.5 ? 0 : Math.PI / 2);
-        g.strokeStyle = `rgba(${r() < 0.5 ? '255,255,255' : '0,0,0'},${0.05 + r() * 0.1})`;
-        g.lineWidth = 1 + r() * 4;
-        g.beginPath();
-        g.moveTo(x, y);
-        g.quadraticCurveTo(x + Math.cos(a) * len * 0.5 + (r() - 0.5) * 20, y + Math.sin(a) * len * 0.5 + (r() - 0.5) * 20, x + Math.cos(a) * len, y + Math.sin(a) * len);
-        g.stroke();
-    }
-    // trame fine du tissage
-    for (let y = 0; y < S; y += 3) {
-        g.fillStyle = 'rgba(0,0,0,0.04)';
-        g.fillRect(0, y, S, 1);
-    }
-    const bump = new THREE.CanvasTexture(c);
-    bump.wrapS = bump.wrapT = THREE.RepeatWrapping;
-    bump.repeat.set(3, 3);
-    const mk = (color) => std(color, {roughness: 1, bumpMap: bump, bumpScale: 2.5});
-    gauzeMats = {duvet: mk(0xcdbb9f), pillow: mk(0xd8c9b1), sheet: mk(0xd3c3a9)};
-    return gauzeMats;
-}
-
-// Lit : tête de lit vers -z.
-function bed(w, d) {
+// Lit 160 x 200 : pieds métal et sommier tapissier sombre, linge « Bed Linen » de niteris (Sketchfab, CC BY 4.0) :
+// matelas, couette matelassée, plaid replié au pied, oreillers rectangulaires. Le cadre et la tête de lit du modèle
+// sont retirés à la préparation du fichier (tête de lit en noyer à part) ; le matelas est calé sur w x d et posé
+// sur le sommier. Les plis sont dans la géométrie (Marvelous Designer) ; teinte gaze beige.
+let bedLinen = null;
+function linenBed(w, d) {
     const g = new THREE.Group(),
         hw = w / 2,
         hd = d / 2;
     for (const sx of [-1, 1])
         for (const sz of [-1, 1]) B(g, sx * (hw - 6) - 2, sx * (hw - 6) + 2, 0, 10, sz * (hd - 6) - 2, sz * (hd - 6) + 2, MAT.metal);
-    const {duvet, pillow, sheet} = gauze();
     RB(g, -hw, hw, 10, 32, -hd, hd, 2, MAT.dark); // sommier tapissier
-    RB(g, -hw + 1, hw - 1, 31, 50, -hd + 1, hd - 1, 5, sheet); // matelas + drap
-    RB(g, -hw - 2, hw + 2, 24, 55, -hd + 45, hd + 2, 6, duvet); // couette qui retombe sur les côtés
-    RB(g, -hw + 1, hw - 1, 53, 57.5, -hd + 43, -hd + 72, 2, duvet); // retour de couette replié
-    // oreillers bombés et légèrement inclinés contre la tête de lit
-    for (const [x1, x2] of [[-hw + 7, -3], [3, hw - 7]]) {
-        const p = RB(g, x1, x2, 49, 64, -hd + 5, -hd + 41, 6.5, pillow);
-        p.scale.y = 0.95;
-        p.rotation.x = -0.12;
-    }
+    if (!bedLinen) bedLinen = std(0xd8cfbf, {roughness: 0.95, side: THREE.DoubleSide});
+    const linen = gltfModel('/models/bed-linen.glb', w, d, {
+        backNode: 'Object_11', // oreillers
+        fitNode: 'Object_10', // matelas
+        dress(m) {
+            m.material = bedLinen;
+        },
+    });
+    linen.position.y = 0.31;
+    g.add(linen);
     return g;
 }
 
@@ -593,7 +559,9 @@ const gltfLoader = new GLTFLoader();
 
 // Charge un .glb dans un groupe, le tourne pour que l'élément `backNode` soit à l'arrière (-z),
 // puis le met exactement aux dimensions w x d (cm) au sol. `dress(mesh)` adapte les matériaux.
-function gltfModel(url, w, d, {backNode, dress}) {
+// `drop` : nœuds retirés après le calcul de l'orientation ; `fitNode` : nœud dont l'emprise est calée sur w x d
+// et dont le bas est posé à y = 0 (par défaut tout le modèle).
+function gltfModel(url, w, d, {backNode, dress, drop = [], fitNode}) {
     const g = new THREE.Group();
     gltfLoader.load(url, (gltf) => {
         const inner = gltf.scene;
@@ -610,8 +578,12 @@ function gltfModel(url, w, d, {backNode, dress}) {
             if (z < bestZ) [best, bestZ] = [a, z];
         }
         wrap.rotation.y = best;
+        for (const name of drop) {
+            const o = inner.getObjectByName(name);
+            o?.parent.remove(o);
+        }
         wrap.updateMatrixWorld(true);
-        const b2 = new THREE.Box3().setFromObject(wrap);
+        const b2 = new THREE.Box3().setFromObject(fitNode ? inner.getObjectByName(fitNode) : wrap);
         const size = b2.getSize(new THREE.Vector3());
         const sx = w / 100 / size.x,
             sz = d / 100 / size.z;
@@ -2862,7 +2834,7 @@ export const BUILDERS = {
     teddy,
     entryCoatBench,
     poster,
-    bed,
+    linenBed,
     wardrobeGrid,
     vanityWasher,
     table,

@@ -197,7 +197,7 @@ export const furnitureDefs = [
     {id: 'meuble-entree', type: 'entryCoatBench', name: 'Amig Lukïen : porte-manteau avec banc et étagères à chaussures (183 x 66 x 32,5)', r: [95, 595.5, 161, 628], rot: 180, url: 'https://www.amazon.fr/dp/B0DK8WDHZN'},
     // Chambre
     // lit tête au mur nord, centré sur ce mur (x 225 -> 612)
-    {id: 'lit', type: 'bed', name: 'Lit 160 x 200', c: [418.5, 120.5], size: [162, 205], rot: 0},
+    {id: 'lit', type: 'linenBed', name: 'Lit 160 x 200 (linge : modèle « Bed Linen » par niteris, CC BY 4.0)', c: [418.5, 118], size: [160, 200], rot: 0},
     {id: 'tete-de-lit', type: 'walnutHeadboard', name: 'Tête de lit-tablette en noyer', c: [418.5, 9], size: [148, 18], rot: 0},
     {id: 'armoire', type: 'wardrobeGrid', name: 'Armoire', r: [BATH_X + INT, 30, 285, 140], rot: 90},
     // à droite du lit, contre le mur nord
