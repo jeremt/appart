@@ -1642,6 +1642,76 @@ function paperPendant(w, d, ceiling = 105) {
     return g;
 }
 
+// ---------- Lampadaire arc ----------
+
+// Lampadaire arc Courviro (Ambient Home, réf. AHLMP1007A) : métal noir, H 185 cm, socle rond,
+// arc qui monte en S et porte un abat-jour dôme Ø 30 au bout d'un déport de ~ 78 cm (photos produit).
+// Face avant (+z) côté abat-jour : le socle est à l'origine, le dôme pend au bout de l'arc.
+function arcLamp(w, d) {
+    const g = new THREE.Group();
+    const black = std(0x141416, {roughness: 0.42, metalness: 0.5});
+    // socle : disque plat aux arêtes vives, collerette de renfort à la base du mât
+    Cyl(g, 14, 14, 2.6, 0, 1.3, 0, black);
+    Cyl(g, 1.7, 1.7, 5, 0, 4.6, 0, black);
+    // mât + arc : tube rond Ø 2,1 cm, profil en S relevé sur la photo (mât quasi vertical puis
+    // grande courbe vers l'avant, sommet à 185 cm, léger raccourcissement au bout où pend le dôme)
+    // points [déport, hauteur] en cm, arc planaire dans le plan vertical y-z
+    const profile = [
+        [0, 3], [0.8, 55], [3.5, 103], [10, 140],
+        [24, 165], [44, 180], [62, 183.5], [72, 182.5], [78, 178],
+    ].map((p) => new THREE.Vector3(0, p[1] / 100, p[0] / 100));
+    const arc = new THREE.Mesh(
+        new THREE.TubeGeometry(new THREE.CatmullRomCurve3(profile), 64, 0.0105, 12),
+        black,
+    );
+    arc.castShadow = arc.receiveShadow = true;
+    g.add(arc);
+    // câble de suspension : du bout de l'arc à l'œillet riveté au sommet du dôme
+    rod(g, [0, 178, 72], [0, 164, 78.9], 0.18, black);
+    // abat-jour dôme Ø 30 : calotte sphérique (flèche 10 cm), ouverte en bas, légèrement penchée
+    const dome = new THREE.Group();
+    dome.position.set(0, 154 / 100, 78 / 100);
+    dome.rotation.x = 0.12; // penché vers l'avant, comme sur la photo
+    const R = 16.25, // rayon de la sphère porteuse de la calotte
+        Cy = -6.25; // centre de la sphère, sous le plan du pourtour
+    const pts = [];
+    for (let i = 0; i <= 24; i++) {
+        const a = (i / 24) * Math.asin(15 / R); // du sommet au pourtour Ø 30
+        pts.push(new THREE.Vector2(Math.sin(a) * R / 100, Cy / 100 + Math.cos(a) * R / 100));
+    }
+    const shell = new THREE.Mesh(new THREE.LatheGeometry(pts, 48), black);
+    shell.castShadow = shell.receiveShadow = true;
+    dome.add(shell);
+    // dessous lumineux : disque chaud juste au-dessus du pourtour + LED globe, éteints le jour
+    const glow = new THREE.Mesh(
+        new THREE.CircleGeometry(14.4 / 100, 48),
+        std(0xfff0d8, {roughness: 0.9, emissive: 0xffdfa8, emissiveIntensity: 0.04, side: THREE.DoubleSide}),
+    );
+    glow.material.userData.night = 1.1;
+    glow.rotation.x = -Math.PI / 2;
+    glow.position.y = 0.005;
+    dome.add(glow);
+    const bulb = new THREE.Mesh(
+        new THREE.SphereGeometry(0.032, 16, 10),
+        std(0xfff4e0, {emissive: 0xffe2b0, emissiveIntensity: 0.05}),
+    );
+    bulb.material.userData.night = 2.4;
+    bulb.position.set(0, 0.045, 0);
+    dome.add(bulb);
+    const eyelet = new THREE.Mesh(new THREE.TorusGeometry(0.006, 0.002, 8, 16), black);
+    eyelet.position.set(0, 0.104, 0);
+    eyelet.rotation.x = Math.PI / 2;
+    dome.add(eyelet);
+    g.add(dome);
+    // halo d'appoint au-dessus de l'accoudoir, réservé au mode nuit (comme la suspension papier)
+    const light = new THREE.PointLight(0xffd9a8, 1.4, 2.4, 2);
+    light.position.set(0, 148 / 100, 78 / 100);
+    light.userData.nightOnly = true;
+    light.visible = false;
+    g.add(light);
+    return g;
+}
+
 // ---------- Balcon : guirlande et plantes ----------
 
 const seeded = (seed) => () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
@@ -2822,6 +2892,7 @@ export const BUILDERS = {
     stringLights,
     railPlanter,
     paperPendant,
+    arcLamp,
     kitchenGrid,
     knifeBar,
     riceCooker,

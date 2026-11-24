@@ -173,6 +173,9 @@ export const furnitureDefs = [
     {id: 'condiments', type: 'condiments', name: 'Moulin à poivre, pot à sel en bois, huile d\'olive', r: [18, 440, 38, 462], rot: 90, elev: 90},
     // Séjour
     {id: 'canape', type: 'teddy', name: 'Canapé OMHU Teddy', r: [325, SPLIT_Y + INT, 525, SPLIT_Y + INT + 100], rot: 0, variants: teddyColors, variant: '5782'},
+    // à gauche du canapé, côté balcon : socle calé sous la baie fixe, au sud du battant de la porte-fenêtre
+    // (ouverte vers l'intérieur, il balaierait le coin nord) ; l'arc porte le dôme au-dessus de l'accoudoir
+    {id: 'lampadaire-arc', type: 'arcLamp', name: 'Lampadaire arc Courviro métal noir, abat-jour dôme Ø 30, H 185', c: [572, 478], size: [38, 38], rot: -145, url: 'https://ambienthome.fr/products/lampadaire-arc-noir-abat-jour-dome-courviro'},
     // suspension papier au-dessus de la table basse, dans l'axe du canapé (bas de la boule à 145 cm, plafond à 250)
     {id: 'suspension-salon', type: 'paperPendant', name: 'Suspension IKEA GULLSUDARE Ø70, papier de riz fait main (805.836.16)', c: [425, 475], size: [70, 70], rot: 0, elev: 145, url: 'https://www.ikea.com/fr/fr/p/gullsudare-abat-jour-suspension-blanc-fait-main-80583616/'},
     {id: 'tableaux-canape', wall: true, type: 'sofaArt', name: 'Mur de cadres au-dessus du canapé : 5 affiches, cadres dépareillés', r: [330, SPLIT_Y + INT, 520, SPLIT_Y + INT + 3], rot: 0},
