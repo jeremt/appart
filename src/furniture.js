@@ -741,6 +741,36 @@ function walnutWood() {
     return walnutMat;
 }
 
+// Bois teinté noir (frêne) : fond presque noir, fil encore lisible en reflets légèrement plus clairs.
+let blackWoodMat = null;
+function blackWood() {
+    if (blackWoodMat) return blackWoodMat;
+    const S = 512;
+    const c = document.createElement('canvas');
+    c.width = c.height = S;
+    const g = c.getContext('2d');
+    let seed = 131;
+    const r = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    g.fillStyle = 'hsl(25, 8%, 9%)';
+    g.fillRect(0, 0, S, S);
+    for (let i = 0; i < 300; i++) {
+        const y = r() * S,
+            amp = 1 + r() * 4,
+            ph = r() * 6;
+        g.strokeStyle = `hsla(25, 8%, ${14 + r() * 12}%, ${0.15 + r() * 0.3})`;
+        g.lineWidth = 0.6 + r() * 1.6;
+        g.beginPath();
+        for (let x = -10; x <= S + 10; x += 16) g.lineTo(x, y + Math.sin(x / (50 + amp * 20) + ph) * amp);
+        g.stroke();
+    }
+    const map = new THREE.CanvasTexture(c);
+    map.colorSpace = THREE.SRGBColorSpace;
+    map.wrapS = map.wrapT = THREE.RepeatWrapping;
+    map.anisotropy = 8;
+    blackWoodMat = new THREE.MeshStandardMaterial({map, roughness: 0.45});
+    return blackWoodMat;
+}
+
 // Contour (en m) arrondi seulement côté -x (le côté +x vient contre le mur).
 // `cavity` = {depth, endLeft, endRight} : niche ouverte côté +y du contour (= arrière -z du meuble).
 function barShape(w, d, rad, cavity) {
@@ -2234,7 +2264,7 @@ function tallPanelRadiator(w, d) {
     return panelRadiator(w, d, 70);
 }
 
-// ---------- Table basse / table à manger convertible en noyer ----------
+// ---------- Table basse / table à manger convertible : plateau noyer live edge, pieds bois noir ----------
 
 // Tube rectangulaire (section a x b cm) entre deux points (cm), orienté pour que b soit horizontal.
 function beam(g, p, q, a, b, mat) {
@@ -2269,14 +2299,15 @@ function taperedLeg(g, L, a0, a1, b0, b1, ang, mat) {
 }
 
 // Inspirée de la table convertible de Family Handyman (familyhandyman.com/project/coffee-dining-table),
-// ramenée à 120 x 80. Plateau en noyer à chants doublés (5 cm), deux traverses de fixation à ±16 cm
-// du centre. Sous chacune, à l'avant et à l'arrière, une paire de pieds assemblés à mi-bois en V
-// (pied long + pied court d'équerre, sans traverse) pivote sur une charnière :
-// - table basse (45 cm) : les pieds longs partent en biais vers le centre et se croisent sous la
-//   table (les paires de gauche et de droite sont décalées en profondeur), les pieds courts
-//   descendent en biais vers l'extérieur : 8 pieds au sol ;
-// - table à manger (75 cm) : les paires pivotent vers l'extérieur jusqu'à ce que les pieds longs
-//   soient d'équerre avec le plateau ; les pieds courts viennent alors à plat contre le dessous du plateau.
+// ramenée à 120 x 80 et calée sur les photos du modèle live edge en chêne. Plateau en noyer à chants
+// doublés (5 cm), deux traverses de fixation à ±28 cm du centre (environ au quart de la longueur).
+// Sous chacune, à l'avant et à l'arrière, une paire de pieds assemblés à mi-bois en V (pied long +
+// pied court à 80°, sans traverse) pivote sur une charnière à tête de boulon chromée :
+// - table basse (35 cm) : les pieds longs partent en biais vers le centre, se croisent sous la
+//   table et touchent le sol vers la charnière opposée (les paires de gauche et de droite sont
+//   décalées en profondeur), les pieds courts descendent presque droits, un peu évasés : 8 pieds au sol ;
+// - table à manger (75 cm) : les paires pivotent vers l'extérieur ; les pieds longs restent évasés
+//   de 10° vers les bouts et les pieds courts viennent à plat contre le dessous du plateau, vers les bouts.
 // `userData.setMode('coffee' | 'dining', instant)` choisit le mode, `userData.tick(dt)` anime la bascule
 // (le plateau monte ou descend en suivant le pied long qui reste au sol).
 function convertibleTable(w, d) {
@@ -2286,25 +2317,50 @@ function convertibleTable(w, d) {
         t = 5, // épaisseur vue du plateau (panneau 2 cm + chants retombants 3 cm)
         slab = 2,
         band = 7, // largeur des bandes de doublage sous les bords
-        xh = 16, // axe des charnières (le pied court rangé s'arrête avant le bout du plateau)
+        xh = 28, // axe des charnières (le pied court rangé s'arrête avant le bout du plateau)
         P = 2.5, // axe sous les traverses de fixation
         R = 2.5, // demi-section des pieds en haut
-        H = {coffee: 45, dining: 75},
-        ALPHA = Math.PI / 2, // pied court d'équerre avec le pied long
-        wood = walnutWood();
+        H = {coffee: 35, dining: 75},
+        SPLAY = (10 * Math.PI) / 180, // évasement des pieds longs vers les bouts en table à manger
+        ALPHA = Math.PI / 2 - SPLAY, // angle du V : pied court à plat sous le plateau en table à manger
+        wood = walnutWood(),
+        legWood = blackWood(); // pieds, têtes et chapes de charnière en bois noir
     const lift = new THREE.Group();
     g.add(lift);
-    B(lift, -hw, hw, t - slab, t, -hd, hd, wood);
+    // live edge sur les longs côtés : bord ondulé (retrait 0 à LE cm), chant clair d'aubier,
+    // légère contre-dépouille (la bande de doublage rentre un peu plus que le plateau)
+    const LE = 3.2,
+        UNDER = 1.2,
+        sap = std(0x9a7650, {roughness: 0.85}),
+        edge = (s, x) => {
+            const p = s > 0 ? [0.7, 2.9, 4.1] : [2.2, 0.4, 5.3];
+            const v = 0.5 + 0.28 * Math.sin(x * 0.045 + p[0]) + 0.14 * Math.sin(x * 0.13 + p[1]) + 0.08 * Math.sin(x * 0.31 + p[2]);
+            return LE * Math.min(1, Math.max(0, v));
+        },
+        xs = [];
+    for (let x = -hw; x < hw; x += 2) xs.push(x);
+    xs.push(hw);
+    // prisme vertical de y0 à y1 (cm) sur un contour [x, z] (cm)
+    const prism = (pts, y0, y1) => {
+        const sh = new THREE.Shape(pts.map(([x, z]) => new THREE.Vector2(x / 100, -z / 100)));
+        const geo = new THREE.ExtrudeGeometry(sh, {depth: (y1 - y0) / 100, bevelEnabled: false});
+        geo.rotateX(-Math.PI / 2);
+        geo.translate(0, y0 / 100, 0);
+        const m = new THREE.Mesh(geo, [wood, sap]);
+        m.castShadow = m.receiveShadow = true;
+        lift.add(m);
+    };
+    prism([...xs.map((x) => [x, hd - edge(1, x)]), ...xs.toReversed().map((x) => [x, -hd + edge(-1, x)])], t - slab, t);
     for (const s of [-1, 1]) {
-        B(lift, -hw, hw, 0, t - slab, s > 0 ? hd - band : -hd, s > 0 ? hd : -hd + band, wood);
+        prism([...xs.map((x) => [x, s * (hd - edge(s, x) - UNDER)]), [hw, s * (hd - band)], [-hw, s * (hd - band)]], 0, t - slab);
         B(lift, s > 0 ? hw - band : -hw, s > 0 ? hw : -hw + band, 0, t - slab, -hd + band, hd - band, wood);
         B(lift, s * xh - 7.5, s * xh + 7.5, 0, t - slab, -hd + band, hd - band, wood);
     }
 
-    // pied long d'équerre en table à manger ; inclinaison φ en table basse (point bas du pied au sol)
-    const Ld = H.dining - t - P,
-        Pc = H.coffee - t - P,
-        reach = (L, a) => L * Math.cos(a) + R * Math.sin(Math.abs(a)); // hauteur entre l'axe et le sol
+    // pied long évasé de SPLAY en table à manger ; inclinaison φ vers le centre en table basse
+    const reach = (L, a) => L * Math.cos(a) + R * Math.sin(Math.abs(a)), // hauteur entre l'axe et le sol
+        Ld = (H.dining - t - P - R * Math.sin(SPLAY)) / Math.cos(SPLAY),
+        Pc = H.coffee - t - P;
     let lo = 0,
         hi = Math.PI / 2;
     for (let i = 0; i < 40; i++) {
@@ -2322,13 +2378,14 @@ function convertibleTable(w, d) {
         lift.add(end);
         const zp = side > 0 ? hd - 9 : hd - 16; // paires décalées pour se croiser sans se toucher
         for (const z of [-zp, zp]) {
-            B(end, xh - 1.5, xh + 1.5, -P, 0, z - 2.5, z + 2.5, wood); // chape de charnière
+            B(end, xh - 1.5, xh + 1.5, -P, 0, z - 2.5, z + 2.5, legWood); // chape de charnière
             const p = new THREE.Group();
             p.position.set(xh / 100, -P / 100, z / 100);
             end.add(p);
-            taperedLeg(p, Ld, 2 * R, 3.6, 2 * R, 3.6, 0, wood);
-            taperedLeg(p, S, 2 * R, 3.6, 2 * R, 3.6, ALPHA, wood);
-            Cyl(p, R, R, 2 * R, 0, 0, 0, wood, true); // tête arrondie autour de l'axe
+            taperedLeg(p, Ld, 2 * R, 3.6, 2 * R, 3.6, 0, legWood);
+            taperedLeg(p, S, 2 * R, 3.6, 2 * R, 3.6, ALPHA, legWood);
+            Cyl(p, R, R, 2 * R, 0, 0, 0, legWood, true); // tête arrondie autour de l'axe
+            Cyl(p, 0.9, 0.9, 0.5, 0, 0, Math.sign(z) * (R + 0.25), MAT.chrome, true); // tête de boulon
             pairs.push(p);
         }
     }
@@ -2338,7 +2395,7 @@ function convertibleTable(w, d) {
     let k = 0,
         target = 0;
     const apply = () => {
-        const a = -phi * (1 - ease(k));
+        const a = -phi + (phi + SPLAY) * ease(k);
         for (const p of pairs) p.rotation.z = a;
         lift.position.y = (reach(Ld, a) + P) / 100;
     };

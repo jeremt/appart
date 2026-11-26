@@ -182,7 +182,7 @@ export const furnitureDefs = [
     // centré sous la table basse, dans le sens de la table (230 le long de x)
     {id: 'tapis', type: 'printedRug', name: 'Tapis Homcomodar Beige Vintage 160 x 230, lavable, poil ras', r: [305, 395, 535, 555], rot: 90, url: 'https://www.amazon.fr/dp/B0DCV96QMX'},
     // inspirée du projet Family Handyman (lien = le tuto), adaptée à l'emprise 120 x 80 de l'ancienne table
-    {id: 'table-basse', type: 'convertibleTable', name: 'Table basse / table à manger convertible en noyer (120 x 80, 45 ou 75 cm)', r: [360, 435, 480, 515], rot: 0, modes: [{code: 'coffee', name: 'Table basse'}, {code: 'dining', name: 'Table à manger'}], url: 'https://www.familyhandyman.com/project/coffee-dining-table/'},
+    {id: 'table-basse', type: 'convertibleTable', name: 'Table basse / table à manger convertible, plateau noyer live edge et pieds bois noir (120 x 80, 35 ou 75 cm)', r: [360, 435, 480, 515], rot: 0, modes: [{code: 'coffee', name: 'Table basse'}, {code: 'dining', name: 'Table à manger'}], url: 'https://www.familyhandyman.com/project/coffee-dining-table/'},
     {id: 'meuble-tv', type: 'tvStandEasel', name: 'Support TV à roulettes CNTSLNB inox + plateau bois (86 x 50,5 x 126,5) + TV 55" + Nintendo Switch et 2 manettes', r: [382, 577.5, 468, 628], rot: 180, url: 'https://www.amazon.fr/dp/B0FRXT8XT2'},
     // à gauche du meuble TV, contre le mur sud (photo IMG_6673)
     {id: 'radiateur-salon', wall: true, type: 'panelRadiator', name: 'Radiateur à panneaux 80 x 60', r: [500, 616, 580, 628], rot: 180},
