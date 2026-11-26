@@ -2066,31 +2066,87 @@ function storageBox(g, x0, x1, y, z0, z1, h, color) {
 
 // Ossature commune des colonnes ouvertes : 4 montants métal noir, tablettes chêne (`levels` = dessous
 // de chaque tablette, la dernière étant le plateau du haut) et fond chêne.
-function columnFrame(g, w, d, h, levels) {
-    const hw = w / 2,
-        hd = d / 2;
-    for (const sx of [-1, 1])
-        for (const sz of [-1, 1]) B(g, sx * hw - (sx > 0 ? 2 : 0), sx * hw + (sx < 0 ? 2 : 0), 0, h - 0.2, sz * hd - (sz > 0 ? 2 : 0), sz * hd + (sz < 0 ? 2 : 0), MAT.blackMetal);
-    for (const y of levels) B(g, -hw + 0.5, hw - 0.5, y, y + 2, -hd + 0.5, hd - 0.5, MAT.oak);
-    B(g, -hw + 2, hw - 2, levels[0] + 2, h - 2, -hd, -hd + 0.6, MAT.oak); // fond
+// Panneau d'aggloméré « marron rustique » : texture de veines claires/sombres générée une fois.
+let rusticWoodMat;
+function rusticWood() {
+    if (rusticWoodMat) return rusticWoodMat;
+    const c = document.createElement('canvas');
+    c.width = 256;
+    c.height = 64;
+    const x = c.getContext('2d'),
+        rnd = seeded(101);
+    x.fillStyle = '#8a5a34';
+    x.fillRect(0, 0, 256, 64);
+    for (let i = 0; i < 70; i++) {
+        const dark = rnd() < 0.55;
+        x.strokeStyle = dark ? `rgba(70,40,20,${0.15 + rnd() * 0.3})` : `rgba(200,150,95,${0.1 + rnd() * 0.25})`;
+        x.lineWidth = 0.5 + rnd() * 2;
+        const y0 = rnd() * 64;
+        x.beginPath();
+        x.moveTo(0, y0);
+        x.bezierCurveTo(85, y0 + (rnd() - 0.5) * 8, 170, y0 + (rnd() - 0.5) * 8, 256, y0 + (rnd() - 0.5) * 6);
+        x.stroke();
+    }
+    for (let i = 0; i < 8; i++) {
+        x.fillStyle = `rgba(55,30,15,${0.2 + rnd() * 0.2})`;
+        x.beginPath();
+        x.ellipse(rnd() * 256, rnd() * 64, 4 + rnd() * 8, 1.5 + rnd() * 2, 0, 0, Math.PI * 2);
+        x.fill();
+    }
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    rusticWoodMat = std(0xffffff, {map: t, roughness: 0.7});
+    return rusticWoodMat;
 }
 
-// Colonne ouverte chêne / métal noir qui abrite le Onewheel (tablette du bas, dessus à 6 cm) :
-// boîtes de rangement, plante, lampe en papier en haut.
-function onewheelColumn(w, d) {
+// VASAGLE BARNET LLS101B01, 6 niveaux, 40 x 30 x 187,5 cm : 4 montants en tube acier noir 2,5 cm reliés en haut
+// par une traverse avant-arrière de chaque côté, 6 tablettes marron rustique (dessus à 10 → 177,5 cm, ~33,5 cm
+// d'écart) posées sur des cornières latérales, croisillon en X au dos entre la 3e et la 4e tablette, patins réglables.
+// La case 4 (110,5 → 144) est laissée vide côté +x : avec rot 180, c'est le côté de la gaine et du thermostat.
+function vasagleBarnet(w, d) {
     const g = new THREE.Group(),
         hw = w / 2,
         hd = d / 2,
-        h = 180;
-    columnFrame(g, w, d, h, [4, 86, 118, 150, h - 2]);
-    // boîtes de rangement (lin beige et kraft) côte à côte
-    storageBox(g, -hw + 2.5, -0.5, 88, -hd + 2, hd - 3, 27, 0xcdbfa6);
-    storageBox(g, 0.5, hw - 2.5, 88, -hd + 2, hd - 3, 27, 0xa37a50);
-    herbPot(g, 0, 120, 0, 8, 0x3f7f3a, seeded(57));
-    paperLamp(g, 0, 152, 0, 10, 22);
-    // dessus : deux livres
-    B(g, -hw + 3, -hw + 20, h, h + 3, -hd + 4, hd - 6, std(0x2f3e5c, {roughness: 0.8}));
-    B(g, -hw + 4, -hw + 19, h + 3, h + 5.5, -hd + 5, hd - 7, std(0xe8e0cf, {roughness: 0.8}));
+        H = 187.5,
+        t = 2.5, // section des tubes
+        th = 1.5, // épaisseur des tablettes
+        levels = [10, 43.5, 77, 110.5, 144, 177.5], // dessus des tablettes
+        frame = std(0x1b1c1e, {roughness: 0.5, metalness: 0.5, envMap: MAT.chrome.envMap}),
+        wood = rusticWood(),
+        rnd = seeded(188);
+    const lx = hw - t / 2,
+        lz = hd - t / 2;
+    for (const sx of [-1, 1]) {
+        for (const sz of [-1, 1]) {
+            B(g, sx * lx - t / 2, sx * lx + t / 2, 1, H - t, sz * lz - t / 2, sz * lz + t / 2, frame);
+            Cyl(g, 1, 1, 1, sx * lx, 0.5, sz * lz, MAT.matteBlack); // patin réglable
+        }
+        B(g, sx * lx - t / 2, sx * lx + t / 2, H - t, H, -hd, hd, frame); // traverse haute avant-arrière
+        for (const y of levels) B(g, sx > 0 ? hw - t - 1 : -hw + t, sx > 0 ? hw - t : -hw + t + 1, y - th - 2, y - th, -hd + t, hd - t, frame); // cornière sous la tablette
+    }
+    for (const y of levels) B(g, -hw + t, hw - t, y - th, y, -hd + 0.3, hd - 0.3, wood);
+    // croisillon en X au dos, entre les tablettes 3 et 4
+    const zb = -hd + t / 2,
+        y0 = levels[2] + 1,
+        y1 = levels[3] - th - 1;
+    rod(g, [-lx, y0, zb], [lx, y1, zb], 0.3, frame);
+    rod(g, [lx, y0, zb], [-lx, y1, zb], 0.3, frame);
+    const ix = hw - t - 0.5; // demi-largeur utile
+    // case 1 (bas) : boîte de rangement en lin
+    storageBox(g, -ix, ix, levels[0], -hd + 2, hd - 3, 28, 0xcdbfa6);
+    // case 2 : rangée de livres
+    bookRow(g, -ix, ix, levels[1], -hd + 1.5, 30, rnd);
+    // case 3 : plante en pot + petite pile de livres
+    herbPot(g, -8, levels[2], 0, 7, 0x3f7f3a, seeded(57));
+    bookStack(g, 7, levels[2], 0, 2, rnd);
+    // case 4 (thermostat) : seulement une petite bougie à l'opposé, tout le côté +x reste libre
+    Cyl(g, 3, 3, 6, -ix + 4, levels[3] + 3, 6, std(0xf4efe6, {roughness: 0.7}));
+    Cyl(g, 3.1, 3.1, 0.3, -ix + 4, levels[3] + 6.15, 6, std(0x2a2c30, {roughness: 0.4}));
+    // case 5 : lampe en papier
+    paperLamp(g, 0, levels[4], 0, 10, 22);
+    // dessus : deux livres et un petit vase en grès
+    bookStack(g, -5, levels[5], 1, 2, rnd);
+    Cyl(g, 2.5, 3.5, 9, 10, levels[5] + 4.5, -2, std(0xb59a7a, {roughness: 0.9}));
     return g;
 }
 
@@ -3008,7 +3064,7 @@ export const BUILDERS = {
     ikeaBar,
     condiments,
     convertibleTable,
-    onewheelColumn,
+    vasagleBarnet,
     intercom,
     alarmKeypad,
     thermostat,

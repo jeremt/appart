@@ -186,8 +186,8 @@ export const furnitureDefs = [
     {id: 'meuble-tv', type: 'tvStandEasel', name: 'Support TV à roulettes CNTSLNB inox + plateau bois (86 x 50,5 x 126,5) + TV 55" + Nintendo Switch et 2 manettes', r: [382, 577.5, 468, 628], rot: 180, url: 'https://www.amazon.fr/dp/B0FRXT8XT2'},
     // à gauche du meuble TV, contre le mur sud (photo IMG_6673)
     {id: 'radiateur-salon', wall: true, type: 'panelRadiator', name: 'Radiateur à panneaux 80 x 60', r: [500, 616, 580, 628], rot: 180},
-    // colonne de rangement (tablette du bas à 6 cm, conçue pour le Onewheel, qui est maintenant dans l'entrée)
-    {id: 'colonne-salon', type: 'onewheelColumn', name: 'Colonne de rangement', r: [295, 588, 343, 628], rot: 180},
+    // contre le flanc de la gaine technique (0,5 cm de jeu avec le thermostat) : la case 4 (110,5 → 144 cm), devant le thermostat, reste presque vide
+    {id: 'etagere-salon', type: 'vasagleBarnet', name: 'Bibliothèque VASAGLE BARNET 6 niveaux, marron rustique et noir (LLS101B01, 40 x 30 x 187,5)', r: [297, 598, 337, 628], rot: 180, url: 'https://www.amazon.fr/dp/B08NWVJNZS'},
     // à gauche du canapé, contre la cloison (laisse 68 cm de passage devant la porte de la chambre)
     // pile de 4 chaises GOPLUS (51 x 44 x 85 l'unité) dans le coin sud-est, tournée à 45° vers le canapé, avec la Monstera sur l'assise
     {id: 'chaises-empilees', type: 'stackedChairs', name: 'Lot de 4 chaises GOPLUS empilées (métal + assise bois, vintage) + Monstera posée sur l\'assise', c: [576, 592], size: [51, 50], rot: -135, links: [{label: 'Chaises GOPLUS', url: 'https://www.amazon.fr/dp/B094VBZF92'}]},
