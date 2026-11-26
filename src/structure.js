@@ -179,7 +179,7 @@ export function applyDoor(door) {
     for (const l of door.leaves) l.pivot.rotation.y = l.closed + l.delta * e;
 }
 
-function buildWindow(o, group) {
+function buildWindow(o, group, colliders) {
     const horiz = o.x2 - o.x1 > o.y2 - o.y1;
     const [a1, a2] = horiz ? [o.x1, o.x2] : [o.y1, o.y2];
     const [t1, t2] = horiz ? [o.y1, o.y2] : [o.x1, o.x2];
@@ -189,6 +189,8 @@ function buildWindow(o, group) {
         D = 7;
     const m1 = mid - D / 2,
         m2 = mid + D / 2;
+    // vitre basse (fixe toute hauteur) : on ne la traverse pas en visite
+    if (o.bottom < 50) colliders.push(rectWorld(o.x1, o.y1, o.x2, o.y2));
     group.add(R(a1, a1 + F, m1, m2, o.bottom, o.top, M.alu));
     group.add(R(a2 - F, a2, m1, m2, o.bottom, o.top, M.alu));
     group.add(R(a1, a2, m1, m2, o.bottom, o.bottom + F, M.alu));
@@ -244,7 +246,7 @@ export function buildStructure(tex) {
 
     for (const o of openings) {
         if (o.kind === 'door') buildDoor(o, group, doors, doorMeshes);
-        else buildWindow(o, group);
+        else buildWindow(o, group, colliders);
     }
 
     const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(IW / 100, IH / 100), M.ceiling);
