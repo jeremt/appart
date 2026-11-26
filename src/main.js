@@ -141,7 +141,7 @@ function applyState(item) {
     else furnRoot.add(item.group);
 }
 
-const STORE = 'appart3d:berenice:v1';
+const STORE = 'appart3d:berenice:v2';
 function save() {
     try {
         // `init` mémorise la position d'origine : si elle change dans le code, l'ancienne sauvegarde est ignorée

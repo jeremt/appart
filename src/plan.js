@@ -37,7 +37,10 @@ export const walls = [
     {x1: BATH_X + INT, y1: SPLIT_Y, x2: IW, y2: SPLIT_Y + INT}, // chambre | séjour
     {x1: 0, y1: BATH_TOP, x2: 35, y2: 94}, // gaine technique (angle baignoire)
     {x1: 0, y1: 228, x2: 56, y2: SPLIT_Y}, // placard + gaine (GCH / PL)
-    {x1: 228, y1: 602, x2: 294, y2: IH}, // gaine technique logement (tableau électrique)
+    // gaine technique logement (tableau électrique), maçonnée et creusée côté entrée (photo) : bords de 6 cm,
+    // porte pleine en bas, 3 niches ouvertes en haut. `recess` : creux sur la face y1, de a1 à a2,
+    // `cuts` = [bas, haut, profondeur] ; `fill` = garniture (gaineFill dans furniture.js).
+    {x1: 228, y1: 602, x2: 294, y2: IH, recess: {a1: 234, a2: 288, cuts: [[5, 124, 2.5], [134, 162, 20], [168, 196, 20], [202, 230, 20]]}, fill: 'gaine'},
     // couloir de l'immeuble autour du palier (hors appartement)
     {x1: -260, y1: 420, x2: -EXT, y2: 440, out: 5}, // nord
     {x1: -260, y1: 700, x2: -EXT, y2: 720, out: 4}, // sud
@@ -189,6 +192,8 @@ export const furnitureDefs = [
     // à gauche du canapé, contre la cloison (laisse 68 cm de passage devant la porte de la chambre)
     // pile de 4 chaises GOPLUS (51 x 44 x 85 l'unité) dans le coin sud-est, tournée à 45° vers le canapé, avec la Monstera sur l'assise
     {id: 'chaises-empilees', type: 'stackedChairs', name: 'Lot de 4 chaises GOPLUS empilées (métal + assise bois, vintage) + Monstera posée sur l\'assise', c: [576, 592], size: [51, 50], rot: -135, links: [{label: 'Chaises GOPLUS', url: 'https://www.amazon.fr/dp/B094VBZF92'}]},
+    // thermostat du chauffage, sur le flanc gauche (côté séjour) de la gaine technique, centré à ~115 cm
+    {id: 'thermostat', wall: true, type: 'thermostat', name: "Thermostat d'ambiance (8,5 x 8,5)", r: [294, 606, 296.5, 614.5], rot: 90, elev: 110.75},
     // mur sud, à droite de la gaine technique : interphone (28,5 cm de la gaine, bas à 111,5 cm) puis, 10 cm plus loin, clavier d'alarme centré sur la même hauteur
     {id: 'interphone', wall: true, type: 'intercom', name: 'Interphone (11,5 x 16)', r: [188, 625.5, 199.5, 628], rot: 180, elev: 111.5},
     {id: 'alarme', wall: true, type: 'alarmKeypad', name: "Clavier d'alarme (8 x 12,5)", r: [170, 626, 178, 628], rot: 180, elev: 113.25},

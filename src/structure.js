@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {walls, openings, rooms, footprint, wallTiles, balcony, landing, H_WALL, IW, IH, toWorld} from './plan.js';
-import {MAT} from './furniture.js';
+import {MAT, gaineFill} from './furniture.js';
 
 const std = (color, roughness = 0.9) => new THREE.MeshStandardMaterial({color, roughness});
 
@@ -80,6 +80,23 @@ function wallPieces(w) {
         horiz ? [a, w.y1, b, w.y2, h0, h1] : [w.x1, a, w.x2, b, h0, h1],
     );
 }
+
+// Mur horizontal creusé côté y1 (`recess` dans plan.js) : joues pleines de part et d'autre, tablettes
+// pleines entre les creux, fond de chaque creux réduit de sa profondeur.
+function recessPieces(w) {
+    const {a1, a2, cuts} = w.recess;
+    const segs = [[w.x1, w.y1, a1, w.y2, 0, H_WALL], [a2, w.y1, w.x2, w.y2, 0, H_WALL]];
+    let h = 0;
+    for (const [h0, h1, depth] of cuts) {
+        if (h0 > h) segs.push([a1, w.y1, a2, w.y2, h, h0]);
+        segs.push([a1, w.y1 + depth, a2, w.y2, h0, h1]);
+        h = h1;
+    }
+    if (h < H_WALL) segs.push([a1, w.y1, a2, w.y2, h, H_WALL]);
+    return segs;
+}
+
+const FILLS = {gaine: gaineFill};
 
 // Helper : rectangle exprimé en (axe du mur, épaisseur) -> plan.
 const along = (horiz) => (a1, a2, t1, t2, h0, h1, mat) =>
@@ -198,11 +215,20 @@ export function buildStructure(tex) {
         const mats = Array(6).fill(M.wall);
         mats[2] = M.wallTop;
         if (w.out != null) mats[w.out] = M.wallOut;
-        for (const [x1, y1, x2, y2, h0, h1] of wallPieces(w)) {
-            const piece = planBox(x1, y1, x2, y2, h0, h1, mats);
+        for (const [x1, y1, x2, y2, h0, h1] of w.recess ? recessPieces(w) : wallPieces(w)) {
+            // creux d'une gaine : les tablettes gardent la couleur du mur sur le dessus
+            const piece = planBox(x1, y1, x2, y2, h0, h1, w.recess && h1 < H_WALL ? mats.map((m, i) => (i === 2 ? M.wall : m)) : mats);
             piece.userData.wall = wi; // murs coupés en 3D libre (cutaway.js)
             group.add(piece);
             if (h0 === 0) colliders.push(rectWorld(x1, y1, x2, y2));
+        }
+        if (w.fill) {
+            const {a1, a2, cuts} = w.recess,
+                depth = Math.max(...cuts.map((c) => c[2]));
+            const fill = FILLS[w.fill](a2 - a1, depth, cuts);
+            fill.position.copy(toWorld((a1 + a2) / 2, w.y1 + depth / 2));
+            fill.rotation.y = Math.PI; // face avant vers -y du plan (côté pièce)
+            group.add(fill);
         }
     });
 

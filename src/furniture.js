@@ -2088,6 +2088,50 @@ function alarmKeypad(w, d) {
     return g;
 }
 
+// Thermostat d'ambiance blanc 8,5 x 8,5 x 2,5 cm : petit écran sombre, deux touches dessous.
+function thermostat(w, d) {
+    const g = new THREE.Group(),
+        hw = w / 2,
+        hd = d / 2,
+        h = 8.5,
+        shell = std(0xf4f3ef, {roughness: 0.4}),
+        key = std(0xc6c7c4, {roughness: 0.5});
+    RB(g, -hw, hw, 0, h, -hd, hd, 0.8, shell);
+    B(g, -2.6, 2.6, 4.2, 7, hd - 0.1, hd + 0.05, std(0x1c1f22, {roughness: 0.15})); // écran
+    for (const x of [-1.6, 1.6]) Cyl(g, 0.7, 0.7, 0.3, x, 2.2, hd, key, true);
+    return g;
+}
+
+// Garniture de la gaine technique maçonnée de l'entrée (le mur est creusé dans structure.js) :
+// porte pleine dans le premier renfoncement, livres et déco dans les niches. `w` x `d` = largeur x profondeur
+// des niches, origine au centre du renfoncement au sol, face du mur en z = +d/2 ; `cuts` = [[bas, haut, profondeur]…].
+export function gaineFill(w, d, cuts) {
+    const g = new THREE.Group(),
+        hw = w / 2,
+        hd = d / 2,
+        rnd = seeded(28);
+    const [[d0, d1, dd], ...niches] = cuts;
+    // porte : panneau peint à fleur du mur, petit jeu tout autour, serrure côté gauche (vu de face)
+    B(g, -hw + 0.4, hw - 0.4, d0 + 0.4, d1 - 0.4, hd - dd + 0.3, hd - 0.2, MAT.gloss);
+    Cyl(g, 1, 1, 0.8, -hw + 5, d1 - 10, hd + 0.1, MAT.metal, true);
+    Cyl(g, 0.35, 0.35, 0.3, -hw + 5, d1 - 10, hd + 0.6, MAT.dark, true);
+    const z0 = -hd,
+        x0 = -hw + 0.5,
+        x1 = hw - 0.5;
+    const [[n0, n0t], [n1, n1t], [n2, n2t]] = niches;
+    // niche basse : bol en grès, petite plante, pile de livres couchés
+    bowl(g, x0 + 8, n0, z0 + 9, 5.5, 5, stoneware('cream'));
+    herbPot(g, -2, n0, z0 + 9, 4.5, 0x4f8a44, rnd);
+    bookStack(g, x1 - 11, n0, z0 + 9, 3, rnd);
+    // niche du milieu : livres debout sur les deux tiers, petit vase noir à droite
+    bookRow(g, x0, x0 + (x1 - x0) * 0.65, n1, z0, n1t - n1 - 1, rnd);
+    Cyl(g, 2.5, 3.5, 13, x1 - 7, n1 + 6.5, z0 + 9, stoneware('black'));
+    // niche haute : rangée de livres, quelques-uns couchés au bout
+    bookRow(g, x0, x1 - 15, n2, z0, n2t - n2 - 1, rnd);
+    bookStack(g, x1 - 7.5, n2, z0 + 9, 4, rnd);
+    return g;
+}
+
 // Colonne de salle de bain blanche : porte en bas, niches ouvertes avec serviettes et papier.
 function bathColumn(w, d) {
     const g = new THREE.Group(),
@@ -2890,6 +2934,7 @@ export const BUILDERS = {
     onewheelColumn,
     intercom,
     alarmKeypad,
+    thermostat,
     bathColumn,
     towelRadiator,
     panelRadiator,
