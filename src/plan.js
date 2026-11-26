@@ -173,9 +173,6 @@ export const furnitureDefs = [
     {id: 'condiments', type: 'condiments', name: 'Moulin à poivre, pot à sel en bois, huile d\'olive', r: [18, 440, 38, 462], rot: 90, elev: 90},
     // Séjour
     {id: 'canape', type: 'teddy', name: 'Canapé OMHU Teddy', r: [325, SPLIT_Y + INT, 525, SPLIT_Y + INT + 100], rot: 0, variants: teddyColors, variant: '5782'},
-    // à gauche du canapé, côté balcon : socle calé sous la baie fixe, au sud du battant de la porte-fenêtre
-    // (ouverte vers l'intérieur, il balaierait le coin nord) ; l'arc porte le dôme au-dessus de l'accoudoir
-    {id: 'lampadaire-arc', type: 'arcLamp', name: 'Lampadaire arc Courviro métal noir, abat-jour dôme Ø 30, H 185', c: [572, 478], size: [38, 38], rot: -145, url: 'https://ambienthome.fr/products/lampadaire-arc-noir-abat-jour-dome-courviro'},
     // suspension papier au-dessus de la table basse, dans l'axe du canapé (bas de la boule à 145 cm, plafond à 250)
     {id: 'suspension-salon', type: 'paperPendant', name: 'Suspension IKEA GULLSUDARE Ø70, papier de riz fait main (805.836.16)', c: [425, 475], size: [70, 70], rot: 0, elev: 145, url: 'https://www.ikea.com/fr/fr/p/gullsudare-abat-jour-suspension-blanc-fait-main-80583616/'},
     {id: 'tableaux-canape', wall: true, type: 'sofaArt', name: 'Mur de cadres au-dessus du canapé : 5 affiches, cadres dépareillés', r: [330, SPLIT_Y + INT, 520, SPLIT_Y + INT + 3], rot: 0},
@@ -212,5 +209,6 @@ export const furnitureDefs = [
     {id: 'etagere-aromatiques', type: 'herbShelf', name: 'Étagère d\'aromatiques', r: [722, 130, 778, 165], rot: 0},
     // salon de jardin bas (canapé au sud face au nord, table d'appoint devant)
     {id: 'salon-canape', type: 'gardenSofa', name: 'Canapé de jardin bas 2 places', r: [640, 553, 770, 623], rot: 180},
-    {id: 'salon-table', type: 'gladomTable', name: 'Table/plateau IKEA GLADOM noir Ø45 x 53 (504.119.90)', c: [705, 500], size: [45, 45], rot: 0, url: 'https://www.ikea.com/fr/fr/p/gladom-table-plateau-noir-50411990/'},
+    // table basse faite maison : bois de récup grisé, plateau = un carreau 60 x 60 gris (18 cm devant le canapé)
+    {id: 'salon-table', type: 'reclaimedTileTable', name: 'Table basse de jardin faite maison : bois de récup, carreau 60 x 60 (70 x 70 x 40)', c: [705, 500], size: [70, 70], rot: 0},
 ];

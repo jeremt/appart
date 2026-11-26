@@ -1642,76 +1642,6 @@ function paperPendant(w, d, ceiling = 105) {
     return g;
 }
 
-// ---------- Lampadaire arc ----------
-
-// Lampadaire arc Courviro (Ambient Home, réf. AHLMP1007A) : métal noir, H 185 cm, socle rond,
-// arc qui monte en S et porte un abat-jour dôme Ø 30 au bout d'un déport de ~ 78 cm (photos produit).
-// Face avant (+z) côté abat-jour : le socle est à l'origine, le dôme pend au bout de l'arc.
-function arcLamp(w, d) {
-    const g = new THREE.Group();
-    const black = std(0x141416, {roughness: 0.42, metalness: 0.5});
-    // socle : disque plat aux arêtes vives, collerette de renfort à la base du mât
-    Cyl(g, 14, 14, 2.6, 0, 1.3, 0, black);
-    Cyl(g, 1.7, 1.7, 5, 0, 4.6, 0, black);
-    // mât + arc : tube rond Ø 2,1 cm, profil en S relevé sur la photo (mât quasi vertical puis
-    // grande courbe vers l'avant, sommet à 185 cm, léger raccourcissement au bout où pend le dôme)
-    // points [déport, hauteur] en cm, arc planaire dans le plan vertical y-z
-    const profile = [
-        [0, 3], [0.8, 55], [3.5, 103], [10, 140],
-        [24, 165], [44, 180], [62, 183.5], [72, 182.5], [78, 178],
-    ].map((p) => new THREE.Vector3(0, p[1] / 100, p[0] / 100));
-    const arc = new THREE.Mesh(
-        new THREE.TubeGeometry(new THREE.CatmullRomCurve3(profile), 64, 0.0105, 12),
-        black,
-    );
-    arc.castShadow = arc.receiveShadow = true;
-    g.add(arc);
-    // câble de suspension : du bout de l'arc à l'œillet riveté au sommet du dôme
-    rod(g, [0, 178, 72], [0, 164, 78.9], 0.18, black);
-    // abat-jour dôme Ø 30 : calotte sphérique (flèche 10 cm), ouverte en bas, légèrement penchée
-    const dome = new THREE.Group();
-    dome.position.set(0, 154 / 100, 78 / 100);
-    dome.rotation.x = 0.12; // penché vers l'avant, comme sur la photo
-    const R = 16.25, // rayon de la sphère porteuse de la calotte
-        Cy = -6.25; // centre de la sphère, sous le plan du pourtour
-    const pts = [];
-    for (let i = 0; i <= 24; i++) {
-        const a = (i / 24) * Math.asin(15 / R); // du sommet au pourtour Ø 30
-        pts.push(new THREE.Vector2(Math.sin(a) * R / 100, Cy / 100 + Math.cos(a) * R / 100));
-    }
-    const shell = new THREE.Mesh(new THREE.LatheGeometry(pts, 48), black);
-    shell.castShadow = shell.receiveShadow = true;
-    dome.add(shell);
-    // dessous lumineux : disque chaud juste au-dessus du pourtour + LED globe, éteints le jour
-    const glow = new THREE.Mesh(
-        new THREE.CircleGeometry(14.4 / 100, 48),
-        std(0xfff0d8, {roughness: 0.9, emissive: 0xffdfa8, emissiveIntensity: 0.04, side: THREE.DoubleSide}),
-    );
-    glow.material.userData.night = 1.1;
-    glow.rotation.x = -Math.PI / 2;
-    glow.position.y = 0.005;
-    dome.add(glow);
-    const bulb = new THREE.Mesh(
-        new THREE.SphereGeometry(0.032, 16, 10),
-        std(0xfff4e0, {emissive: 0xffe2b0, emissiveIntensity: 0.05}),
-    );
-    bulb.material.userData.night = 2.4;
-    bulb.position.set(0, 0.045, 0);
-    dome.add(bulb);
-    const eyelet = new THREE.Mesh(new THREE.TorusGeometry(0.006, 0.002, 8, 16), black);
-    eyelet.position.set(0, 0.104, 0);
-    eyelet.rotation.x = Math.PI / 2;
-    dome.add(eyelet);
-    g.add(dome);
-    // halo d'appoint au-dessus de l'accoudoir, réservé au mode nuit (comme la suspension papier)
-    const light = new THREE.PointLight(0xffd9a8, 1.4, 2.4, 2);
-    light.position.set(0, 148 / 100, 78 / 100);
-    light.userData.nightOnly = true;
-    light.visible = false;
-    g.add(light);
-    return g;
-}
-
 // ---------- Balcon : guirlande et plantes ----------
 
 const seeded = (seed) => () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
@@ -2616,6 +2546,70 @@ function gardenSeat(w, d, seats) {
 }
 const gardenSofa = (w, d) => gardenSeat(w, d, 2);
 
+// Table basse de jardin faite maison (bois de récup grisé par le soleil, plateau = 1 carreau 60 x 60 gris
+// effet béton) : 70 x 70 x H40. Cadre de 5 cm en onglet autour du carreau, 4 pieds carrés 6 x 6 aux angles
+// sous le cadre, traverses sous le plateau entre les pieds.
+let concreteTileMat;
+function reclaimedTileTable(w, d) {
+    const g = new THREE.Group(),
+        H = 40,
+        fw = 5, // largeur du cadre
+        ft = 4, // épaisseur du cadre
+        leg = 6,
+        hw = w / 2,
+        hd = d / 2;
+    // bois de récup : teintes brun grisé légèrement différentes d'une pièce à l'autre
+    const woods = [0x7d6a55, 0x857260, 0x76644f, 0x8a7a68].map((c) => std(c, {roughness: 0.9}));
+    if (!concreteTileMat) {
+        const c = document.createElement('canvas');
+        c.width = c.height = 256;
+        const x = c.getContext('2d');
+        x.fillStyle = '#9d9c97';
+        x.fillRect(0, 0, 256, 256);
+        let seed = 7;
+        const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+        // nuages clairs/sombres puis piqûres
+        for (let i = 0; i < 90; i++) {
+            const v = 140 + Math.floor(rnd() * 40);
+            x.fillStyle = `rgba(${v},${v},${v - 4},0.10)`;
+            x.beginPath();
+            x.arc(rnd() * 256, rnd() * 256, 10 + rnd() * 40, 0, Math.PI * 2);
+            x.fill();
+        }
+        for (let i = 0; i < 1400; i++) {
+            const v = rnd() < 0.5 ? 110 : 185;
+            x.fillStyle = `rgba(${v},${v},${v},0.35)`;
+            x.fillRect(rnd() * 256, rnd() * 256, 1 + rnd(), 1 + rnd());
+        }
+        const t = new THREE.CanvasTexture(c);
+        t.colorSpace = THREE.SRGBColorSpace;
+        concreteTileMat = std(0xffffff, {map: t, roughness: 0.8});
+    }
+    // pieds aux angles, sous le cadre
+    [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(([sx, sz], i) => {
+        const x0 = sx * (hw - leg / 2),
+            z0 = sz * (hd - leg / 2);
+        B(g, x0 - leg / 2, x0 + leg / 2, 0, H - ft, z0 - leg / 2, z0 + leg / 2, woods[i]);
+    });
+    // traverses entre les pieds, en retrait de 1 cm des faces extérieures
+    const ty0 = H - ft - 8, ty1 = H - ft, tt = 2.5;
+    B(g, -hw + leg, hw - leg, ty0, ty1, -hd + 1, -hd + 1 + tt, woods[1]);
+    B(g, -hw + leg, hw - leg, ty0, ty1, hd - 1 - tt, hd - 1, woods[2]);
+    B(g, -hw + 1, -hw + 1 + tt, ty0, ty1, -hd + leg, hd - leg, woods[3]);
+    B(g, hw - 1 - tt, hw - 1, ty0, ty1, -hd + leg, hd - leg, woods[0]);
+    // support du carreau (contreplaqué) puis carreau affleurant le haut du cadre
+    B(g, -hw + fw, hw - fw, H - ft, H - 1.2, -hd + fw, hd - fw, woods[1]);
+    B(g, -hw + fw + 0.1, hw - fw - 0.1, H - 1.2, H - 0.1, -hd + fw + 0.1, hd - fw - 0.1, concreteTileMat);
+    // cadre : 4 planches trapézoïdales en onglet (forme en m, y du shape = -z monde, symétrique ici)
+    const m = (v) => v / 100;
+    const board = (pts, mat) => prism(g, new THREE.Shape(pts.map(([px, pz]) => new THREE.Vector2(m(px), m(-pz)))), H - ft, H, mat);
+    board([[-hw, -hd], [hw, -hd], [hw - fw, -hd + fw], [-hw + fw, -hd + fw]], woods[0]);
+    board([[hw, hd], [-hw, hd], [-hw + fw, hd - fw], [hw - fw, hd - fw]], woods[2]);
+    board([[-hw, hd], [-hw, -hd], [-hw + fw, -hd + fw], [-hw + fw, hd - fw]], woods[3]);
+    board([[hw, -hd], [hw, hd], [hw - fw, hd - fw], [hw - fw, -hd + fw]], woods[1]);
+    return g;
+}
+
 // IKEA GLADOM (504.119.90) : table/plateau Ø45 x 53 cm en acier laqué noir, plateau amovible à bord relevé,
 // 4 pieds tubulaires légèrement évasés reliés par un croisillon.
 function gladomTable(w, d) {
@@ -2927,10 +2921,10 @@ export const BUILDERS = {
     herbShelf,
     gardenSofa,
     gladomTable,
+    reclaimedTileTable,
     stringLights,
     railPlanter,
     paperPendant,
-    arcLamp,
     kitchenGrid,
     knifeBar,
     riceCooker,
