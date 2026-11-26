@@ -166,6 +166,7 @@ function buildDoor(o, group, doors, doorMeshes) {
         const closed = yaw(start ? axis : axis.clone().negate());
         let delta = yaw(normal) - closed;
         delta = Math.atan2(Math.sin(delta), Math.cos(delta));
+        if (o.maxAngle) delta = Math.sign(delta) * Math.min(Math.abs(delta), (o.maxAngle * Math.PI) / 180);
         door.leaves.push({pivot, closed, delta});
     }
     applyDoor(door);

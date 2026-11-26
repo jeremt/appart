@@ -49,9 +49,9 @@ export const walls = [
 ];
 
 // Ouvertures. Les portes ont `leaves` (charnière côté 'start' ou 'end' de l'ouverture)
-// et `swing` (+1 / -1 : sens d'ouverture le long de l'axe perpendiculaire au mur).
+// et `swing` (+1 / -1 : sens d'ouverture le long de l'axe perpendiculaire au mur) ; `maxAngle` = butée d'ouverture en degrés (90 par défaut).
 export const openings = [
-    {id: 'entree', kind: 'door', name: "Porte d'entrée", x1: -EXT, y1: 536, x2: 0, y2: 616, top: 215, leaves: ['end'], swing: 1, open: false, exterior: true},
+    {id: 'entree', kind: 'door', name: "Porte d'entrée", x1: -EXT, y1: 536, x2: 0, y2: 616, top: 215, leaves: ['end'], swing: 1, open: false, exterior: true, maxAngle: 75},
     {id: 'pf-sejour', kind: 'door', name: 'Porte-fenêtre séjour', x1: IW, y1: 328, x2: IW + EXT, y2: 419, top: 215, leaves: ['start'], swing: -1, open: false, style: 'glass'},
     {id: 'fixe-sejour', kind: 'window', x1: IW, y1: 419, x2: IW + EXT, y2: 581, bottom: 0, top: 215},
     {id: 'pf-chambre', kind: 'door', name: 'Porte-fenêtre chambre', x1: IW, y1: 156, x2: IW + EXT, y2: 243, top: 215, leaves: ['end'], swing: -1, open: false, style: 'glass'},
@@ -186,9 +186,8 @@ export const furnitureDefs = [
     {id: 'meuble-tv', type: 'tvStandEasel', name: 'Support TV à roulettes CNTSLNB inox + plateau bois (86 x 50,5 x 126,5) + TV 55" + Nintendo Switch et 2 manettes', r: [382, 577.5, 468, 628], rot: 180, url: 'https://www.amazon.fr/dp/B0FRXT8XT2'},
     // à gauche du meuble TV, contre le mur sud (photo IMG_6673)
     {id: 'radiateur-salon', wall: true, type: 'panelRadiator', name: 'Radiateur à panneaux 80 x 60', r: [500, 616, 580, 628], rot: 180},
-    // colonne du Onewheel : tablette du bas à 6 cm, plus large que l'ancienne colonne (48 x 40) pour accueillir son support
-    {id: 'colonne-salon', type: 'onewheelColumn', name: 'Colonne de rangement + Onewheel', r: [295, 588, 343, 628], rot: 180},
-    {id: 'onewheel', type: 'onewheelStand', name: 'Onewheel sur support', c: [319, 612], size: [40, 30], rot: 180, elev: 6},
+    // colonne de rangement (tablette du bas à 6 cm, conçue pour le Onewheel, qui est maintenant dans l'entrée)
+    {id: 'colonne-salon', type: 'onewheelColumn', name: 'Colonne de rangement', r: [295, 588, 343, 628], rot: 180},
     // à gauche du canapé, contre la cloison (laisse 68 cm de passage devant la porte de la chambre)
     // pile de 4 chaises GOPLUS (51 x 44 x 85 l'unité) dans le coin sud-est, tournée à 45° vers le canapé, avec la Monstera sur l'assise
     {id: 'chaises-empilees', type: 'stackedChairs', name: 'Lot de 4 chaises GOPLUS empilées (métal + assise bois, vintage) + Monstera posée sur l\'assise', c: [576, 592], size: [51, 50], rot: -135, links: [{label: 'Chaises GOPLUS', url: 'https://www.amazon.fr/dp/B094VBZF92'}]},
@@ -198,6 +197,8 @@ export const furnitureDefs = [
     {id: 'interphone', wall: true, type: 'intercom', name: 'Interphone (11,5 x 16)', r: [188, 625.5, 199.5, 628], rot: 180, elev: 111.5},
     {id: 'alarme', wall: true, type: 'alarmKeypad', name: "Clavier d'alarme (8 x 12,5)", r: [170, 626, 178, 628], rot: 180, elev: 113.25},
     // juste après le vantail de la porte d'entrée ouverte (80 cm) : porte-manteau + banc + étagères à chaussures
+    // Onewheel au sol, entre la porte d'entrée et le meuble à chaussures (2 cm de jeu) : la porte s'arrête à 75° devant lui
+    {id: 'onewheel', type: 'onewheelStand', name: 'Onewheel sur support', c: [73, 613], size: [40, 30], rot: 180},
     {id: 'meuble-entree', type: 'entryCoatBench', name: 'Amig Lukïen : porte-manteau avec banc et étagères à chaussures (183 x 66 x 32,5)', r: [95, 595.5, 161, 628], rot: 180, url: 'https://www.amazon.fr/dp/B0DK8WDHZN'},
     // Chambre
     // lit tête au mur nord, centré sur ce mur (x 225 -> 612)
