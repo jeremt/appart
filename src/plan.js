@@ -189,8 +189,9 @@ export const furnitureDefs = [
     // à gauche du canapé, contre la cloison (laisse 68 cm de passage devant la porte de la chambre)
     // pile de 4 chaises GOPLUS (51 x 44 x 85 l'unité) dans le coin sud-est, tournée à 45° vers le canapé, avec la Monstera sur l'assise
     {id: 'chaises-empilees', type: 'stackedChairs', name: 'Lot de 4 chaises GOPLUS empilées (métal + assise bois, vintage) + Monstera posée sur l\'assise', c: [576, 592], size: [51, 50], rot: -135, links: [{label: 'Chaises GOPLUS', url: 'https://www.amazon.fr/dp/B094VBZF92'}]},
-    // à droite de la porte d'entrée, contre le mur sud : meuble à linge HITNET
-    {id: 'meuble-linge', type: 'hitnetHamper', name: 'Meuble à linge HITNET bambou noyer, panier 32 L + 3 étagères (40 x 30 x 119)', r: [184, 598, 224, 628], rot: 180, url: 'https://www.amazon.fr/dp/B0FDF77VFL'},
+    // mur sud, à droite de la gaine technique : interphone (28,5 cm de la gaine, bas à 111,5 cm) puis, 10 cm plus loin, clavier d'alarme centré sur la même hauteur
+    {id: 'interphone', wall: true, type: 'intercom', name: 'Interphone (11,5 x 16)', r: [188, 625.5, 199.5, 628], rot: 180, elev: 111.5},
+    {id: 'alarme', wall: true, type: 'alarmKeypad', name: "Clavier d'alarme (8 x 12,5)", r: [170, 626, 178, 628], rot: 180, elev: 113.25},
     // juste après le vantail de la porte d'entrée ouverte (80 cm) : porte-manteau + banc + étagères à chaussures
     {id: 'meuble-entree', type: 'entryCoatBench', name: 'Amig Lukïen : porte-manteau avec banc et étagères à chaussures (183 x 66 x 32,5)', r: [95, 595.5, 161, 628], rot: 180, url: 'https://www.amazon.fr/dp/B0DK8WDHZN'},
     // Chambre
