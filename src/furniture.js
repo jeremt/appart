@@ -2126,21 +2126,59 @@ function glassJar(g, x, y, z, r, h, fill) {
     Cyl(g, r + 0.2, r + 0.2, lidH - 0.6, x, y + bodyH + 0.6 + (lidH - 0.6) / 2, z, MAT.walnut);
 }
 
-// Colonne ouverte chêne / métal noir pour l'airfryer (dessus de tablette à 100 cm) et le rice cooker
-// (150 cm), avec des boîtes de rangement dessous.
-function applianceColumn(w, d) {
+// ---------- Meuble à linge HITNET en bambou, coloris noyer (40 x 30 x 119 cm) ----------
+
+// Quatre montants carrés, trois tablettes à lattes au-dessus (dessus à 72, 92,4 et 113 cm, montants
+// dépassant de 6 cm), caisson à panneaux MDF en bas (pieds de 8,5 cm) avec façade basculante à lattes
+// et poignée découpée ; le sac en tissu beige de 32 L dépasse quand la façade est entrouverte.
+function hitnetHamper(w, d) {
     const g = new THREE.Group(),
         hw = w / 2,
         hd = d / 2,
-        h = 180;
-    columnFrame(g, w, d, h, [4, 36, 68, 98, 148, h - 2]);
-    // bocaux en verre (2 x 2 par tablette) : riz, pâtes, lentilles, farine / céréales, café, sucre
-    const jars = [[0xf1ece0, 0xd9b45a, 0xa4552f, 0xe8dcc0], [0xc9a35a, 0x6a4a2a, 0xe9e2d0, 0x8a6a3a]];
-    [6, 38].forEach((y, row) =>
-        [-10.5, 10.5].forEach((x, i) =>
-            [-hd + 11, hd - 14].forEach((z, j) => glassJar(g, x, y, z, 9.2, 26, jars[row][i * 2 + j])),
-        ),
-    );
+        h = 119,
+        p = 3, // section des montants
+        bamboo = std(0x8a5a34, {roughness: 0.6}),
+        panel = std(0x5e3d26, {roughness: 0.55}),
+        bag = std(0xe6dfd0, {roughness: 1});
+    for (const sx of [-1, 1])
+        for (const sz of [-1, 1]) B(g, sx > 0 ? hw - p : -hw, sx > 0 ? hw : -hw + p, 0, h, sz > 0 ? hd - p : -hd, sz > 0 ? hd : -hd + p, bamboo);
+    // tablettes à lattes (dessus à `y`), traverses latérales dessous
+    const slats = 6,
+        sw = (d - 2 * p) / slats;
+    for (const y of [72, 92.4, 113]) {
+        for (let i = 0; i < slats; i++) {
+            const z = -hd + p + i * sw;
+            B(g, -hw + p, hw - p, y - 1.5, y, z + 0.4, z + sw - 0.4, bamboo);
+        }
+        for (const sx of [-1, 1]) B(g, sx > 0 ? hw - p : -hw, sx > 0 ? hw : -hw + p, y - 4, y - 1.5, -hd + p, hd - p, bamboo);
+        B(g, -hw + p, hw - p, y - 4, y - 1.5, -hd, -hd + 2, bamboo); // traverse arrière
+    }
+    B(g, -hw + p, hw - p, 113, 116.5, -hd, -hd + 2, bamboo); // rebord arrière du plateau du haut
+    // caisson : côtés et fond en panneau, plancher, traverses basses
+    const y0 = 8.5,
+        y1 = 70.5;
+    for (const sx of [-1, 1]) B(g, sx > 0 ? hw - p + 0.5 : -hw + p - 1.5, sx > 0 ? hw - p + 1.5 : -hw + p - 0.5, y0, y1, -hd + p, hd - p, panel);
+    B(g, -hw + p, hw - p, y0, y1, -hd + 1, -hd + 2, panel);
+    B(g, -hw + p, hw - p, y0, y0 + 1.5, -hd + p, hd - p, bamboo);
+    for (const sx of [-1, 1]) B(g, sx > 0 ? hw - p : -hw, sx > 0 ? hw : -hw + p, y0 - 3, y0, -hd + p, hd - p, bamboo);
+    B(g, -hw + p, hw - p, y0 - 3, y0, hd - 2, hd, bamboo);
+    // sac en tissu, bord supérieur roulé
+    B(g, -hw + p + 1.5, hw - p - 1.5, y0 + 1.5, y1 - 4, -hd + 3, hd - 5, bag);
+    RB(g, -hw + p + 1, hw - p - 1, y1 - 6, y1 - 3, -hd + 2.5, hd - 4.5, 1.2, bag);
+    // façade basculante, articulée en bas, entrouverte (le haut s'écarte de ~7 cm)
+    const door = new THREE.Group(),
+        dh = y1 - y0 - 0.5,
+        fw = 2.5; // largeur des montants du cadre
+    door.position.set(0, (y0 + 0.5) / 100, (hd - 1) / 100);
+    door.rotation.x = 0.11;
+    g.add(door);
+    const dx1 = -hw + p + 0.3,
+        dx2 = hw - p - 0.3;
+    for (const x of [dx1, dx2 - fw]) B(door, x, x + fw, 0, dh, -1.6, 0, bamboo);
+    B(door, dx1, dx2, 0, 3, -1.6, 0, bamboo);
+    B(door, dx1, dx2, dh - 9, dh, -1.6, 0, bamboo);
+    B(door, -6, 6, dh - 6, dh - 3, -1.7, 0.1, MAT.black); // poignée découpée
+    for (let y = 4.5; y < dh - 10.5; y += 4.2) B(door, dx1 + fw, dx2 - fw, y, y + 2.8, -1.4, -0.2, bamboo); // lattes
     return g;
 }
 
@@ -2880,7 +2918,7 @@ export const BUILDERS = {
     condiments,
     convertibleTable,
     onewheelColumn,
-    applianceColumn,
+    hitnetHamper,
     bathColumn,
     towelRadiator,
     panelRadiator,
