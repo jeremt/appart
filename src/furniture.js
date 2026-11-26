@@ -193,16 +193,33 @@ function openCarcass(g, hw, hd, y0, y1, zf, inner = MAT.white) {
     B(g, -hw + 1.5, hw - 1.5, y0 + 1.5, y1 - 1.5, -hd, -hd + 1, inner);
 }
 
-// Micro-ondes GoldStar crème (relevé sur les photos) : bandeau de commandes en haut (2 boutons + touche verte),
-// hublot à cadre blanc et grille grise. Origine au centre du fond, posé en y.
-function microwaveGoldstar(g, x, y, z0, zf) {
-    const cream = std(0xe6dfc6, {roughness: 0.5});
-    B(g, x - 22, x + 22, y, y + 25.5, z0, zf, cream);
-    B(g, x - 20, x + 5, y + 1.5, y + 18, zf, zf + 0.5, MAT.plastic); // cadre du hublot
-    B(g, x - 17.5, x + 2.5, y + 3.5, y + 16, zf + 0.5, zf + 0.8, std(0x8f9193, {roughness: 0.7})); // grille
-    B(g, x + 8, x + 20, y + 5, y + 12, zf, zf + 0.4, std(0xd9d1b4, {roughness: 0.6})); // étiquette
-    for (const dx of [-12, -1]) Cyl(g, 2.1, 2.1, 1.2, x + dx, y + 21.7, zf + 0.6, MAT.white, true);
-    B(g, x + 12, x + 19, y + 20.2, y + 23.4, zf, zf + 0.9, std(0x7fcf91, {roughness: 0.4})); // touche verte
+// Micro-ondes posable noir (photo) : ~44 x 34 x 26 cm, porte vitrée fumée à gauche, panneau de commandes à droite
+// (afficheur + 2 boutons rotatifs). Origine au centre du fond, posé en y ; sur le dessus, une pile de livres.
+function microwaveBlack(g, x, y, z0) {
+    const body = std(0x1b1c1e, {roughness: 0.45, metalness: 0.2}),
+        W = 44,
+        H = 26,
+        zf = z0 + 34,
+        x0 = x - W / 2,
+        x1 = x + W / 2,
+        px = x1 - 11; // séparation porte / panneau
+    B(g, x0, x1, y + 1, y + H, z0, zf, body);
+    for (const fx of [x0 + 3, x1 - 3]) for (const fz of [z0 + 3, zf - 3]) Cyl(g, 1, 1, 1, fx, y + 0.5, fz, MAT.matteBlack);
+    // porte : cadre noir brillant, vitre fumée, poignée encastrée sur le bord droit
+    B(g, x0 + 0.5, px - 0.3, y + 1.5, y + H - 0.5, zf, zf + 0.6, std(0x0c0c0d, {roughness: 0.15, metalness: 0.3}));
+    B(g, x0 + 4, px - 5, y + 5, y + H - 4.5, zf + 0.6, zf + 0.8, std(0x2a2d30, {roughness: 0.05, metalness: 0.4, transparent: true, opacity: 0.9}));
+    B(g, px - 2.5, px - 1, y + 4, y + H - 4, zf + 0.6, zf + 1.6, MAT.chrome);
+    // panneau de commandes : afficheur et deux boutons chromés
+    B(g, px, x1 - 0.5, y + 1.5, y + H - 0.5, zf, zf + 0.4, std(0x2b2c2f, {roughness: 0.4}));
+    B(g, px + 2.5, x1 - 3, y + H - 5.5, y + H - 3, zf + 0.4, zf + 0.6, std(0x101418, {emissive: 0x2a8a5a, emissiveIntensity: 0.4}));
+    for (const ky of [y + 15, y + 7.5]) Cyl(g, 2.2, 2.2, 1.8, (px + x1) / 2, ky, zf + 1.3, MAT.chrome, true);
+    // dessus : livres couchés
+    const top = y + H;
+    let h = top;
+    for (const [bw, bd, bh, c] of [[24, 17, 2.4, 0xc9772f], [22, 15, 1.8, 0xe8dcc0], [20, 14, 2.2, 0x6b7f8c]]) {
+        B(g, x0 + 3, x0 + 3 + bw, h, h + bh, z0 + 6, z0 + 6 + bd, std(c, {roughness: 0.8}));
+        h += bh;
+    }
 }
 
 // Verre à pied : pied, jambe fine, calice évasé.
@@ -240,7 +257,10 @@ function wallCabinets(g, w, d, mode = 'doors') {
         openCarcass(g, hw, hd, 150, 215, zf, niche);
         B(g, -hw + 1.5, hw - 1.5, 189, 191, -hd, zf, MAT.white);
         B(g, -hw + 1.5, hw - 1.5, 151.5, 152, -hd + 1, zf, niche);
-        microwaveGoldstar(g, 0, 151.5, -hd + 1.5, zf - 0.5);
+        microwaveBlack(g, -6, 152, -hd + 1.5);
+        // rouleau d'essuie-tout debout à droite du micro-ondes (tube en carton visible au centre)
+        Cyl(g, 6, 6, 24, 23, 152 + 12, -hd + 17, std(0xfbfbf8, {roughness: 1}));
+        Cyl(g, 2, 2, 24.2, 23, 152 + 12.1, -hd + 17, std(0xb08a5a, {roughness: 0.9}));
         B(g, -hw + 0.3, hw - 0.3, 191.5, 214.5, zf, zf + 2, kitchenWhite);
         barHandle(g, -hw + 12, 194, zf + 2); // calée à gauche (photo)
     } else if (mode === 'hood') {

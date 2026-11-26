@@ -166,7 +166,7 @@ export const furnitureDefs = [
     {id: 'colonne-sdb', type: 'bathColumn', name: 'Colonne de rangement', r: [180, 256, 215, 296], rot: -90},
     // Cuisine
     {id: 'evier', type: 'sink', name: 'Évier', r: [0, SPLIT_Y + INT, 63, 402], rot: 90},
-    {id: 'plan-travail', type: 'counter', name: 'Plan de travail + frigo top inox + micro-ondes GoldStar encastré', r: [0, 402, 63, 464], rot: 90},
+    {id: 'plan-travail', type: 'counter', name: 'Plan de travail + frigo top inox + micro-ondes noir posé dans la niche (livres dessus, essuie-tout à droite)', r: [0, 402, 63, 464], rot: 90},
     {id: 'plaques', type: 'cooker', name: 'Plaques à induction 4 feux + four encastré 60 cm', r: [0, 464, 63, 523], rot: 90},
     {id: 'grille-cuisine', wall: true, type: 'kitchenGrid', name: 'Grille murale ustensiles, poêle + wok de Buyer Carbone Plus 35 cm (5114.35)', r: [80, SPLIT_Y + INT, 150, SPLIT_Y + INT + 20], rot: 0},
     // bar : 3 caissons blancs (congélateur, 5 tiroirs, grand tiroir) sous un plan de travail, puis étagère en bois arrondie
