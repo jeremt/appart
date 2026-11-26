@@ -20,6 +20,7 @@
                 <label class="chk"><input type="checkbox" id="opt-labels" checked /> Cotes & pièces</label>
                 <label class="chk"><input type="checkbox" id="opt-edit" /> Déplacer les meubles</label>
                 <label class="chk edit-only"><input type="checkbox" id="opt-snap" checked /> Pas de 5 cm</label>
+                <button id="btn-measure" title="Mesurer une distance entre deux points (touche M)">📏 Mesurer</button>
                 <button id="btn-undo" title="Ctrl/⌘ + Z">Annuler</button>
                 <button id="btn-reset" class="edit-only">Réinitialiser</button>
                 <button id="btn-night" title="Mode nuit (touche N)">☾ Nuit</button>
@@ -63,6 +64,12 @@
             <ul id="trash-list"></ul>
         </aside>
 
+        <div id="measure-bar" hidden>
+            <span id="measure-tip"></span>
+            <button id="measure-clear">Tout effacer</button>
+            <button id="measure-close" aria-label="Fermer l'outil de mesure">✕</button>
+        </div>
+
         <div id="help" hidden></div>
         <div id="toast" hidden></div>
 
@@ -79,6 +86,7 @@
                     <li><kbd>ZQSD</kbd> / <kbd>WASD</kbd> ou flèches : se déplacer</li>
                     <li><kbd>Maj</kbd> : courir · souris : regarder</li>
                     <li><kbd>E</kbd> ou clic : ouvrir / fermer la porte visée</li>
+                    <li><kbd>M</kbd> : outil de mesure (clic = poser un point au centre de l'écran)</li>
                     <li><kbd>Échap</kbd> : libérer la souris</li>
                     <li><kbd>1</kbd> / <kbd>2</kbd> / <kbd>3</kbd> : Plan, 3D libre, Visite (à tout moment)</li>
                 </ul>

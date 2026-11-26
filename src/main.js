@@ -13,6 +13,7 @@ import {buildStructure, buildEnvironment, applyDoor} from './structure.js';
 import {createCutaway} from './cutaway.js';
 import {makeTextures} from './textures.js';
 import {FloorReflection, HQPipeline, halton} from './render.js';
+import {createMeasureTool} from './measure.js';
 
 const $ = (s) => document.querySelector(s);
 const viewport = $('#viewport');
@@ -285,16 +286,16 @@ let mode = 'plan';
 const showLabels = {plan: true, orbit: false};
 const activeCam = () => (mode === 'plan' ? ortho : mode === 'orbit' ? persp : fpsCam);
 
-const MODES_HELP = 'Changer de vue à tout moment : <kbd>1</kbd> Plan · <kbd>2</kbd> 3D libre · <kbd>3</kbd> Visite · <kbd>N</kbd> jour / nuit · <kbd>S</kbd> capture dans le presse-papiers (<kbd>P</kbd> en visite)';
+const MODES_HELP = 'Changer de vue à tout moment : <kbd>1</kbd> Plan · <kbd>2</kbd> 3D libre · <kbd>3</kbd> Visite · <kbd>N</kbd> jour / nuit · <kbd>M</kbd> mesurer · <kbd>S</kbd> capture dans le presse-papiers (<kbd>P</kbd> en visite)';
 const HELP = {
-    plan: `<b>Plan 2D</b> — glisser : déplacer la vue · <kbd>Espace</kbd> + glisser : déplacer la vue même sur un meuble · molette : zoom<br>Clic sur un meuble : sélection · avec « Déplacer les meubles » : glisser pour déplacer · <kbd>R</kbd> pivoter 90° (<kbd>⇧R</kbd> 15°) · <kbd>Suppr</kbd> supprimer · flèches : ajuster<br>Double-clic sur une porte : ouvrir / fermer<br>${MODES_HELP}`,
-    orbit: `<b>3D libre</b> — clic gauche : tourner · <kbd>Espace</kbd> + glisser ou clic droit : déplacer la vue · molette : zoom<br>Avec « Déplacer les meubles » : glisser un meuble pour le déplacer · <kbd>R</kbd> pivoter · <kbd>Suppr</kbd> supprimer<br>Double-clic sur une porte : ouvrir / fermer<br>${MODES_HELP}`,
+    plan: `<b>Plan 2D</b> — glisser : déplacer la vue · <kbd>Espace</kbd> + glisser : déplacer la vue même sur un meuble · molette : zoom<br>Clic sur un meuble : sélection · avec « Déplacer les meubles » : glisser pour déplacer · <kbd>R</kbd> pivoter 90° (<kbd>⇧R</kbd> 15°) · <kbd>Suppr</kbd> supprimer · flèches : ajuster<br>Double-clic sur une porte : ouvrir / fermer<br><kbd>M</kbd> mesurer : clic sur le point de départ puis d'arrivée (distance au sol) · <kbd>Maj</kbd> axe droit · <kbd>Suppr</kbd> retirer la dernière mesure<br>${MODES_HELP}`,
+    orbit: `<b>3D libre</b> — clic gauche : tourner · <kbd>Espace</kbd> + glisser ou clic droit : déplacer la vue · molette : zoom<br>Avec « Déplacer les meubles » : glisser un meuble pour le déplacer · <kbd>R</kbd> pivoter · <kbd>Suppr</kbd> supprimer<br>Double-clic sur une porte : ouvrir / fermer<br><kbd>M</kbd> mesurer : clic sur deux points (murs, meubles, sol) · <kbd>Maj</kbd> axe droit ou vertical · <kbd>Suppr</kbd> retirer la dernière mesure<br>${MODES_HELP}`,
     get fps() {
         return isTouch()
-            ? `<b>Visite</b> — joystick : se déplacer (à fond : courir) · glisser à droite : regarder · toucher une porte : l'ouvrir / fermer · ✕ : quitter`
+            ? `<b>Visite</b> — joystick : se déplacer (à fond : courir) · glisser à droite : regarder · toucher une porte : l'ouvrir / fermer · 📏 dans le menu : mesurer · ✕ : quitter`
             : this.fpsDesktop;
     },
-    fpsDesktop: `<b>Visite</b> — <kbd>ZQSD</kbd>/<kbd>WASD</kbd> se déplacer · <kbd>Maj</kbd> courir · <kbd>E</kbd> ou clic : porte · <kbd>Échap</kbd> libérer la souris<br>${MODES_HELP}`,
+    fpsDesktop: `<b>Visite</b> — <kbd>ZQSD</kbd>/<kbd>WASD</kbd> se déplacer · <kbd>Maj</kbd> courir · <kbd>E</kbd> ou clic : porte · <kbd>M</kbd> mesurer (clic : poser un point au viseur) · <kbd>Échap</kbd> libérer la souris<br>${MODES_HELP}`,
 };
 
 function setMode(m) {
@@ -322,6 +323,8 @@ function setMode(m) {
     updateLabelVisibility();
     setSpacePan(false);
     renderer.domElement.style.cursor = '';
+    measure.cancel();
+    measure.hover(null);
 }
 
 // Espace maintenu : le clic gauche déplace la vue (main) au lieu de tourner / saisir un meuble.
@@ -640,6 +643,8 @@ viewport.addEventListener(
             return;
         }
         down = {x: e.clientX, y: e.clientY};
+        // outil de mesure : un clic (sans glisser) pose un point, le glisser continue de déplacer la vue
+        if (measure.active) return void (down.measure = true);
         setNdc(e);
         const {item} = pickRay();
         if (!item) return;
@@ -679,6 +684,14 @@ window.addEventListener('pointermove', (e) => {
         }
         return;
     }
+    if (measure.active && mode !== 'fps' && !spacePan) {
+        if (e.target === renderer.domElement && e.buttons === 0) {
+            setNdc(e);
+            measure.hover(measureHit(), measureOpts(e));
+            renderer.domElement.style.cursor = 'crosshair';
+        } else if (e.target !== renderer.domElement && e.buttons === 0) measure.hover(null);
+        return;
+    }
     if (mode !== 'fps' && !spacePan && e.target === renderer.domElement && e.buttons === 0) {
         setNdc(e);
         const {item, door} = pickRay();
@@ -695,10 +708,64 @@ window.addEventListener('pointerup', (e) => {
         renderer.domElement.style.cursor = 'grab';
         return;
     }
-    if (down && mode !== 'fps' && e.target === renderer.domElement && Math.hypot(e.clientX - down.x, e.clientY - down.y) < 4)
-        select(down.item ?? null);
+    const click =
+        down && mode !== 'fps' && e.target === renderer.domElement && Math.hypot(e.clientX - down.x, e.clientY - down.y) < 4;
+    if (click && down.measure) {
+        setNdc(e);
+        measure.click(measureHit(), measureOpts(e));
+        measure.hover(measureHit(), measureOpts(e));
+    } else if (click) select(down.item ?? null);
     down = null;
 });
+
+// ---------- Outil de mesure ----------
+const measure = createMeasureTool({
+    scene,
+    onChange: () => {
+        markDirty();
+        updateMeasureTip();
+    },
+});
+
+// point 3D sous le rayon courant : surface visible la plus proche (meubles, murs, sol, balcon), sinon le sol
+function measureHit() {
+    const shown = (o) => {
+        for (; o; o = o.parent) if (!o.visible) return false;
+        return true;
+    };
+    const hit = raycaster
+        .intersectObjects([furnRoot, structure.group, env.group], true)
+        .find((h) => h.object.isMesh && shown(h.object));
+    return hit ? hit.point : raycaster.ray.intersectPlane(floorPlane, new THREE.Vector3());
+}
+function measureOpts(e) {
+    const r = renderer.domElement.getBoundingClientRect();
+    return {flat: mode === 'plan', axis: !!e?.shiftKey && mode !== 'fps', cam: activeCam(), size: {w: r.width, h: r.height}};
+}
+
+function updateMeasureTip() {
+    const bar = $('#measure-bar');
+    bar.hidden = !measure.active;
+    $('#btn-measure').classList.toggle('active', measure.active);
+    document.body.classList.toggle('measuring', measure.active);
+    if (!measure.active) return;
+    const touch = isTouch();
+    const where = mode === 'fps' ? (touch ? 'Touchez' : 'Visez et cliquez') : touch ? 'Touchez' : 'Cliquez';
+    const tip = measure.pending
+        ? `${where} le point d'arrivée${mode === 'fps' || touch ? '' : ' · <kbd>Maj</kbd> : axe droit'} · <kbd>Échap</kbd> : annuler`
+        : `${where} le point de départ${mode === 'plan' ? ' (distance au sol)' : ''}`;
+    $('#measure-tip').innerHTML = touch ? tip.replace(/ · <kbd>Échap<\/kbd>.*$/, '') : tip;
+    $('#measure-clear').disabled = !measure.count;
+}
+
+function setMeasuring(on) {
+    if (on) select(null);
+    measure.setActive(on);
+    if (!on) renderer.domElement.style.cursor = '';
+}
+$('#btn-measure').addEventListener('click', () => setMeasuring(!measure.active));
+$('#measure-close').addEventListener('click', () => setMeasuring(false));
+$('#measure-clear').addEventListener('click', () => measure.clear());
 
 renderer.domElement.addEventListener('dblclick', (e) => {
     if (mode === 'fps') return;
@@ -756,6 +823,18 @@ window.addEventListener('keydown', (e) => {
     if (!e.metaKey && !e.ctrlKey && !e.altKey && (e.code === 'KeyP' || (e.code === 'KeyS' && mode !== 'fps'))) {
         screenshotToClipboard();
         return;
+    }
+    if (e.code === 'KeyM' && !e.metaKey && !e.ctrlKey && !e.altKey) return setMeasuring(!measure.active);
+    if (measure.active) {
+        if (e.key === 'Escape') {
+            if (!measure.cancel()) setMeasuring(false);
+            return;
+        }
+        if (e.key === 'Delete' || e.key === 'Backspace') {
+            e.preventDefault();
+            measure.undoLast();
+            return;
+        }
     }
     if (e.code === 'Space' && mode !== 'fps') {
         e.preventDefault();
@@ -886,6 +965,18 @@ function interact(at) {
     if (d) toggleDoor(d);
 }
 
+// visite : point de mesure au centre de l'écran (viseur) ou à l'endroit touché
+function measureAt(at = {x: 0, y: 0}) {
+    if (!visiting()) return;
+    raycaster.setFromCamera(ndc.set(at.x, at.y), fpsCam);
+    measure.click(measureHit(), measureOpts());
+}
+function updateMeasureAim() {
+    if (!measure.active || !visiting() || hintTick % 2) return;
+    raycaster.setFromCamera(ndc.set(0, 0), fpsCam);
+    measure.hover(measureHit(), measureOpts());
+}
+
 let hintTick = 0;
 function updateHint() {
     if (++hintTick % 6) return;
@@ -968,7 +1059,9 @@ touchUi.addEventListener('pointerup', (e) => {
     if (!look || e.pointerId !== look.id) return;
     if (!look.moved && performance.now() - look.t0 < 400) {
         const r = renderer.domElement.getBoundingClientRect();
-        interact({x: ((e.clientX - r.left) / r.width) * 2 - 1, y: -((e.clientY - r.top) / r.height) * 2 + 1});
+        const at = {x: ((e.clientX - r.left) / r.width) * 2 - 1, y: -((e.clientY - r.top) / r.height) * 2 + 1};
+        if (measure.active) measureAt(at);
+        else interact(at);
     }
     look = null;
 });
@@ -999,7 +1092,10 @@ function stopTouchVisit() {
 $('#touch-exit').addEventListener('click', stopTouchVisit);
 
 document.addEventListener('mousedown', (e) => {
-    if (mode === 'fps' && fps.isLocked && e.button === 0) interact();
+    if (mode === 'fps' && fps.isLocked && e.button === 0) {
+        if (measure.active) measureAt();
+        else interact();
+    }
 });
 
 // ---------- Reflets du carrelage ----------
@@ -1014,7 +1110,8 @@ const probes = [
 ].map((p) => ({...p, cam: new THREE.CubeCamera(0.05, 40, new THREE.WebGLCubeRenderTarget(256, {type: THREE.HalfFloatType}))}));
 
 function captureReflections() {
-    const saved = [selBox.visible, dimLines.visible, structure.ceiling.visible, env.soffit.visible];
+    const saved = [selBox.visible, dimLines.visible, structure.ceiling.visible, env.soffit.visible, measure.group.visible];
+    measure.group.visible = false;
     cutaway.update(null); // sondes prises murs debout (la coupe revient à l'image suivante)
     floorRefl.setEnabled(false); // pas de reflet planaire dans les sondes
     selBox.visible = dimLines.visible = false;
@@ -1034,7 +1131,7 @@ function captureReflections() {
         Object.assign(p.mat, {envMap: p.env.texture, envMapIntensity: p.intensity * k, roughness: p.roughness});
         p.mat.needsUpdate = true;
     }
-    [selBox.visible, dimLines.visible, structure.ceiling.visible, env.soffit.visible] = saved;
+    [selBox.visible, dimLines.visible, structure.ceiling.visible, env.soffit.visible, measure.group.visible] = saved;
     floorRefl.setEnabled(hq);
     markDirty();
 }
@@ -1149,6 +1246,7 @@ function resize() {
     const pr = renderer.getPixelRatio();
     floorRefl.setSize(w * pr, h * pr);
     pipeline.setSize(w, h, pr);
+    measure.setResolution(w, h);
 }
 window.addEventListener('resize', resize);
 
@@ -1224,6 +1322,7 @@ renderer.setAnimationLoop(() => {
     if (mode === 'fps') {
         updateFps(dt);
         updateHint();
+        updateMeasureAim();
     } else if (mode === 'orbit') orbit.update();
     if (cutaway.update(mode === 'orbit' ? persp : null, orbit.target)) markDirty();
     const cam = activeCam();
